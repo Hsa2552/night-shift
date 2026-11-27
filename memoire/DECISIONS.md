@@ -33,6 +33,12 @@
 - **Conséquences** : le back-end (Supabase ou aucun) et la stratégie du service worker restent à décider avec le sujet ; `memoire/ARCHITECTURE.md` décrit le socle et les commandes. Fusionner la PR revient à valider cette décision : passer alors le statut en `[DÉCIDÉ]`.
 - **Responsable** : _prénom de l'humain qui valide_
 
+### D-27-2200-S · Unspoil · `[DÉCIDÉ]` (équipe, 27/11 vers 22 h)
+
+- **Contexte** : l'équipe a arrêté le périmètre dans `DEBUT_Hackaton.txt` et Salif a lancé le développement.
+- **Décision** : réaliser une PWA de masquage des corrections dans le PDF original, avec détection déterministe et révélation progressive en secours. Les PDF restent sur l'appareil.
+- **Responsables** : Salif pour le lecteur PDF et la PWA, Hazem pour la détection, Wael pour le lecteur côté interface et les interactions.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...
