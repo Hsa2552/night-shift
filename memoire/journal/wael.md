@@ -36,3 +36,9 @@
 - Les rectangles valides sont limités à la page. Si un bloc contient une région non affichable, le document reste couvert et la révélation progressive prend le relais. Le canvas d’une page totalement couverte est aussi masqué en CSS.
 - Les commandes affichent le libellé du bloc sur une ligne distincte de l’action. Elles restent hors du PDF et se répartissent en grille selon la largeur de la page.
 - Vérifié : `npm run check` (101 tests), build Ubuntu et parcours Edge sur huit PDF synthétiques, écran mobile émulé à 390 px et mode hors ligne. L’alignement ne change pas avec la largeur. Le trait du graphique dans `mixte.pdf` reste visible en dehors de la région détectée (Q-27-2233-WB).
+
+### 27/11 23:06 · SESSION · T-WB-1 (glissement du trait) · Codex
+
+- Le trait prend le focus quand la révélation progressive s’active. Le glissement met à jour la frontière au plus une fois par image, tient compte de la fenêtre visible et distingue le simple appui du déplacement. Au relâchement, la dernière position est appliquée et le défilement s’arrête.
+- Vérifié : `npm run check` (102 tests), build Ubuntu, gestes souris et tactile émulé dans Edge, défilement au bord, PDF sans texte, rechargement hors ligne. Les quatre parcours d’import et les commandes par bloc passent aussi dans Firefox.
+- Non vérifié : gestes sur téléphone physique et Safari. La région du graphique de `mixte.pdf` reste suivie côté détection.

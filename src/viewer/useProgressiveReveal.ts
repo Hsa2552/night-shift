@@ -8,9 +8,22 @@ function clamp(value: number, max: number) {
 interface Drag {
   pointerId: number
   pages: NodeListOf<HTMLElement>
+  startY: number
   clientY: number
   grabOffset: number
-  frame: number
+  moved: boolean
+  frame?: number
+}
+
+function findFirstPage(count: number, matches: (index: number) => boolean) {
+  let start = 0
+  let end = count
+  while (start < end) {
+    const middle = Math.floor((start + end) / 2)
+    if (matches(middle)) end = middle
+    else start = middle + 1
+  }
+  return start
 }
 
 export function useProgressiveReveal(pages: readonly { height: number }[], enabled: boolean) {
@@ -34,12 +47,13 @@ export function useProgressiveReveal(pages: readonly { height: number }[], enabl
   }, [pages])
   const activePage = Math.max(
     0,
-    pageStarts.findLastIndex((start) => start <= position),
+    findFirstPage(pages.length, (index) => pageStarts[index] > position) - 1,
   )
 
   useLayoutEffect(() => {
+    if (enabled) slider.current?.focus({ preventScroll: true })
     return () => {
-      if (drag.current) cancelAnimationFrame(drag.current.frame)
+      if (drag.current?.frame !== undefined) cancelAnimationFrame(drag.current.frame)
       drag.current = null
     }
   }, [enabled])
@@ -58,29 +72,35 @@ export function useProgressiveReveal(pages: readonly { height: number }[], enabl
 
   function updateFromPointer(current: Drag) {
     const y = current.clientY - current.grabOffset
-    for (const [index, page] of current.pages.entries()) {
-      const rect = page.getBoundingClientRect()
-      if (rect.height > 0 && y <= rect.bottom) {
-        const fraction = clamp((y - rect.top) / rect.height, 1)
-        setPosition(pageStarts[index] + fraction * pages[index].height)
-        return
-      }
+    const index = findFirstPage(
+      current.pages.length,
+      (pageIndex) => y <= current.pages[pageIndex].getBoundingClientRect().bottom,
+    )
+    const rect = current.pages[index]?.getBoundingClientRect()
+    if (!rect) {
+      setPosition(totalHeight)
+    } else if (rect.height > 0) {
+      const fraction = clamp((y - rect.top) / rect.height, 1)
+      setPosition(pageStarts[index] + fraction * pages[index].height)
     }
-    setPosition(totalHeight)
   }
 
-  function scrollDuringDrag() {
+  function updateDragFrame() {
     const current = drag.current
     if (!current) return
+    current.frame = undefined
     const margin = 48
-    const above = Math.max(0, margin - current.clientY)
-    const below = Math.max(0, current.clientY - window.innerHeight + margin)
-    if (above || below) {
-      const oldScroll = window.scrollY
-      window.scrollBy(0, clamp(below, margin) / 3 - clamp(above, margin) / 3)
-      if (oldScroll !== window.scrollY) updateFromPointer(current)
+    const viewportTop = window.visualViewport?.offsetTop ?? 0
+    const viewportBottom = viewportTop + (window.visualViewport?.height ?? window.innerHeight)
+    const above = clamp(viewportTop + margin - current.clientY, margin)
+    const below = clamp(current.clientY - viewportBottom + margin, margin)
+    const scrollStep = (below - above) / 3
+    const oldScroll = window.scrollY
+    if (scrollStep !== 0) window.scrollBy(0, scrollStep)
+    updateFromPointer(current)
+    if (oldScroll !== window.scrollY) {
+      current.frame = requestAnimationFrame(updateDragFrame)
     }
-    current.frame = requestAnimationFrame(scrollDuringDrag)
   }
 
   function startDrag(event: PointerEvent<HTMLDivElement>) {
@@ -93,23 +113,31 @@ export function useProgressiveReveal(pages: readonly { height: number }[], enabl
     drag.current = {
       pointerId: event.pointerId,
       pages: viewer.querySelectorAll<HTMLElement>('[data-page-position]'),
+      startY: event.clientY,
       clientY: event.clientY,
       grabOffset: event.clientY - rect.top - rect.height / 2,
-      frame: requestAnimationFrame(scrollDuringDrag),
+      moved: false,
     }
   }
 
   function moveDrag(event: PointerEvent<HTMLElement>) {
     const current = drag.current
     if (current?.pointerId !== event.pointerId) return
+    if (!current.moved && Math.abs(event.clientY - current.startY) < 3) return
+    current.moved = true
     current.clientY = event.clientY
-    updateFromPointer(current)
+    current.frame ??= requestAnimationFrame(updateDragFrame)
   }
 
   function endDrag(event: PointerEvent<HTMLElement>) {
-    if (drag.current?.pointerId !== event.pointerId) return
-    cancelAnimationFrame(drag.current.frame)
+    const current = drag.current
+    if (current?.pointerId !== event.pointerId) return
+    if (current.frame !== undefined) cancelAnimationFrame(current.frame)
     drag.current = null
+    if (event.type === 'pointerup' && current.moved) {
+      current.clientY = event.clientY
+      updateFromPointer(current)
+    }
   }
 
   function moveWithKeyboard(event: KeyboardEvent<HTMLDivElement>) {

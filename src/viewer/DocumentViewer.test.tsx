@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DocumentViewer } from './DocumentViewer'
 import '../index.css'
@@ -31,6 +31,12 @@ function mockPageBounds(page: HTMLElement, top: number, height: number) {
   vi.spyOn(canvas.parentElement!, 'getBoundingClientRect').mockReturnValue(
     new DOMRect(0, top, 200, height),
   )
+}
+
+async function nextFrame() {
+  await act(async () => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  })
 }
 
 describe('lecteur', () => {
@@ -68,7 +74,7 @@ describe('lecteur', () => {
     expect(lastMask.style.width).toBe('40%')
   })
 
-  it('déplace la frontière entre des pages de tailles différentes et remasque en remontant', () => {
+  it('déplace la frontière entre des pages de tailles différentes et remasque en remontant', async () => {
     render(<DocumentViewer pages={pages} mode={{ kind: 'progressive' }} renderPage={renderPage} />)
     const first = screen.getByRole('region', { name: 'Page 1' })
     const second = screen.getByRole('region', { name: 'Page 2' })
@@ -84,19 +90,42 @@ describe('lecteur', () => {
     const viewer = screen.getByRole('region', { name: 'Document PDF' })
     fireEvent.pointerDown(slider, { pointerId: 1, pointerType: 'touch', button: 0, clientY: 100 })
     fireEvent.pointerMove(viewer, { pointerId: 1, pointerType: 'touch', clientY: 250 })
+    await nextFrame()
     expect(within(first).getByTestId('progressive-mask').style.top).toBe('50%')
     expect(within(second).getByTestId('progressive-mask').style.top).toBe('0%')
     fireEvent.pointerMove(viewer, { pointerId: 1, pointerType: 'touch', clientY: 500 })
+    await nextFrame()
     expect(within(first).queryByTestId('progressive-mask')).toBeNull()
     expect(Number.parseFloat(within(second).getByTestId('progressive-mask').style.top)).toBeCloseTo(
       100 / 3,
     )
     fireEvent.pointerMove(viewer, { pointerId: 1, pointerType: 'touch', clientY: 100 })
+    fireEvent.pointerUp(viewer, { pointerId: 1, pointerType: 'touch', clientY: 100 })
     expect(screen.getAllByTestId('progressive-mask').map((mask) => mask.style.top)).toEqual([
       '0%',
       '0%',
     ])
-    fireEvent.pointerUp(viewer, { pointerId: 1, pointerType: 'touch' })
+  })
+
+  it('garde le document couvert après un appui près du bord de l’écran sans glissement', async () => {
+    render(<DocumentViewer pages={pages} mode={{ kind: 'progressive' }} renderPage={renderPage} />)
+    const viewer = screen.getByRole('region', { name: 'Document PDF' })
+    const slider = screen.getByRole('slider')
+    const y = window.innerHeight - 10
+    mockPageBounds(screen.getByRole('region', { name: 'Page 1' }), y, 300)
+    mockPageBounds(screen.getByRole('region', { name: 'Page 2' }), y + 310, 225)
+    vi.spyOn(slider, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, y - 22, 200, 44))
+    const scroll = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
+    try {
+      fireEvent.pointerDown(slider, { pointerId: 1, pointerType: 'touch', button: 0, clientY: y })
+      fireEvent.pointerMove(viewer, { pointerId: 1, pointerType: 'touch', clientY: y + 1 })
+      await nextFrame()
+      fireEvent.pointerUp(viewer, { pointerId: 1, pointerType: 'touch', clientY: y + 1 })
+      expect(scroll).not.toHaveBeenCalled()
+      expect(slider.getAttribute('aria-valuenow')).toBe('0')
+    } finally {
+      scroll.mockRestore()
+    }
   })
 
   it('met à jour la position et le focus du trait au clavier', () => {

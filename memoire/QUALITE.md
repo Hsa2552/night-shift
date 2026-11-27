@@ -54,6 +54,13 @@
 - Résultat : 110 à 140 ms par exécution. La mesure a révélé une mauvaise classification (`correction_only` au lieu de `mixed` quand les corrections sont longues), corrigée et couverte par un test
 - Limites : machine de bureau, pas de téléphone ; analyse par couleur non mesurée (elle demande le rendu raster de chaque page, coût dépendant du module PDF)
 
+### V-27-2306-WB · Parcours intégré, géométrie et lecture progressive
+
+- Par : Wael (Codex) · Branche `feat/viewer`, synchronisée avec `main` (`362ef0e`).
+- Protocole : `npm run check`, build Ubuntu avec `BASE_PATH=/night-shift/`, import de huit PDF synthétiques dans Edge et des quatre types de document dans Firefox. Edge en émulation tactile 390 × 844 et réseau coupé après activation du service worker. PDF sans texte de deux pages pour le geste multipage.
+- Résultat : 102 tests réussis. Les rectangles partiellement hors page sont limités à la page. Toute région inutilisable maintient le document couvert. Les boutons révèlent et remasquent chaque bloc indépendamment. Un appui simple sur le trait ne révèle rien. Le défilement au bord démarre pendant le glissement et s’arrête au relâchement. L’import, le rendu et l’analyse restent utilisables hors ligne dans Edge.
+- Limites : téléphone physique et Safari à vérifier. Le bord du graphique dans `mixte.pdf` reste suivi dans Q-27-2233-WB.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
