@@ -33,6 +33,15 @@
 - **Conséquences** : le back-end (Supabase ou aucun) et la stratégie du service worker restent à décider avec le sujet ; `memoire/ARCHITECTURE.md` décrit le socle et les commandes. Fusionner la PR revient à valider cette décision : passer alors le statut en `[DÉCIDÉ]`.
 - **Responsable** : _prénom de l'humain qui valide_
 
+### D-27-2222-S · Fusion conditionnelle des PR ordinaires · `[PROPOSÉ]`
+
+- **Contexte** : l'addendum de lancement demande de réduire les attentes entre jalons. GitHub indique que `main` n'a pas de protection de branche classique et ne renvoie aucune règle active pour cette branche. Le compte Git utilisé sur ce poste a le droit de pousser et aucun droit administrateur. La CI est active et son succès est vérifiable sur les PR.
+- **Décision proposée** : après validation collective et intégration des Règles v2, un agent pourra fusionner immédiatement sa propre PR ordinaire dans `main`. Les PR touchant les fichiers verrouillés, les conflits d'attribution et les décisions produit ou d'architecture gardent la validation et la fusion humaines.
+- **Conditions cumulatives** : PR ouverte et prête, limitée au périmètre de l'agent. Vérifications locales vertes. Branche à jour de `origin/main`, état fusionnable et revues requises satisfaites. Workflow CI de PR terminé avec succès sur le SHA de tête précis et testé. Aucun arrêt annoncé. Heure vérifiée à Paris et strictement avant le 28 novembre 2026 à 13 h.
+- **Exécution proposée** : refaire `git fetch origin` et relire l'état GitHub juste avant la fusion. Figer le SHA et utiliser `gh pr merge --match-head-commit` ou l'équivalent GitHub qui reçoit le SHA attendu. En cas de rejet, identifier le motif et recommencer les vérifications si la branche a bougé. Aucune fusion différée, aucun contournement des protections et aucun réglage GitHub modifié.
+- **Mise en vigueur** : obtenir l'accord de l'équipe, passer `AGENTS.md` en Règles v2 et actualiser la consigne correspondante de `memoire/INDEX.md` sur la branche dédiée. Après fusion humaine, annoncer l'entrée en vigueur et relancer les sessions d'agents. Les Règles v1 régissent les fusions jusqu'à cette intégration.
+- **Responsable de la proposition** : Salif.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...
