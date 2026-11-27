@@ -1,0 +1,4 @@
+kind: mixed
+default q
+t 0-4, 8, 31
+c 48-221

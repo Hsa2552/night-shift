@@ -5,7 +5,8 @@
 
 import type { DetectionResult, DocumentKind, PageRegion, Rect } from '../contract.ts'
 
-export type Role = 'q' | 'c' | 't'
+/** q : énoncé ; c : correction ; t : titre ou texte neutre ; m : ligne mêlant les deux (non comptée). */
+export type Role = 'q' | 'c' | 't' | 'm'
 
 export interface TruthElement {
   pageIndex: number
@@ -88,5 +89,49 @@ export function evaluate(truth: Truth, result: DetectionResult): Evaluation {
     leaked: corrections.filter((e) => covered(e, regions) < LEAK_THRESHOLD),
     questions: questions.length,
     overmasked: questions.filter((e) => covered(e, regions) > OVERMASK_THRESHOLD),
+  }
+}
+
+/**
+ * Vérité terrain à partir d'une annotation par plages de lignes :
+ *   kind: mixed
+ *   default q
+ *   c 12-30, 45
+ *   t 0-2
+ * Les numéros sont ceux du listing `x.lignes.txt` (ordre de lecture).
+ */
+export function truthFromRoles(
+  spec: string,
+  units: { pageIndex: number; text: string; bbox: Rect }[],
+): Truth {
+  let kind: DocumentKind = 'unknown'
+  let fallback: Role = 'q'
+  const roles = new Map<number, Role>()
+  for (const raw of spec.split(/\r?\n/)) {
+    const line = raw.replace(/#.*/, '').trim()
+    if (!line) continue
+    const k = /^kind\s*:\s*(\w+)$/.exec(line)
+    if (k) {
+      kind = k[1] as DocumentKind
+      continue
+    }
+    const d = /^default\s+([qctm])$/.exec(line)
+    if (d) {
+      fallback = d[1] as Role
+      continue
+    }
+    const r = /^([qctm])\s+(.+)$/.exec(line)
+    if (!r) throw new Error(`Ligne d'annotation invalide : ${raw}`)
+    for (const part of r[2]!.split(/[,\s]+/).filter(Boolean)) {
+      const [a, b] = part.split('-').map(Number)
+      if (!Number.isInteger(a) || (b !== undefined && !Number.isInteger(b))) {
+        throw new Error(`Plage invalide : ${part}`)
+      }
+      for (let i = a!; i <= (b ?? a!); i++) roles.set(i, r[1] as Role)
+    }
+  }
+  return {
+    kind,
+    elements: units.map((u, i) => ({ ...u, role: roles.get(i) ?? fallback })),
   }
 }
