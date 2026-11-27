@@ -104,4 +104,23 @@ describe('figure de correction qui touche la question suivante', () => {
     const region = result.blocks[0]!.regions[0]!.bbox
     expect(region.y + region.height).toBeLessThanOrEqual(top(2))
   })
+
+  it('cadre autour de la correction : masqué en entier, question précédente lisible', async () => {
+    // Ligne 0 : question ; lignes 1 à 3 : correction entourée d'un cadre qui commence
+    // 4 points au-dessus de la ligne 1 et finit avant la question 2 (ligne 5).
+    const page = fakePage(0, [
+      '1. Tracer le triangle.',
+      'Correction',
+      'Le triangle est rectangle.',
+      'Il est tracé ci-dessus.',
+      '',
+      '2. Calculer son aire.',
+    ])
+    const raster = fakeRaster(page)
+    strokeRect(raster, 60, Math.round(top(1) - 4), 400, Math.round(top(4) - top(1) + 4))
+    const result = await detectCorrections({ pages: [page], getRaster: async () => raster })
+    const region = result.blocks[0]!.regions[0]!.bbox
+    expect(region.y).toBeLessThanOrEqual(Math.round(top(1) - 4))
+    expect(region.y).toBeGreaterThanOrEqual(top(0) + 11)
+  })
 })

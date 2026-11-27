@@ -699,6 +699,7 @@ function lineRegions(d: Draft, flow: Line[]): BoundedRegion[] {
           bbox: { x: area.x0, y: y0, width: area.x1 - area.x0, height: y1 - y0 },
         },
         next: bounded,
+        prev: above,
       })
     }
     i = j + 1

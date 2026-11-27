@@ -117,11 +117,13 @@ function pixelSpan(ink: PageInk, bbox: Rect) {
 export function graphicBottom(ink: PageInk, bbox: Rect, limitY: number): number {
   const bottom = bbox.y + bbox.height
   const { x0, x1 } = pixelSpan(ink, bbox)
-  const yb = Math.min(ink.raster.height, Math.round(bottom * ink.sy))
+  // Arrondi vers l'extérieur : la rangée de pixels coupée par la limite compte comme touchée.
+  const yb = Math.min(ink.raster.height, Math.ceil(bottom * ink.sy))
   const limit = Math.min(ink.raster.height - 1, Math.floor(limitY * ink.sy))
   const seeds = columnsWithInk(ink, x0, x1, yb - 2, yb)
+  if (seeds.size === 0) return bottom
   const last = follow(ink, x0, x1, seeds, yb, 1, limit)
-  return last === null ? bottom : Math.max(bottom, (last + 1) / ink.sy)
+  return Math.max(bottom, (last === null ? yb : last + 1) / ink.sy)
 }
 
 /**
@@ -133,7 +135,7 @@ export function graphicBottom(ink: PageInk, bbox: Rect, limitY: number): number 
 export function graphicTop(ink: PageInk, bbox: Rect, limitY: number): number {
   const top = bbox.y
   const { x0, x1 } = pixelSpan(ink, bbox)
-  const yt = Math.max(0, Math.round(top * ink.sy))
+  const yt = Math.max(0, Math.floor(top * ink.sy))
   const yBottom = Math.min(ink.raster.height - 1, Math.floor((top + bbox.height) * ink.sy))
   const seeds = columnsWithInk(ink, x0, x1, yt, yt + 2)
   if (seeds.size === 0) return top
@@ -141,5 +143,5 @@ export function graphicTop(ink: PageInk, bbox: Rect, limitY: number): number {
   if (reached === null || reached - yt < 0.5 * (yBottom - yt)) return top
   const limit = Math.max(0, Math.ceil(limitY * ink.sy))
   const last = follow(ink, x0, x1, seeds, yt - 1, -1, limit)
-  return last === null ? top : Math.min(top, last / ink.sy)
+  return Math.min(top, (last ?? yt) / ink.sy)
 }

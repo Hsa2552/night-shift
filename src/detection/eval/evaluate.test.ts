@@ -4,7 +4,7 @@
 // Évaluation du détecteur sur un dossier de PDF locaux (jamais envoyés ailleurs).
 // Désactivée par défaut. Usage :
 //   UNSPOIL_EVAL_DIR=chemin/vers/pdf npx vitest run src/detection/eval
-// (UNSPOIL_EVAL_RASTER=0 pour évaluer le texte seul.)
+// (UNSPOIL_EVAL_RASTER=0 pour évaluer le texte seul, UNSPOIL_EVAL_VERBOSE=1 pour les régions.)
 // Pour chaque `x.pdf`, la vérité terrain est lue dans `x.verite.json` (voir metrics.ts).
 // Sans vérité, le test écrit `x.a-annoter.json` : les lignes du document avec le rôle
 // deviné par le détecteur, à corriger à la main (q, c ou t) puis à renommer en `x.verite.json`.
@@ -120,6 +120,14 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
           `${f} : ${result.kind}, ${result.blocks.length} blocs (sans vérité, fichier à annoter écrit)`,
         )
         continue
+      }
+      if (process.env.UNSPOIL_EVAL_VERBOSE) {
+        for (const b of result.blocks) {
+          const r = b.regions.map(({ pageIndex, bbox }) =>
+            [pageIndex, bbox.x, bbox.y, bbox.width, bbox.height].map((v) => +v.toFixed(1)),
+          )
+          lines.push(`   ${f} ${b.id} [${b.questionLabel ?? '-'}] ${JSON.stringify(r)}`)
+        }
       }
       const truth = JSON.parse(readFileSync(truthPath, 'utf8')) as Truth
       const ev = evaluate(truth, result)
