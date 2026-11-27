@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { openPdf } from './index'
-import { makeLargeTestPdf, makeTestPdf } from './test-pdf'
+import { makeDenseTestPdf, makeLargeTestPdf, makeTestPdf } from './test-pdf'
 
 describe('openPdf with a synthetic PDF', () => {
   it('extracts text and geometry from two pages with different sizes and orientations', async () => {
@@ -59,6 +59,30 @@ describe('openPdf with a synthetic PDF', () => {
         height: 842,
         textItems: [],
       })
+    } finally {
+      await pdf.close()
+    }
+  })
+
+  it('preserves order, accents and font metrics across text stream chunks', async () => {
+    const pdf = await openPdf(new Blob([makeDenseTestPdf()]))
+    try {
+      const { textItems } = await pdf.getPageData(0)
+      const lines = textItems
+        .map(({ text, hasEOL }) => text + (hasEOL ? '\n' : ''))
+        .join('')
+        .split('\n')
+        .filter(Boolean)
+      expect(lines).toHaveLength(250)
+      expect(lines[0]).toBe('Ligne 1 : révision')
+      expect(lines[125]).toBe('Ligne 126 : révision')
+      expect(lines[249]).toBe('Ligne 250 : révision')
+      const first = textItems.find((item) => item.text === lines[0])!
+      const last = textItems.find((item) => item.text === lines[249])!
+      expect(new Set(textItems.map((item) => item.fontName)).size).toBe(2)
+      expect(last.fontName).toBe(first.fontName)
+      expect(last.bbox.height).toBeCloseTo(first.bbox.height)
+      expect(last.bbox.y - first.bbox.y).toBeCloseTo(249 * 15)
     } finally {
       await pdf.close()
     }

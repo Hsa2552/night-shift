@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type { TextItem, TextStyle } from 'pdfjs-dist/types/src/display/api'
 import { describe, expect, it } from 'vitest'
 import { mapTextItem } from './text-geometry'

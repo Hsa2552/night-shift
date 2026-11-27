@@ -35,3 +35,9 @@
 - Vérifié : 90 tests sur la branche PDF, 104 dans la copie intégrée, les deux builds et Edge hors ligne. Le PDF synthétique de 80 pages a exercé le recadrage de la première page et les budgets d'affichage et d'analyse. Voir `QUALITE.md` V-27-2304-S.
 - Le README décrit un test commun sur ordinateur et téléphone à partir du même commit. La publication Pages exige l'activation par un mainteneur. Le workflow existant construit uniquement `main`.
 - PR #5 : proposition finalisée. La protection serveur de `main`, l'accord de Salif, Hazem et Wael et la fusion humaine des Règles v2 sont des prérequis à l'automatisation.
+
+### 27/11 · SESSION · T-S-2 extraction par lots et pistes pour le détecteur · Codex
+
+- L'extraction convertit chaque lot du flux PDF.js avant de lire le suivant. La page ne conserve qu'un tableau complet de fragments, dans le format C1. Le test de régression couvre 250 lignes accentuées, deux polices et la conservation des métriques entre lots.
+- Un essai dans Edge sur `mixte.pdf` a enregistré 351 opérations PDF.js et un tracé d'environ x 88–293 et y 155–224. Les bornes de cette API sont quantifiées et ne suffisent pas à classer un tracé comme corrigé. Relevé transmis à Hazem dans la PR #6. Le raster actuel peut aussi servir à vérifier la marge sous le masque.
+- Vérification du correctif de Wael `96cce8c` : dans le parcours hors ligne sur PDF synthétique de 80 pages, le lecteur garde 3 canvas non vides après le même défilement qui en laissait 13. La première page se rend à nouveau en y revenant. Voir le protocole et les limites dans `QUALITE.md` V-27-2314-S.

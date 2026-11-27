@@ -2,7 +2,7 @@ import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mj
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 import type { PageData, PageDimensions, RasterData } from '../shared/types'
 import { fitCanvas, MAX_DISPLAY_PIXELS, MAX_RASTER_PIXELS } from './canvas-size'
-import { mapTextItem } from './text-geometry'
+import { readPageText } from './read-text'
 
 export type { PageData, PageDimensions, RasterData, Rect, TextItem } from '../shared/types'
 
@@ -115,10 +115,7 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
     async getPageData(pageIndex) {
       const page = await getPage(pageIndex)
       const { width, height, transform } = page.getViewport({ scale: 1 })
-      const { items, styles } = await page.getTextContent()
-      const textItems = items.flatMap((item) =>
-        'str' in item ? [mapTextItem(item, styles[item.fontName], transform)] : [],
-      )
+      const textItems = await readPageText(page, transform, document.isPureXfa)
       return { pageIndex, width, height, textItems }
     },
     renderPage,
