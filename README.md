@@ -1,20 +1,8 @@
-# [Nom du projet à définir] · Night Shift 2026
+# Unspoil · Night Shift 2026
 
-Dépôt de l'équipe [nom à compléter] pour le hackathon Night Shift 2026 de l'ENSAI.
+Dépôt du projet Unspoil pour le hackathon Night Shift 2026 de l'ENSAI.
 
-> Sujet non choisi pour l'instant. Le socle technique est en place ; le reste de ce README sera complété avant le rendu.
-
-## Le problème
-
-_À compléter._
-
-## La solution
-
-_À compléter._
-
-## Fonctionnalités disponibles
-
-_Uniquement ce qui fonctionne réellement. Préciser ce qui est simulé ou utilise des données de démonstration._
+Unspoil permet de réviser avec une annale au format PDF sans voir ses corrigés à l'avance. Le lecteur conserve la mise en page et masque les corrections qu'il détecte. La révélation progressive permet de découvrir manuellement le document, même sans texte extractible. Les fichiers restent sur l'appareil.
 
 ## Installation
 
@@ -23,7 +11,7 @@ Prérequis : [Node.js](https://nodejs.org/) 22.13 ou plus récent (version LTS r
 ```bash
 git clone https://github.com/Hsa2552/night-shift.git
 cd night-shift
-npm install
+npm ci
 ```
 
 ## Lancement
@@ -43,22 +31,47 @@ npm test           # tests seuls
 
 ## Déploiement
 
-L'application est un site statique (dossier `dist/`). Deux options gratuites :
+Publier le contenu de `dist/` sur un hébergement statique HTTPS à partir du commit que l'équipe souhaite tester. Utiliser le chemin de base `/` pour un domaine dédié.
 
-- **Vercel ou Netlify** : importer le dépôt depuis leur site. Vite est détecté automatiquement. Fonctionne avec un dépôt privé et crée une adresse d'aperçu pour chaque branche.
-- **GitHub Pages** : le workflow `.github/workflows/deploy-pages.yml` est prêt mais désactivé. Gratuit uniquement si le dépôt est public (ou avec GitHub Pro). Pour l'activer : Settings > Pages > Source : GitHub Actions, puis Settings > Secrets and variables > Actions > Variables : `DEPLOY_PAGES` = `true`.
+Pour GitHub Pages, le workflow `.github/workflows/deploy-pages.yml` construit le site sous `/night-shift/`. Un mainteneur choisit **GitHub Actions** comme source dans **Settings → Pages**, puis crée la variable d'Actions `DEPLOY_PAGES=true`. Après l'intégration de l'interface dans `main`, vérifier que le déploiement pointe sur le commit attendu avant de partager son URL. [Documentation GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
+
+Pour reproduire le même chemin en local, construire et prévisualiser avec `BASE_PATH` dans le même terminal.
+
+```sh
+BASE_PATH=/night-shift/ npm run build
+BASE_PATH=/night-shift/ npm run preview
+```
+
+```powershell
+$env:BASE_PATH = '/night-shift/'
+npm run build
+npm run preview
+```
+
+Ouvrir `http://localhost:4173/night-shift/`, en adaptant le port si Vite en affiche un autre.
+
+## Procédure commune de vérification
+
+Partir du même commit intégrant le lecteur, le détecteur et l'interface. Les PDF de [src/detection/samples](src/detection/samples) sont des exemples synthétiques créés pour les tests.
+
+1. **Sur ordinateur**, lancer `npm ci`, `npm run check`, `npm run build`, puis `npm run preview`. Ouvrir l'URL locale indiquée par Vite.
+2. **Sur téléphone**, transférer `couleur.pdf`, `sujet-seul.pdf` et `fin.pdf` sur l'appareil. Ouvrir l'URL HTTPS déployée. Sur Android, utiliser l'installation du site dans Chrome si elle est proposée. Sur iPhone, ouvrir Safari, puis **Partager → Sur l'écran d'accueil → Ouvrir comme app web**. [Installation sur iPhone](https://support.apple.com/fr-ca/guide/iphone/iphea86e5236/ios)
+3. **Masques**. Importer `couleur.pdf`. La page s'ouvre couverte. Cliquer sur **Masquer les corrigés**, puis révéler et remasquer un bloc. Redimensionner la fenêtre ou tourner le téléphone et vérifier l'alignement. Avec `sujet-seul.pdf`, vérifier le message « Aucun corrigé n’a été détecté ».
+4. **Multipage**. Importer `fin.pdf`, activer la révélation progressive et déplacer le trait dans les deux sens. Vérifier que la page suivante reste couverte jusqu'au passage du trait. Si disponible, refaire le test avec un PDF autorisé de 50 pages ou plus.
+5. **Hors ligne**. Attendre le chargement du site et recharger une fois en ligne. Couper le réseau, rouvrir l'application, puis importer `couleur.pdf` depuis les fichiers locaux et relancer le masquage. Le lecteur et l'analyse doivent fonctionner après ce nouveau démarrage.
+6. Reporter le SHA, l'appareil, le navigateur et les résultats dans [memoire/QUALITE.md](memoire/QUALITE.md). Pour un masque décalé, indiquer le PDF, la page et l'orientation.
 
 ## Limitations connues
 
-_À compléter._
+La détection dépend de conventions documentaires. Un document atypique ou un scan peut nécessiter la révélation progressive. Le lecteur réduit la résolution interne des bitmaps sur les très grandes pages pour maîtriser la mémoire.
 
 ## Démo
 
-_À compléter._
+Le dossier des exemples contient `mixte.pdf`, `corrige-seul.pdf`, `sujet-seul.pdf` et `inconnu.pdf` pour montrer les quatre résultats possibles.
 
 ## Équipe
 
-_À compléter._
+Salif (lecteur PDF et PWA), Hazem (détection) et Wael (interface).
 
 ---
 

@@ -1,6 +1,7 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 import type { PageData, PageDimensions, RasterData } from '../shared/types'
+import { fitCanvas, MAX_DISPLAY_PIXELS, MAX_RASTER_PIXELS } from './canvas-size'
 import { mapTextItem } from './text-geometry'
 
 export type { PageData, PageDimensions, RasterData, Rect, TextItem } from '../shared/types'
@@ -65,6 +66,7 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
     pageIndex: number,
     canvas: HTMLCanvasElement,
     { width, pixelRatio = globalThis.devicePixelRatio || 1, signal }: RenderPageOptions = {},
+    maxPixels = MAX_DISPLAY_PIXELS,
   ) {
     signal?.throwIfAborted()
     const page = await getPage(pageIndex)
@@ -84,8 +86,9 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
     if (closing) throw new Error('Le PDF est fermé.')
 
     const viewport = page.getViewport({ scale: cssWidth / original.width })
-    canvas.width = Math.max(1, Math.round(viewport.width * pixelRatio))
-    canvas.height = Math.max(1, Math.round(viewport.height * pixelRatio))
+    const bitmap = fitCanvas(viewport.width, viewport.height, pixelRatio, maxPixels)
+    canvas.width = bitmap.width
+    canvas.height = bitmap.height
     canvas.style.width = `${viewport.width}px`
     canvas.style.height = `${viewport.height}px`
     // Match both canvas edges despite rounding the physical dimensions to whole pixels.
@@ -126,7 +129,7 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
       const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true })
       if (!context) throw new Error('Le contexte canvas 2D est indisponible.')
       try {
-        await renderPage(pageIndex, canvas, { pixelRatio: 1 })
+        await renderPage(pageIndex, canvas, { pixelRatio: 1 }, MAX_RASTER_PIXELS)
         const { width, height } = canvas
         return { width, height, rgba: context.getImageData(0, 0, width, height).data }
       } finally {

@@ -27,3 +27,11 @@
 - Salif a validé C1. Le contrat est consigné dans la PR #7 sur `contrat/interfaces-pdf` (CI verte). Les exports correspondants sont dans la PR #4.
 - Le parcours réel sur les branches de Wael (`204ed83`) et de Hazem (`86ec9e4`), assemblées avec `feat/pdf`, passe les 94 tests et le build. Edge a importé et analysé les quatre types de PDF synthétiques hors ligne. Le geste tactile et la couverture des pages suivantes ont été vérifiés en émulation. Voir `QUALITE.md` V-27-2236-S.
 - Les entrées de Salif sont regroupées pour faciliter la fusion des trois PR sans écraser les vérifications des autres membres. La PR #5 attend l'accord collectif.
+
+### 27/11 · SESSION · T-S-2 robustesse PDF et recette · Codex
+
+- Les PR #7, #4 et #6 sont dans `main`. La PR #3 a intégré `main` et sa tête `0d70cc7` fournit l'interface de la recette intégrée.
+- Sur `fix/pdf-robustesse`, les rectangles de texte suivent les axes de la matrice PDF, même avec inclinaison. Les bitmaps peuvent être réduits sur les très grandes pages. Les dimensions CSS, la géométrie canonique et les signatures de C1 sont conservées.
+- Vérifié : 90 tests sur la branche PDF, 104 dans la copie intégrée, les deux builds et Edge hors ligne. Le PDF synthétique de 80 pages a exercé le recadrage de la première page et les budgets d'affichage et d'analyse. Voir `QUALITE.md` V-27-2304-S.
+- Le README décrit un test commun sur ordinateur et téléphone à partir du même commit. La publication Pages exige l'activation par un mainteneur. Le workflow existant construit uniquement `main`.
+- PR #5 : proposition finalisée. La protection serveur de `main`, l'accord de Salif, Hazem et Wael et la fusion humaine des Règles v2 sont des prérequis à l'automatisation.

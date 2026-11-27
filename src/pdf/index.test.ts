@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { openPdf } from './index'
-import { makeTestPdf } from './test-pdf'
+import { makeLargeTestPdf, makeTestPdf } from './test-pdf'
 
 describe('openPdf with a synthetic PDF', () => {
   it('extracts text and geometry from two pages with different sizes and orientations', async () => {
@@ -44,6 +44,24 @@ describe('openPdf with a synthetic PDF', () => {
     await expect(openPdf(new Blob(['Pas un PDF']))).rejects.toMatchObject({
       name: 'InvalidPDFException',
     })
+  })
+
+  it('reads the crop box and reaches the end of a multipage document', async () => {
+    const pdf = await openPdf(new Blob([makeLargeTestPdf(80)]))
+    try {
+      expect(pdf.pageCount).toBe(80)
+      const first = await pdf.getPageData(0)
+      expect(first).toMatchObject({ pageIndex: 0, width: 15_000, height: 8000 })
+      expect(first.textItems[0].bbox.x).toBeCloseTo(5000)
+      await expect(pdf.getPageData(79)).resolves.toEqual({
+        pageIndex: 79,
+        width: 595,
+        height: 842,
+        textItems: [],
+      })
+    } finally {
+      await pdf.close()
+    }
   })
 
   it('rejects invalid page indices', async () => {

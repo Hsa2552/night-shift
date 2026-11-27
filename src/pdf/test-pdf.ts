@@ -14,6 +14,27 @@ export function makeTestPdf(): Uint8Array<ArrayBuffer> {
     stream('Correction'),
   ]
 
+  return encodePdf(objects)
+}
+
+// Synthetic document with a wide cropped first page, then ordinary pages sharing a font.
+export function makeLargeTestPdf(pageCount: number): Uint8Array<ArrayBuffer> {
+  const content = 'BT /F1 36 Tf 5100 50 Td (Premiere page de test) Tj ET'
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    `<< /Type /Pages /Kids [${Array.from({ length: pageCount }, (_, i) => `${i + 5} 0 R`).join(' ')}] /Count ${pageCount} >>`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+    ...Array.from({ length: pageCount }, (_, i) =>
+      i === 0
+        ? '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 20000 10000] /CropBox [100 0 15100 8000] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>'
+        : '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>',
+    ),
+  ]
+  return encodePdf(objects)
+}
+
+function encodePdf(objects: string[]): Uint8Array<ArrayBuffer> {
   let pdf = '%PDF-1.4\n'
   const offsets = objects.map((object, index) => {
     const offset = pdf.length

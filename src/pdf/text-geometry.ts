@@ -9,18 +9,21 @@ export function mapTextItem(
 ): TextItem {
   const [a, b, c, d, x, y] = Util.transform(viewportTransform, item.transform)
   const vertical = style?.vertical === true
-  const angle = Math.atan2(b, a) + (vertical ? Math.PI / 2 : 0)
+  const baselineLength = Math.hypot(a, b)
   const fontSize = Math.hypot(c, d)
   const scale = Math.hypot(viewportTransform[0], viewportTransform[1])
   const advance = (vertical ? item.height : item.width) * scale
-  const ascent = fontSize * (style?.ascent ?? (style?.descent != null ? 1 + style.descent : 0.8))
-  const descent = fontSize * (style?.descent ?? -0.2)
-  const alongX = Math.cos(angle) * advance
-  const alongY = Math.sin(angle) * advance
-  const ascentX = x + Math.sin(angle) * ascent
-  const ascentY = y - Math.cos(angle) * ascent
-  const descentX = x + Math.sin(angle) * descent
-  const descentY = y - Math.cos(angle) * descent
+  const ascent = style?.ascent ?? (style?.descent != null ? 1 + style.descent : 0.8)
+  const descent = style?.descent ?? -0.2
+  const alongX = vertical ? (-c / (fontSize || 1)) * advance : (a / (baselineLength || 1)) * advance
+  const alongY = vertical ? (-d / (fontSize || 1)) * advance : (b / (baselineLength || 1)) * advance
+  // Use the transformed font axes, so a sheared or mirrored text matrix is preserved.
+  const upX = vertical ? (a / (baselineLength || 1)) * fontSize : c
+  const upY = vertical ? (b / (baselineLength || 1)) * fontSize : d
+  const ascentX = x + upX * ascent
+  const ascentY = y + upY * ascent
+  const descentX = x + upX * descent
+  const descentY = y + upY * descent
   const minX = Math.min(ascentX, ascentX + alongX, descentX, descentX + alongX)
   const minY = Math.min(ascentY, ascentY + alongY, descentY, descentY + alongY)
   const maxX = Math.max(ascentX, ascentX + alongX, descentX, descentX + alongX)
