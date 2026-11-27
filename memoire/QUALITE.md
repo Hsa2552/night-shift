@@ -41,9 +41,30 @@
 - Résultat : 110 à 140 ms par exécution. La mesure a révélé une mauvaise classification (`correction_only` au lieu de `mixed` quand les corrections sont longues), corrigée et couverte par un test
 - Limites : machine de bureau, pas de téléphone ; analyse par couleur non mesurée (elle demande le rendu raster de chaque page, coût dépendant du module PDF)
 
+### V-27-2330-HZ · Évaluation avec vérité terrain : fuites et sur-masquage séparés
+
+- Par : Hazem (Claude Code) · Commit : voir la branche `feat/detection-robustesse`
+- Commande ou protocole : `UNSPOIL_EVAL_DIR=src/detection/samples npx vitest run src/detection/eval` (outil `src/detection/eval/`, désactivé sans cette variable). Extraction avec `mapTextItem` du module PDF, rendu raster à l'échelle 1 par la fabrique de canvas de pdf.js 6.5 sous Node (`npm install --no-save @napi-rs/canvas`). 15 PDF synthétiques créés par l'équipe, rôle de chaque élément annoté par le générateur (`*.verite.json`). Fuite : élément de correction couvert à moins de 95 % ; sur-masquage : élément d'énoncé couvert à plus de 5 %
+- Résultat avant correctifs : type correct 11/15, corrections visibles 45/109, énoncés masqués 0/65. Après : type correct 15/15, corrections visibles 0/109, énoncés masqués 1/65 (bord de la figure de `mixte.pdf` qui chevauche réellement le haut de la question 2 de 0,25 point). Texte seul (`UNSPOIL_EVAL_RASTER=0`) : 13/15, 11/109 visibles (couleurs et figure), 0/65
+- Limites : documents créés par nous, donc **aucune mesure de généralisation** ; à refaire sur de vraies annales annotées. Navigateur non testé par cet outil
+
+### V-27-2335-HZ · Défaut Q-27-2233-WB (bord de figure visible dans `mixte.pdf`)
+
+- Par : Hazem (Claude Code)
+- Cause : les régions s'arrêtaient avant la ligne de texte suivante ; un graphique de la correction qui descendait jusqu'à cette ligne dépassait du masque.
+- Correctif : `src/detection/graphics.ts` suit dans le raster l'encre hors texte qui traverse la limite d'un masque (vers le bas, et vers le haut pour un cadre qui entoure la correction), sans dépasser la moitié de la ligne visible voisine
+- Résultat : figure de `mixte.pdf` entièrement couverte dans l'évaluation ci-dessus (rendu Node). Non vérifié dans le navigateur de Wael
+
 ## Problèmes connus et risques
 
 _Aucun pour l'instant._
+
+### Q-27-2330-HZ · Fragments de texte perdus quand pdf.js renvoie des métriques NaN · ouvert
+
+- Gravité : gênant (risque de correction laissée visible)
+- Constat et reproduction : pour certaines polices de symboles (ZapfDingbats dans `src/detection/samples/qcm-cases.pdf`), `styles[fontName].ascent` et `.descent` valent `NaN`. `mapTextItem` (`src/pdf/text-geometry.ts`) utilise `??`, qui ne remplace pas `NaN` : le rectangle devient `NaN` et le détecteur ne voit pas le fragment. Une correction écrite dans une telle police ne serait jamais masquée.
+- Contournement : dans l'outil d'évaluation seulement (métriques NaN remplacées par les valeurs par défaut). Correctif proposé : `Number.isFinite(style?.ascent) ? style.ascent : ...`, idem pour `descent`
+- Responsable ou tâche : Salif (module PDF)
 
 ## Données de démonstration
 

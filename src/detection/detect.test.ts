@@ -247,6 +247,53 @@ describe('detectCorrections', () => {
     expect(coverage(result, 0, 4)).toEqual([null, 'c1', null, 'c2'])
   })
 
+  it('corrigé seul à titres « Solution N. » sans aucune question : découpé', async () => {
+    const result = await run(
+      fakePage(0, [
+        'Corrigé du TD 5',
+        'Solution 1. On factorise le polynôme.',
+        'Les racines sont 1 et -2.',
+        'Solution 2. La dérivée vaut ln x + 1.',
+      ]),
+    )
+    expect(result.kind).toBe('correction_only')
+    expect(coverage(result, 0, 4)).toEqual([null, 'c1', 'c1', 'c2'])
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual(['Question 1', 'Question 2'])
+  })
+
+  it('corrigé seul sans titre, commençant par une correction : tout est masqué', async () => {
+    const result = await run(fakePage(0, ['Solution 1. On factorise.', 'Solution 2. On dérive.']))
+    expect(result.kind).toBe('correction_only')
+    expect(coverage(result, 0, 2)).toEqual(['c1', 'c2'])
+  })
+
+  it('QCM à cases issues d’une police de symboles (« o » vide, « 4 » cochée)', async () => {
+    const result = await run(
+      fakePage(0, [
+        'Question 1 : Symbole du sodium ?',
+        'o So',
+        '4 Na',
+        'o Sd',
+        'Question 2 : Formule de l’eau ?',
+        '4 H2O',
+        'o HO2',
+        'o H2O2',
+      ]),
+    )
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual(['Question 1', 'Question 2'])
+    // Cases masquées, texte des options visible.
+    expect(coverage(result, 0, 8, 73)).toEqual([null, 'c1', 'c1', 'c1', null, 'c2', 'c2', 'c2'])
+    expect(coverage(result, 0, 8, 72 + 3 * 5.5)).toEqual(Array(8).fill(null))
+  })
+
+  it('liste numérotée « 1 xxx / 2 yyy / 3 zzz » : pas prise pour des cases de QCM', async () => {
+    const result = await run(
+      fakePage(0, ['1. Citer trois auteurs.', '1 Hugo', '2 Zola', '3 Balzac', '2. Conclure.']),
+    )
+    expect(result.blocks).toEqual([])
+  })
+
   it('corrigé uniquement sans numérotation : repli proposé', async () => {
     const result = await run(
       fakePage(0, ['Solutions', 'La dérivée vaut 2x.', "L'intégrale vaut 1/3."]),

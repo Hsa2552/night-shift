@@ -1,0 +1,126 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Vocabulaire anglais",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 148.528,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Question",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 47.674,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Reponse",
+      "bbox": {
+        "x": 360,
+        "y": 79.35000000000002,
+        "width": 46.452999999999996,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "1. Traduire « maison »",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 107.404,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "house",
+      "bbox": {
+        "x": 360,
+        "y": 96.95000000000005,
+        "width": 29.964,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "2. Traduire « voiture »",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 104.687,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "car",
+      "bbox": {
+        "x": 360,
+        "y": 114.55000000000007,
+        "width": 15.279,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "3. Traduire « arbre »",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 97.625,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "tree",
+      "bbox": {
+        "x": 360,
+        "y": 132.1500000000001,
+        "width": 18.953,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "4. Traduire « livre »",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 92.11399999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "book",
+      "bbox": {
+        "x": 360,
+        "y": 149.7500000000001,
+        "width": 23.848,
+        "height": 10.45
+      }
+    }
+  ]
+}

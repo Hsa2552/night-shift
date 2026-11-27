@@ -196,8 +196,8 @@ export function findInlineCorrection(text: string): number | null {
   return null
 }
 
-const CHECKED_SYMBOLS = '☑☒■✓✔●◉✗✘⊠'
-const UNCHECKED_SYMBOLS = '☐□○◯❍'
+const CHECKED_SYMBOLS = '☑☒■✓✔✅●◉✗✘⊠▣'
+const UNCHECKED_SYMBOLS = '☐□○◯❍❏❑❒◻▢'
 const LEADING_OPTION_RE = new RegExp(
   `^(\\s*)([${CHECKED_SYMBOLS}${UNCHECKED_SYMBOLS}]|\\[\\s?[xX✓✔]?\\s?\\]|\\(\\s?[xX]?\\s?\\))`,
 )
@@ -240,4 +240,13 @@ export function isCorrectionTitle(text: string): boolean {
     return false
   }
   return !/\b(?:sujets?|enonces?)\b|\bavec\b|\+/.test(folded)
+}
+
+/**
+ * Caractère isolé en tête de ligne, suivi d'un texte : candidat « case de QCM » quand la
+ * police de symboles est extraite sous forme de lettres (ZapfDingbats « o », « 4 »...).
+ */
+export function leadingGlyph(text: string): string | null {
+  const m = /^(\S)\s+\S/u.exec(text)
+  return m ? m[1]! : null
 }

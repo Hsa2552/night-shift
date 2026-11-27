@@ -1,0 +1,137 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Annale 2024",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 93.376,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Exercice 1",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "1. Resoudre x + 1 = 0.",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 108.18499999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "2. Resoudre 2x = 4.",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 95.645,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Exercice 2",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "1. Deriver la fonction x -> x².",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 136.75199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "Corrige",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 57.056000000000004,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "Exercice 1",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "1. x = -1.",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 42.449,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "2. x = 2.",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 38.785999999999994,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "Exercice 2",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "1. La derivee vaut 2x.",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 104.12599999999999,
+        "height": 10.45
+      }
+    }
+  ]
+}

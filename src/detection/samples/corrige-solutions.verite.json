@@ -1,0 +1,313 @@
+{
+  "kind": "correction_only",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Corrige du TD 5",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 118.57600000000001,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Solution 1. On factorise le polynome : (x - 1)(x + 2).",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 247.753,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Les racines sont donc 1 et -2.",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 144.188,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Solution 2. La derivee de x ln x vaut ln x + 1.",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 215.105,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 1 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 2 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 3 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 167.35000000000014,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 4 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 184.95000000000016,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 5 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 202.55000000000018,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 6 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 220.1500000000002,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 7 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 237.75000000000023,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 8 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 255.35000000000025,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 9 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 272.9500000000003,
+        "width": 163.856,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 10 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 290.5500000000003,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 11 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 308.1500000000003,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 12 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 325.75000000000034,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 13 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 343.35000000000036,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 14 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 360.9500000000004,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 15 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 378.5500000000004,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 16 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 396.15000000000043,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 17 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 413.75000000000045,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 18 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 431.3500000000005,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 19 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 448.9500000000005,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 20 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 466.5500000000005,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 21 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 484.15000000000055,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Detail 22 du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 501.75000000000057,
+        "width": 169.97199999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "Fin du calcul de la solution 2.",
+      "bbox": {
+        "x": 72,
+        "y": 53.75,
+        "width": 141.845,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 1,
+      "role": "c",
+      "text": "Solution 3. La limite vaut 0 par croissances comparees.",
+      "bbox": {
+        "x": 72,
+        "y": 71.35000000000002,
+        "width": 268.51,
+        "height": 10.45
+      }
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "kind": "statement_only",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Examen d analyse 2025",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 178.528,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Exercice 1",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "1. Etudier la continuite de f sur R.",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 161.86499999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "2. Calculer la derivee de f.",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 126.67599999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Exercice 2",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "1. Calculer l integrale de 0 a 1 de x² dx.",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 190.487,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "2. En deduire la valeur moyenne de x² sur [0, 1].",
+      "bbox": {
+        "x": 72,
+        "y": 167.35000000000014,
+        "width": 233.29899999999998,
+        "height": 10.45
+      }
+    }
+  ]
+}

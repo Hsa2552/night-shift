@@ -1,0 +1,170 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "QCM de chimie",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 115.424,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 1 : Quel est le symbole du sodium ?",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 221.386,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "❏",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 8.382,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "So",
+      "bbox": {
+        "x": 90,
+        "y": 96.95000000000005,
+        "width": 13.453,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "✔",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 9.306,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Na",
+      "bbox": {
+        "x": 90,
+        "y": 114.55000000000007,
+        "width": 14.058,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "❏",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 8.382,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Sd",
+      "bbox": {
+        "x": 90,
+        "y": 132.1500000000001,
+        "width": 13.453,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 2 : Quelle est la formule de l eau ?",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 213.89499999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "✔",
+      "bbox": {
+        "x": 72,
+        "y": 167.35000000000014,
+        "width": 9.306,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "H2O",
+      "bbox": {
+        "x": 90,
+        "y": 167.35000000000014,
+        "width": 22.616,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "❏",
+      "bbox": {
+        "x": 72,
+        "y": 184.95000000000016,
+        "width": 8.382,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "HO2",
+      "bbox": {
+        "x": 90,
+        "y": 184.95000000000016,
+        "width": 22.616,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "❏",
+      "bbox": {
+        "x": 72,
+        "y": 202.55000000000018,
+        "width": 8.382,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "H2O2",
+      "bbox": {
+        "x": 90,
+        "y": 202.55000000000018,
+        "width": 28.732,
+        "height": 10.45
+      }
+    }
+  ]
+}

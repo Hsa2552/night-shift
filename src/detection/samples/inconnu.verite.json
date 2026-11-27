@@ -1,0 +1,49 @@
+{
+  "kind": "unknown",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Notes de cours",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 115.34400000000001,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "La fonction exponentielle est strictement croissante sur R.",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 281.347,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Elle verifie exp(a + b) = exp(a) exp(b) pour tous reels a et b.",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 289.476,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "On en deduit de nombreuses proprietes utiles en analyse.",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 281.864,
+        "height": 10.45
+      }
+    }
+  ]
+}

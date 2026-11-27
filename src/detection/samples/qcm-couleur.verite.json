@@ -1,0 +1,104 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "QCM de geographie",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 151.296,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 1 : Quelle est la capitale de l Espagne ?",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 240.361,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "A. Barcelone",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 62.315,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "B. Madrid",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 46.354,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "C. Seville",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 45.132999999999996,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 2 : Quel est le plus long fleuve de France ?",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 254.76,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "A. La Loire",
+      "bbox": {
+        "x": 72,
+        "y": 167.35000000000014,
+        "width": 52.535999999999994,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "B. La Seine",
+      "bbox": {
+        "x": 72,
+        "y": 184.95000000000016,
+        "width": 55.989999999999995,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "C. Le Rhone",
+      "bbox": {
+        "x": 72,
+        "y": 202.55000000000018,
+        "width": 60.763999999999996,
+        "height": 10.45
+      }
+    }
+  ]
+}

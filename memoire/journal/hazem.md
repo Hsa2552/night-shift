@@ -47,3 +47,11 @@
 - Fait : QCM dont la bonne option est colorée ou surlignée : toutes les options du groupe sont masquées (sinon la forme du masque trahit la réponse) ; seuil « énoncé négligeable » rendu absolu (un long corrigé ne fait plus passer un document mixte pour un corrigé seul).
 - Vérifié : `npm run check` OK ; banc pdf.js 8 sur 8 ; temps de détection : `QUALITE.md` V-27-2300-HZ.
 - Incident : le commit `2b06206` a été poussé avec un test en échec (ma commande ne s'arrêtait pas sur l'échec de `npm run check`). Corrigé par le commit suivant ; critère « corrigé seul » remplacé : document mixte dès qu'une question numérotée visible a un énoncé ou qu'une ligne d'énoncé contient une phrase, les titres d'exercice ne comptant pas.
+
+### 27/11 23:35 · SESSION · T-HZ-2 robustesse (phase 2) · Claude Code
+
+- Contexte : PR #6 fusionnée ; branche `feat/detection-robustesse` créée depuis main. `src/detection/contract.ts` réexporte désormais `src/shared/types.ts` (contrat C1).
+- Fait : figures et cadres suivis dans le raster (Q-27-2233-WB) ; corrigé seul à titres « Solution N. » sans question ; cases de QCM en police de symboles ; aucun « aucun corrigé » si le rendu raster échoue ; outil d'évaluation `src/detection/eval/` avec vérité terrain ; 16 PDF d'exemple avec `*.verite.json`.
+- Vérifié : 90 tests ; évaluation : `QUALITE.md` V-27-2330-HZ.
+- Trouvé dans le module PDF : Q-27-2330-HZ (métriques NaN), transmis à Salif.
+- Non vérifié : vraies annales ; parcours dans le navigateur avec l'interface de Wael (PR #3 non fusionnée).

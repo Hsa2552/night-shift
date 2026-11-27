@@ -8,13 +8,16 @@ import type {
   DetectionResult,
   DocumentKind,
   PageRegion,
+  RasterData,
   Rect,
 } from './contract.ts'
 import { hueDistance, inkOf, type Ink } from './color.ts'
+import { buildPageInk, graphicBottom, graphicTop, type PageInk } from './graphics.ts'
 import { layoutPage, type Line, type PageLayout } from './layout.ts'
 import {
   findInlineCorrection,
   isCorrectionTitle,
+  leadingGlyph,
   nextValue,
   parseCorrectionStart,
   parseOption,
@@ -34,6 +37,8 @@ export const WARNINGS = {
   unsegmented: 'Corrigé détecté, mais son découpage par question est impossible.',
   uncovered: "Certaines questions n'ont pas de corrigé détecté.",
   color: 'Corrigés repérés uniquement par leur couleur : vérifiez le résultat.',
+  noVisualCheck:
+    "Aucun marqueur de corrigé, mais l'analyse visuelle de la page a échoué : détection incertaine.",
   suspicious:
     'Aucun marqueur de corrigé, mais certaines lignes pourraient être des réponses : détection incertaine.',
 } as const
@@ -79,6 +84,7 @@ interface Parsed {
   /** Indice d'un marqueur de correction en cours de ligne. */
   inline: number | null
   option: OptionLine | null
+  glyph: string | null
 }
 
 function parseLine(line: Line): Parsed {
@@ -86,7 +92,7 @@ function parseLine(line: Line): Parsed {
   let c = parseCorrectionStart(line.text)
   if (!c && q) c = parseCorrectionStart(q.rest)
   const inline = c ? null : findInlineCorrection(line.text)
-  return { q, c, inline, option: parseOption(line.text) }
+  return { q, c, inline, option: parseOption(line.text), glyph: leadingGlyph(line.text) }
 }
 
 interface Draft {
@@ -114,6 +120,18 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     return { kind: 'unknown', blocks: [], warnings: [WARNINGS.noText], needsFallback: true }
   }
 
+  // Rendus raster demandés au plus une fois par page ; un échec de rendu vaut « pas de raster ».
+  const rasters = new Map<number, Promise<RasterData | null>>()
+  const rasterOf = (pageIndex: number): Promise<RasterData | null> => {
+    if (!input.getRaster) return Promise.resolve(null)
+    let raster = rasters.get(pageIndex)
+    if (!raster) {
+      raster = input.getRaster(pageIndex).catch(() => null)
+      rasters.set(pageIndex, raster)
+    }
+    return raster
+  }
+
   const parsed = flow.map(parseLine)
   const isC = (i: number) => parsed[i]!.c !== null
   const isPureQ = (i: number) => parsed[i]!.q !== null && parsed[i]!.c === null
@@ -121,13 +139,31 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   const preambleEnd = firstQ === -1 ? flow.length : firstQ
 
   // Préambule (avant la première question) : titre annonçant un corrigé, ou marqueur explicite.
-  let lastPreambleMarker = -1
-  for (let i = 0; i < preambleEnd; i++) {
+  // Premier marqueur du préambule. Un titre pur (« Corrigé du TD 5 ») reste visible et la
+  // correction commence après lui ; une ligne de correction avec contenu est masquée.
+  let firstPreambleMarker = -1
+  for (let i = 0; i < preambleEnd && firstPreambleMarker < 0; i++) {
     const titleZone = flow[i]!.pageIndex === 0 && i < 6
-    if (isC(i) || (titleZone && isCorrectionTitle(flow[i]!.text))) lastPreambleMarker = i
+    if (isC(i) || (titleZone && isCorrectionTitle(flow[i]!.text))) firstPreambleMarker = i
   }
+  const markerIsTitle = (i: number) => {
+    const c = parsed[i]!.c
+    if (!c) return true
+    if (c.headerOnly) return true
+    if (c.target !== undefined && c.target.rest.replace(/[\s:.\-–]/g, '').length === 0) return true
+    // « Corrigé de l'examen 2025 » en tête de document : titre, pas contenu
+    // (contrairement à « Solution 1. On factorise... »).
+    const titleZone = flow[i]!.pageIndex === 0 && i < 6
+    return titleZone && !/[:.]\s+\S/.test(flow[i]!.text)
+  }
+  const correctionStart =
+    firstPreambleMarker < 0
+      ? -1
+      : markerIsTitle(firstPreambleMarker)
+        ? firstPreambleMarker + 1
+        : firstPreambleMarker
   const laterMarkers = parsed.some((p, i) => i > preambleEnd && (p.c !== null || p.inline !== null))
-  const correctionFromStart = lastPreambleMarker >= 0 && !laterMarkers
+  const correctionFromStart = firstPreambleMarker >= 0 && !laterMarkers
 
   const drafts: Draft[] = []
   const modeAt: ('statement' | 'correction' | 'title')[] = []
@@ -211,11 +247,11 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
 
   let startIndex = 0
   if (correctionFromStart) {
-    for (let i = 0; i <= lastPreambleMarker; i++) {
+    for (let i = 0; i < correctionStart; i++) {
       modeAt.push('title')
       labelAt.push(undefined)
     }
-    startIndex = lastPreambleMarker + 1
+    startIndex = correctionStart
     if (startIndex < flow.length) open(startIndex, true)
   }
 
@@ -276,8 +312,12 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
 
   // Sans aucun marqueur textuel : les corrigés se distinguent-ils par leur couleur ?
   let byColor = false
+  let visualCheckFailed = false
   if (drafts.length === 0 && input.getRaster) {
-    const inks = await lineInks(layouts, input.getRaster)
+    const inks = await lineInks(layouts, rasterOf)
+    for (const layout of layouts) {
+      if (layout.lines.length > 0 && !(await rasterOf(layout.pageIndex))) visualCheckFailed = true
+    }
     const colorBlocks = colorDrafts(flow, parsed, inks, modeAt, labelAt)
     if (colorBlocks.length > 0) {
       byColor = true
@@ -322,11 +362,17 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     ) {
       warnings.push(WARNINGS.uncovered)
     }
-  } else if (qCount >= 2 && continuityEvents >= 1 && !suspiciousFont(flow, parsed)) {
+  } else if (
+    qCount >= 2 &&
+    continuityEvents >= 1 &&
+    !suspiciousFont(flow, parsed) &&
+    !visualCheckFailed
+  ) {
     kind = 'statement_only'
   } else if (qCount >= 2 && continuityEvents >= 1) {
+    // Sans vérification visuelle (corrigés en couleur), on n'affirme pas « aucun corrigé ».
     kind = 'unknown'
-    warnings.push(WARNINGS.suspicious)
+    warnings.push(visualCheckFailed ? WARNINGS.noVisualCheck : WARNINGS.suspicious)
     needsFallback = true
   } else {
     kind = 'unknown'
@@ -334,8 +380,41 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     needsFallback = true
   }
 
-  const blocks: CorrectionBlock[] = drafts
-    .map((d) => ({ label: d.label, regions: d.custom ?? lineRegions(d, flow) }))
+  const pageInks = new Map<number, PageInk | null>()
+  const pageInk = async (pageIndex: number): Promise<PageInk | null> => {
+    if (!pageInks.has(pageIndex)) {
+      const raster = await rasterOf(pageIndex)
+      const page = input.pages.find((p) => p.pageIndex === pageIndex)
+      pageInks.set(pageIndex, raster && page ? buildPageInk(raster, page) : null)
+    }
+    return pageInks.get(pageIndex)!
+  }
+  const built: { label?: string; regions: PageRegion[] }[] = []
+  for (const d of drafts) {
+    if (d.custom) {
+      built.push({ label: d.label, regions: d.custom })
+      continue
+    }
+    const regions: PageRegion[] = []
+    for (const { region, next, prev } of lineRegions(d, flow)) {
+      // Une figure de la correction qui déborde sous la limite, ou un cadre qui l'entoure,
+      // reste masqué en entier, sans dépasser la moitié de la ligne visible voisine.
+      const ink = (next || prev) && input.getRaster ? await pageInk(region.pageIndex) : null
+      if (ink && next) {
+        const limit = next.bbox.y + 0.5 * next.bbox.height
+        const bottom = graphicBottom(ink, region.bbox, limit)
+        region.bbox.height = bottom - region.bbox.y
+      }
+      if (ink && prev) {
+        const top = graphicTop(ink, region.bbox, prev.bbox.y + 0.5 * prev.bbox.height)
+        region.bbox.height += region.bbox.y - top
+        region.bbox.y = top
+      }
+      regions.push(region)
+    }
+    built.push({ label: d.label, regions })
+  }
+  const blocks: CorrectionBlock[] = built
     .filter((b) => b.regions.length > 0)
     .map((b, n) => ({
       id: `c${n + 1}`,
@@ -457,6 +536,59 @@ function qcmDrafts(
     }
     i = j + 1
   }
+  drafts.push(...glyphBoxDrafts(flow, parsed, modeAt, labelAt))
+  return drafts
+}
+
+/**
+ * Cases de QCM dessinées avec une police de symboles : lignes consécutives commençant
+ * toutes par un caractère isolé, à la même abscisse, avec exactement deux valeurs
+ * (case cochée, case vide). Une liste numérotée (une valeur par ligne) ne passe pas.
+ */
+function glyphBoxDrafts(
+  flow: Line[],
+  parsed: Parsed[],
+  modeAt: string[],
+  labelAt: (string | undefined)[],
+): Draft[] {
+  const drafts: Draft[] = []
+  const eligible = (k: number) =>
+    modeAt[k] === 'statement' && parsed[k]!.glyph !== null && !parsed[k]!.option && !parsed[k]!.q
+  let i = 0
+  while (i < flow.length) {
+    if (!eligible(i)) {
+      i++
+      continue
+    }
+    let j = i
+    while (
+      j + 1 < flow.length &&
+      eligible(j + 1) &&
+      Math.abs(flow[j + 1]!.bbox.x - flow[i]!.bbox.x) <= 2
+    ) {
+      j++
+    }
+    const run = Array.from({ length: j - i + 1 }, (_, k) => i + k)
+    const values = new Set(run.map((k) => parsed[k]!.glyph))
+    const symbolic = [...values].every((v) => !/[\p{L}\p{N}]/u.test(v!))
+    if (values.size === 2 && (run.length >= 3 || symbolic)) {
+      const regions = run.map((k) => {
+        const line = flow[k]!
+        const pad = 0.3 * line.fontSize
+        const x0 = line.charX[0] ?? line.bbox.x
+        const x1 = line.charX[1] ?? x0 + line.fontSize
+        return region(
+          line,
+          x0 - pad,
+          line.bbox.y - pad,
+          x1 - x0 + 2 * pad,
+          line.bbox.height + 2 * pad,
+        )
+      })
+      drafts.push({ start: i, end: j, label: labelAt[i], grouped: false, custom: regions })
+    }
+    i = j + 1
+  }
   return drafts
 }
 
@@ -476,8 +608,16 @@ function clip(r: Rect, line: Line): Rect {
  * Rectangles d'un bloc de lignes : pleine largeur de la zone (colonne) pour couvrir aussi
  * les figures et équations, du haut de la première ligne jusqu'à la ligne suivante hors bloc.
  */
-function lineRegions(d: Draft, flow: Line[]): PageRegion[] {
-  const regions: PageRegion[] = []
+interface BoundedRegion {
+  region: PageRegion
+  /** Ligne visible juste en dessous qui limite la région (bas ajustable par les graphiques). */
+  next?: Line
+  /** Ligne visible juste au-dessus de la première région (haut ajustable par les cadres). */
+  prev?: Line
+}
+
+function lineRegions(d: Draft, flow: Line[]): BoundedRegion[] {
+  const regions: BoundedRegion[] = []
   let i = d.start
   while (i <= d.end) {
     const area = flow[i]!.area
@@ -488,6 +628,7 @@ function lineRegions(d: Draft, flow: Line[]): PageRegion[] {
     const pad = 0.3 * first.fontSize
     const prev = flow[i - 1]
     const next = flow[j + 1]
+    const above = i === d.start && prev && prev.area.id === area.id ? prev : undefined
     let y0: number
     if (i !== d.start) {
       y0 = area.y0 // suite du bloc dans une nouvelle colonne ou page
@@ -498,7 +639,8 @@ function lineRegions(d: Draft, flow: Line[]): PageRegion[] {
       y0 = Math.max(area.y0, y0)
     }
     let y1: number
-    if (j === d.end && next && next.area.id === area.id) {
+    const bounded = j === d.end && next && next.area.id === area.id ? next : undefined
+    if (bounded) {
       const gap = next.bbox.y - bottomOf(last)
       y1 = gap >= 0 ? next.bbox.y - Math.min(pad, gap / 2) : bottomOf(last)
     } else {
@@ -508,29 +650,39 @@ function lineRegions(d: Draft, flow: Line[]): PageRegion[] {
       // Première ligne : seulement la partie à droite du marqueur.
       const x = Math.max(area.x0, d.inlineX - pad)
       regions.push({
-        pageIndex: first.pageIndex,
-        bbox: { x, y: y0, width: area.x1 - x, height: (j > i ? bottomOf(first) : y1) - y0 },
+        region: {
+          pageIndex: first.pageIndex,
+          bbox: { x, y: y0, width: area.x1 - x, height: (j > i ? bottomOf(first) : y1) - y0 },
+        },
+        next: j > i ? undefined : bounded,
+        prev: above,
       })
       if (j > i) {
         regions.push({
-          pageIndex: first.pageIndex,
-          bbox: {
-            x: area.x0,
-            y: bottomOf(first),
-            width: area.x1 - area.x0,
-            height: y1 - bottomOf(first),
+          region: {
+            pageIndex: first.pageIndex,
+            bbox: {
+              x: area.x0,
+              y: bottomOf(first),
+              width: area.x1 - area.x0,
+              height: y1 - bottomOf(first),
+            },
           },
+          next: bounded,
         })
       }
     } else {
       regions.push({
-        pageIndex: first.pageIndex,
-        bbox: { x: area.x0, y: y0, width: area.x1 - area.x0, height: y1 - y0 },
+        region: {
+          pageIndex: first.pageIndex,
+          bbox: { x: area.x0, y: y0, width: area.x1 - area.x0, height: y1 - y0 },
+        },
+        next: bounded,
       })
     }
     i = j + 1
   }
-  return regions.filter((r) => r.bbox.width > 0 && r.bbox.height > 0)
+  return regions.filter((r) => r.region.bbox.width > 0 && r.region.bbox.height > 0)
 }
 
 const bottomOf = (line: Line) => line.bbox.y + line.bbox.height
@@ -555,17 +707,12 @@ function hasUncoveredLeaf(
 /** Encre de chaque ligne du flux, en demandant le rendu de chaque page une seule fois. */
 async function lineInks(
   layouts: PageLayout[],
-  getRaster: NonNullable<DetectionInput['getRaster']>,
+  rasterOf: (pageIndex: number) => Promise<RasterData | null>,
 ): Promise<Ink[]> {
   const inks: Ink[] = []
   for (const layout of layouts) {
     if (layout.lines.length === 0) continue
-    let raster
-    try {
-      raster = await getRaster(layout.pageIndex)
-    } catch {
-      raster = null
-    }
+    const raster = await rasterOf(layout.pageIndex)
     for (const line of layout.lines) {
       inks.push(raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' })
     }
