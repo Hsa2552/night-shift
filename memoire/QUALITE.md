@@ -138,6 +138,22 @@ _Liste des données fictives ou synthétiques, et où elles sont signalées (cod
 - Résultat : 94 tests réussis. Sur les PDF synthétiques de Hazem, l'analyse distingue le document mixte avec corrections en couleur, le corrigé seul, le sujet seul et le cas inconnu. Les masques se révèlent et se referment par bloc. Le repli progressif fonctionne à la souris. Un PDF invalide est rejeté. En émulation tactile 390 × 844, le trait révèle la première page, peut revenir en haut et laisse la page suivante couverte.
 - Limites : appareil mobile physique, Safari et annales externes non testés. Les trois branches n'étaient pas encore fusionnées sur `main`.
 
+### V-27-2304-S · Géométrie et budgets bitmap sur document multipage
+
+- Par : Salif (Codex) · Branche : `fix/pdf-robustesse`.
+- Protocole : tests ciblés sur matrice inclinée, rotation et recadrage, puis build de production sous `/night-shift/`. Dans Edge hors ligne, ouverture d'un PDF synthétique de 80 pages avec une première page recadrée à 15 000 × 8 000 unités et 79 pages ordinaires vides. Lecture séquentielle des dimensions, raster de la page 1, puis rendu à 7 500 pixels CSS avec un ratio demandé de 3.
+- Résultat : les dimensions et le repère de l'extraction sont conservés. Le bitmap affiché mesure 3 966 × 2 115 pixels et le raster 2 804 × 1 495 pixels, soit 16 767 920 octets RGBA. Les limites sont de 4 096 pixels par axe, 8 388 608 pixels pour le canvas affiché et 4 194 304 pour le raster d'analyse.
+- Temps observés sur une exécution Edge contrôlée : environ 483 ms pour ouvrir le fichier et lire les 80 dimensions et 91 ms pour produire le raster. Le document artificiel est surtout vide. Ces chiffres ne mesurent ni le tas mémoire, ni la performance sur des scans lourds, ni l'autonomie mobile.
+- Intégration : 104 tests et build réussis en assemblant le lecteur avec l'interface `0d70cc7`. Import et analyse hors ligne, masques, rejet de fichier invalide et tactile émulé réussis. Déploiement public et smartphone physique non vérifiés.
+
+### V-27-2314-S · Extraction par lots et libération des canvas
+
+- Par : Salif (Codex) · Lecteur `fix/pdf-robustesse`, détection `9287511`, interface `96cce8c`.
+- Protocole : test de 250 lignes accentuées sur deux polices. Build de production sous `/night-shift/` et Edge hors ligne. Comparaison du nombre et de la taille des bitmaps après le même défilement des 12 premières pages d'un PDF synthétique de 80 pages de taille identique, avant et après le correctif de Wael.
+- Résultat : 91 tests sur la branche PDF, 110 en intégration, builds respectifs réussis. Accents, ordre, police et rectangle conservés lors du passage d'un lot à l'autre. Le parcours des quatre classifications, les masques, le repli progressif et le geste tactile émulé passent hors ligne.
+- Rendu multipage : après le défilement, le nombre de canvas non vides passe de 13 à 3 et la capacité RGBA nominale de 59 078 656 à 13 633 536 octets. La première page se rend à nouveau en revenant dessus. Ces chiffres ne représentent pas la consommation totale du navigateur. L'impact du découpage du texte sur le tas et le temps d'analyse n'a pas été mesuré.
+- Limites : PDF synthétiques, Edge sur Windows et tactile émulé. Déploiement HTTPS et téléphone physique à vérifier par l'équipe.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
