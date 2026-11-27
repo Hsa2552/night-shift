@@ -19,3 +19,8 @@
 - Vérifié : `npm run check` (86 tests), build Ubuntu sous `/night-shift/`, parcours Edge sur huit PDF synthétiques, mode tactile émulé, PDF multipage sans texte et import/détection hors ligne. Voir `QUALITE.md` V-27-2233-WB.
 - Limite remontée à Hazem : morceau de bordure du graphique visible dans `mixte.pdf` (PR #6). Téléphone physique et Safari non vérifiés.
 - Maturité : intégrée en copie locale avec `feat/pdf` `9b771dd` et `feat/detection` `dca91b3`. PR #3 en brouillon jusqu’à l’intégration des deux dépendances dans `main`.
+
+### 27/11 22:41 · SESSION · T-WB-1 (W5) · Codex
+
+- Vérifié après synchronisation du détecteur : `npm run check` (97 tests), build Ubuntu, Edge avec le hors ligne et les gestes souris/tactile émulé, Firefox avec les quatre parcours synthétiques. Voir `QUALITE.md` V-27-2241-WB.
+- Les têtes vérifiées des PR #4 et #6 ont une CI verte. Leur intégration dans `main` est requise pour que la CI de la PR #3 trouve les modules PDF et détection.

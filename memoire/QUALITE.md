@@ -27,6 +27,12 @@
 - Résultat : les quatre classifications et les commandes de masquage répondent comme attendu. Le masque reste aligné au redimensionnement. Le trait avance et remonte au tactile, y compris jusqu’à la seconde page sans texte. Après rechargement hors ligne, le PDF s’ouvre, s’affiche et ses blocs sont détectés et masqués.
 - Limites : le premier bloc de `mixte.pdf` laisse visible un trait du graphique (Q-27-2233-WB). Téléphone physique, Safari et installation sur un appareil non testés.
 
+### V-27-2241-WB · Revalidation après le correctif de classification
+
+- Par : Wael (Codex) · Versions vérifiées en copie d’intégration : interface `204ed83`, PDF `9607b59` (rendu inchangé depuis `9b771dd`), détection `9287511`.
+- Résultat : `npm run check` passe (97 tests) et le build Ubuntu sous `/night-shift/` passe. Edge confirme le parcours hors ligne et la révélation progressive à la souris et au tactile émulé. Firefox confirme l’import, le masquage, le remasquage et les quatre types sur les fichiers synthétiques correspondants.
+- Limites : hors ligne testé sur Edge. Téléphone physique et Safari à vérifier. Le trait du graphique reste suivi dans Q-27-2233-WB.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
