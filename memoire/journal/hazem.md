@@ -41,3 +41,8 @@
 - Fait : titres de correction qui désignent leur cible (« Correction de l'exercice 2 », « Corrigé exercice 3 », « Solution de la question 4 », « Solution 5. », « Answer to question 2 ») : le libellé du bloc vient du titre, et une section d'exercice est découpée par question ; nouveaux marqueurs « Grille de réponses », « Clé de correction », « Answer key ».
 - Vérifié : `npm run check` OK (77 tests) ; banc pdf.js : 8 PDF sur 8 inchangés.
 - État GitHub : PR #6 ouverte, CI verte et fusionnable sur `dca91b3` ; aucune fusion dans main pour l'instant (Règles v1 : fusion humaine).
+
+### 27/11 23:00 · SESSION · T-HZ-1 QCM colorés et classification · Claude Code
+
+- Fait : QCM dont la bonne option est colorée ou surlignée : toutes les options du groupe sont masquées (sinon la forme du masque trahit la réponse) ; seuil « énoncé négligeable » rendu absolu (un long corrigé ne fait plus passer un document mixte pour un corrigé seul).
+- Vérifié : `npm run check` OK ; banc pdf.js 8 sur 8 ; temps de détection : `QUALITE.md` V-27-2300-HZ.

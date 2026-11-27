@@ -69,6 +69,32 @@ describe('détection par couleur', () => {
     expect(b2!.regions[0]!.bbox.y + b2!.regions[0]!.bbox.height).toBeLessThanOrEqual(top(6))
   })
 
+  it('QCM à bonne option colorée : toutes les options du groupe sont masquées', async () => {
+    const qcm = fakePage(0, [
+      'Question 1 : Capitale de la France ?',
+      'A. Lyon',
+      'B. Paris',
+      'C. Marseille',
+      'Question 2 : Combien font 2 + 2 ?',
+      'A. 3',
+      'B. 4',
+      'C. 5',
+    ])
+    const green: RGB = [20, 150, 40]
+    const result = await withRaster(qcm, paint(green, 'B. Paris', 'B. 4'))
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks).toHaveLength(2)
+    const top = (n: number) => 72 + n * 16.5
+    const [b1, b2] = result.blocks.map((b) => b.regions[0]!.bbox)
+    // Bloc 1 : lignes 1 à 3 (A, B, C), la question 1 reste visible.
+    expect(b1!.y).toBeLessThanOrEqual(top(1))
+    expect(b1!.y).toBeGreaterThanOrEqual(top(0) + 11)
+    expect(b1!.y + b1!.height).toBeGreaterThanOrEqual(top(3) + 11)
+    expect(b1!.y + b1!.height).toBeLessThanOrEqual(top(4))
+    expect(b2!.y).toBeLessThanOrEqual(top(5))
+    expect(b2!.y + b2!.height).toBeGreaterThanOrEqual(top(7) + 11)
+  })
+
   it('titres colorés (questions en couleur) : pas pris pour des corrigés', async () => {
     const result = await withRaster(page, paint(RED, 'Exercice', '1.', '2.', '3.'))
     expect(result.kind).toBe('statement_only')

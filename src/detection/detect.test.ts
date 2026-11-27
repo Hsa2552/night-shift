@@ -62,6 +62,16 @@ describe('detectCorrections', () => {
     expect(result.blocks[0]!.regions[0]!.bbox.width).toBe(A4.width)
   })
 
+  it('longue correction après des questions courtes : document mixte', async () => {
+    const steps = Array.from({ length: 30 }, (_, n) => `Étape ${n + 1} du raisonnement détaillé.`)
+    const result = await run(
+      fakePage(0, ['1. Calculer 2 + 2.', 'Correction :', ...steps, '2. Calculer 3 + 3.']),
+    )
+    expect(result.kind).toBe('mixed')
+    expect(blockAt(result, 0, 0)).toBeNull()
+    expect(blockAt(result, 0, 32)).toBeNull()
+  })
+
   it('plusieurs questions et corrections alternées, marqueurs variés', async () => {
     const result = await run(
       fakePage(0, [

@@ -308,7 +308,9 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       }
     })
     // Énoncé quasi absent (seulement des libellés) : corrigé seul.
-    const noStatement = statementChars < Math.max(20, 0.05 * correctionChars)
+    // Énoncé négligeable dans l'absolu ET devant les corrections : au-delà de 40 caractères
+    // de vraies questions, le document est mixte quelle que soit la longueur des corrections.
+    const noStatement = statementChars < 40 && statementChars < 0.2 * correctionChars
     kind = correctionFromStart || noStatement ? 'correction_only' : 'mixed'
     if (byColor) warnings.push(WARNINGS.color)
     if (kind === 'correction_only' && drafts.length === 1 && !drafts[0]!.label) {
@@ -605,6 +607,15 @@ function colorDrafts(
     if (cluster.lines.length < 2 || questions > 0.2 * cluster.lines.length) continue
     if (firstQuestion === -1 || cluster.lines[0]! < firstQuestion) continue
     for (const i of cluster.lines) if (parsed[i]!.q === null) answerLines.add(i)
+  }
+
+  // QCM : si la bonne option est colorée, toutes les options du groupe sont masquées,
+  // sinon la forme du masque désignerait la bonne réponse.
+  const isOption = (i: number) => parsed[i]?.option != null && parsed[i]!.q === null
+  for (const i of [...answerLines]) {
+    if (!isOption(i)) continue
+    for (let k = i - 1; k >= 0 && isOption(k); k--) answerLines.add(k)
+    for (let k = i + 1; k < flow.length && isOption(k); k++) answerLines.add(k)
   }
 
   // Suites de lignes consécutives (les lignes sans encre mesurable ne coupent pas une suite).
