@@ -17,3 +17,14 @@
 - Maturité : testée (données synthétiques).
 - Décisions : aucune décision commune ; choix locaux décrits dans QUALITE (conventions reconnues et limites).
 - Suite : tester sur les vraies `PageData` dès S2 ; couleur et raster (P1) ; documents multicolonnes réels.
+
+### 27/11 22:45 · SESSION · T-HZ-1 module détection (vers H2, H3) · Claude Code
+
+- Correction de l'entrée précédente : `npm run build` avait bien été lancé après le commit `1b5e570`, résultat OK.
+- Fait : détection par couleur (`color.ts`, utilise `getRaster` seulement si aucun marqueur textuel n'est trouvé) ; garde-fou « police suspecte » (réponses sans marqueur dans une police absente des questions : `unknown` + repli au lieu de « aucun corrigé ») ; correction de la classification `mixed` / `correction_only` ; avertissement « questions sans corrigé » corrigé pour les colonnes côte à côte.
+- PDF d'exemple créés par l'équipe (contenu inventé) dans `src/detection/samples/` avec leur générateur : utilisables pour la démo par Wael et Salif.
+- Banc d'essai sur vrais fichiers PDF : voir `QUALITE.md` V-27-2245-HZ.
+- Contrat : `src/shared/types.ts` de la branche `feat/pdf` (Salif) est identique à `src/detection/contract.ts`. Je le remplacerai par un réexport dès la fusion de `feat/pdf` dans main.
+- Pour Salif : le rendu raster a besoin de `standardFontDataUrl` (sans lui, les polices standard ne sont pas dessinées dans le raster) ; ton `openPdf` le fournit déjà, à garder disponible hors ligne.
+- Maturité : testée (synthétique et banc pdf.js hors dépôt). Non intégrée : pas encore appelée par l'interface.
+- Suite : intégrer main dès la fusion de `feat/pdf` ; tests sur de vrais PDF via `openPdf` ; aide à l'intégration W4.

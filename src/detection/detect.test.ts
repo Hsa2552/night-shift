@@ -210,6 +210,35 @@ describe('detectCorrections', () => {
     })
   })
 
+  it('réponses sans marqueur dans une autre police : pas de promesse « aucun corrigé »', async () => {
+    const answer = (text: string) => ({ text, font: 'Italique' })
+    const result = await run(
+      fakePage(0, [
+        '1. Calculer la dérivée de f.',
+        answer('La dérivée de f vaut deux fois x.'),
+        '2. Calculer la primitive de f.',
+        answer('Une primitive de f est x au cube sur trois.'),
+      ]),
+    )
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
+    expect(result.warnings).toContain(WARNINGS.suspicious)
+    expect(result.blocks).toEqual([])
+  })
+
+  it('formules dans une autre police : le sujet seul reste reconnu', async () => {
+    const formula = (text: string) => ({ text, font: 'CMMI10' })
+    const result = await run(
+      fakePage(0, [
+        '1. Calculer la dérivée de f définie par :',
+        formula('f(x) = x² + 3x'),
+        '2. Calculer la primitive de g définie par :',
+        formula('g(x) = 1/x'),
+      ]),
+    )
+    expect(result.kind).toBe('statement_only')
+  })
+
   it('question contenant le mot « solution » : pas un marqueur', async () => {
     const result = await run(
       fakePage(0, [

@@ -16,7 +16,7 @@ export const detectCorrections: DetectCorrections = async (
   input: DetectionInput,
 ): Promise<DetectionResult> => {
   try {
-    return detect(input)
+    return await detect(input)
   } catch (error) {
     return {
       kind: 'unknown',

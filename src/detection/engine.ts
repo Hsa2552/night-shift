@@ -10,7 +10,8 @@ import type {
   PageRegion,
   Rect,
 } from './contract.ts'
-import { layoutPage, type Line } from './layout.ts'
+import { hueDistance, inkOf, type Ink } from './color.ts'
+import { layoutPage, type Line, type PageLayout } from './layout.ts'
 import {
   findInlineCorrection,
   isCorrectionTitle,
@@ -32,6 +33,9 @@ export const WARNINGS = {
     `Pages sans texte extractible, non analysées : ${pages.join(', ')}.`,
   unsegmented: 'Corrigé détecté, mais son découpage par question est impossible.',
   uncovered: "Certaines questions n'ont pas de corrigé détecté.",
+  color: 'Corrigés repérés uniquement par leur couleur : vérifiez le résultat.',
+  suspicious:
+    'Aucun marqueur de corrigé, mais certaines lignes pourraient être des réponses : détection incertaine.',
 } as const
 
 // --- Contexte de numérotation -------------------------------------------------
@@ -95,11 +99,13 @@ interface Draft {
   grouped: boolean
   /** Rectangles explicites (QCM) au lieu des lignes start..end. */
   custom?: PageRegion[]
+  /** Question associée par la géométrie (correction dans une colonne voisine). */
+  questionIndex?: number
 }
 
 // --- Moteur principal -----------------------------------------------------------
 
-export function detect(input: DetectionInput): DetectionResult {
+export async function detect(input: DetectionInput): Promise<DetectionResult> {
   const layouts = input.pages.map(layoutPage)
   const flow = layouts.flatMap((p) => p.lines)
   const textlessPages = layouts.filter((p) => !p.hasText).map((p) => p.pageIndex)
@@ -264,6 +270,18 @@ export function detect(input: DetectionInput): DetectionResult {
   labelSideBySide(drafts, flow, statementQ, labelAt)
   mergeLabelOnlyBlocks(drafts, flow, parsed)
   drafts.push(...qcmDrafts(flow, parsed, modeAt, labelAt))
+
+  // Sans aucun marqueur textuel : les corrigés se distinguent-ils par leur couleur ?
+  let byColor = false
+  if (drafts.length === 0 && input.getRaster) {
+    const inks = await lineInks(layouts, input.getRaster)
+    const colorBlocks = colorDrafts(flow, parsed, inks, modeAt, labelAt)
+    if (colorBlocks.length > 0) {
+      byColor = true
+      drafts.push(...colorBlocks)
+      for (const d of colorBlocks) for (let i = d.start; i <= d.end; i++) modeAt[i] = 'correction'
+    }
+  }
   drafts.sort((a, b) => a.start - b.start)
 
   // --- Classification -----------------------------------------------------------
@@ -286,8 +304,10 @@ export function detect(input: DetectionInput): DetectionResult {
         statementChars += q ? q.rest.trim().length : chars
       }
     })
-    kind =
-      correctionFromStart || statementChars < 0.15 * correctionChars ? 'correction_only' : 'mixed'
+    // Énoncé quasi absent (seulement des libellés) : corrigé seul.
+    const noStatement = statementChars < Math.max(20, 0.05 * correctionChars)
+    kind = correctionFromStart || noStatement ? 'correction_only' : 'mixed'
+    if (byColor) warnings.push(WARNINGS.color)
     if (kind === 'correction_only' && drafts.length === 1 && !drafts[0]!.label) {
       warnings.push(WARNINGS.unsegmented)
       needsFallback = true
@@ -299,8 +319,12 @@ export function detect(input: DetectionInput): DetectionResult {
     ) {
       warnings.push(WARNINGS.uncovered)
     }
-  } else if (qCount >= 2 && continuityEvents >= 1) {
+  } else if (qCount >= 2 && continuityEvents >= 1 && !suspiciousFont(flow, parsed)) {
     kind = 'statement_only'
+  } else if (qCount >= 2 && continuityEvents >= 1) {
+    kind = 'unknown'
+    warnings.push(WARNINGS.suspicious)
+    needsFallback = true
   } else {
     kind = 'unknown'
     warnings.push(WARNINGS.unknown)
@@ -360,7 +384,10 @@ function labelSideBySide(
       if (q.bbox.y > first.bbox.y + 0.5 * first.fontSize) continue
       if (best === undefined || q.bbox.y > flow[best]!.bbox.y) best = index
     }
-    if (best !== undefined) d.label = labelAt[best]
+    if (best !== undefined) {
+      d.label = labelAt[best]
+      d.questionIndex = best
+    }
   }
 }
 
@@ -513,6 +540,118 @@ function hasUncoveredLeaf(
     const next = statementQ[k + 1]
     if (next && next.level > q.level) return false // la question a des sous-questions
     const limit = next ? next.index : Infinity
-    return !drafts.some((d) => d.start >= q.index && d.start < limit)
+    return !drafts.some(
+      (d) => d.questionIndex === q.index || (d.start >= q.index && d.start < limit),
+    )
   })
+}
+
+// --- Analyse par couleur ------------------------------------------------------------
+
+/** Encre de chaque ligne du flux, en demandant le rendu de chaque page une seule fois. */
+async function lineInks(
+  layouts: PageLayout[],
+  getRaster: NonNullable<DetectionInput['getRaster']>,
+): Promise<Ink[]> {
+  const inks: Ink[] = []
+  for (const layout of layouts) {
+    if (layout.lines.length === 0) continue
+    let raster
+    try {
+      raster = await getRaster(layout.pageIndex)
+    } catch {
+      raster = null
+    }
+    for (const line of layout.lines) {
+      inks.push(raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' })
+    }
+  }
+  return inks
+}
+
+/**
+ * Corrigés sans marqueur, écrits dans une couleur réservée. Une teinte est retenue si :
+ * au moins deux lignes de corps de texte l'utilisent, presque aucune n'est une question
+ * ou un titre, et une question de l'énoncé (dans une autre encre) la précède.
+ */
+function colorDrafts(
+  flow: Line[],
+  parsed: Parsed[],
+  inks: Ink[],
+  modeAt: string[],
+  labelAt: (string | undefined)[],
+): Draft[] {
+  const sizes = flow.map((l) => l.fontSize).sort((a, b) => a - b)
+  const bodySize = sizes[Math.floor(sizes.length / 2)]!
+  const isHeading = (i: number) => flow[i]!.fontSize > 1.2 * bodySize
+
+  // Regroupement des lignes colorées par teinte proche.
+  const clusters: { hue: number; lines: number[] }[] = []
+  inks.forEach((ink, i) => {
+    if (ink.kind !== 'color' || modeAt[i] !== 'statement' || isHeading(i)) return
+    const cluster = clusters.find((c) => hueDistance(c.hue, ink.hue) <= 20)
+    if (cluster) cluster.lines.push(i)
+    else clusters.push({ hue: ink.hue, lines: [i] })
+  })
+
+  const firstQuestion = flow.findIndex((_, i) => parsed[i]!.q !== null && inks[i]?.kind !== 'color')
+  const answerLines = new Set<number>()
+  for (const cluster of clusters) {
+    const questions = cluster.lines.filter((i) => parsed[i]!.q !== null).length
+    if (cluster.lines.length < 2 || questions > 0.2 * cluster.lines.length) continue
+    if (firstQuestion === -1 || cluster.lines[0]! < firstQuestion) continue
+    for (const i of cluster.lines) if (parsed[i]!.q === null) answerLines.add(i)
+  }
+
+  // Suites de lignes consécutives (les lignes sans encre mesurable ne coupent pas une suite).
+  const drafts: Draft[] = []
+  let i = 0
+  while (i < flow.length) {
+    if (!answerLines.has(i)) {
+      i++
+      continue
+    }
+    let j = i
+    let k = i + 1
+    while (k < flow.length && (answerLines.has(k) || inks[k]?.kind === 'none')) {
+      if (answerLines.has(k)) j = k
+      k++
+    }
+    drafts.push({ start: i, end: j, label: labelAt[i], grouped: false })
+    i = j + 1
+  }
+  return drafts
+}
+
+// --- Prudence avant d'annoncer « aucun corrigé » -------------------------------------
+
+/**
+ * Vrai si des lignes de texte, placées après des questions dans au moins deux questions
+ * différentes, utilisent une police qu'aucune ligne de question n'utilise (réponses en
+ * italique, par exemple). On ne masque rien sur ce seul indice : on renonce seulement
+ * à affirmer qu'il n'y a pas de corrigé.
+ */
+function suspiciousFont(flow: Line[], parsed: Parsed[]): boolean {
+  const questionFonts = new Set<string>()
+  flow.forEach((line, i) => {
+    if (parsed[i]!.q) for (const f of line.fontNames) questionFonts.add(f)
+  })
+  if (questionFonts.size === 0) return false
+  const spansByFont = new Map<string, Set<number>>()
+  let span = -1
+  flow.forEach((line, i) => {
+    if (parsed[i]!.q) {
+      span = i
+      return
+    }
+    if (span < 0 || line.fontNames.length !== 1) return
+    const font = line.fontNames[0]!
+    if (questionFonts.has(font)) return
+    const letters = (line.text.match(/\p{L}/gu) ?? []).length
+    if (letters < 0.5 * line.text.length || line.text.split(/\s+/).length < 3) return // formule
+    const spans = spansByFont.get(font) ?? new Set<number>()
+    spans.add(span)
+    spansByFont.set(font, spans)
+  })
+  return [...spansByFont.values()].some((spans) => spans.size >= 2)
 }

@@ -39,8 +39,8 @@
 - Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection`
 - Dépend de : contrat commun (proposition §11, copiée dans `src/detection/contract.ts`) ; S2 de Salif pour les tests sur vrais PDF
 - Critères d'acceptation : `detectCorrections` renvoie type, blocs et régions corrects sur les quatre configurations ; tests sur données synthétiques puis sur vrais PDF
-- Maturité : testée sur données synthétiques (H1). Non testé : vrais PDF
-- Notes : journal `journal/hazem.md`, entrée du 27/11 22:20
+- Maturité : testée (synthétique, puis 8 PDF générés via un banc pdf.js). Non testé : annales réelles, intégration dans l'interface
+- Notes : journal `journal/hazem.md`, entrées du 27/11 22:20 et 22:45
 
 ## Terminées ou abandonnées
 

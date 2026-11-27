@@ -49,3 +49,31 @@ export function fakePage(pageIndex: number, lines: (string | FakeLine)[], startY
 export function blankPage(pageIndex: number): PageData {
   return { pageIndex, ...A4, textItems: [] }
 }
+
+export type RGB = [number, number, number]
+
+/**
+ * Rendu raster SYNTHÉTIQUE d'une page : fond blanc, et chaque fragment de texte peint
+ * comme un rectangle plein de sa couleur (noir par défaut). Échelle 1 pixel par unité.
+ */
+export function fakeRaster(
+  page: PageData,
+  colorOf: (item: TextItem) => RGB | undefined = () => undefined,
+) {
+  const width = Math.ceil(page.width)
+  const height = Math.ceil(page.height)
+  const rgba = new Uint8ClampedArray(width * height * 4).fill(255)
+  for (const item of page.textItems) {
+    const [r, g, b] = colorOf(item) ?? [0, 0, 0]
+    const { x, y, width: w, height: h } = item.bbox
+    for (let py = Math.floor(y); py < Math.min(height, Math.ceil(y + h)); py++) {
+      for (let px = Math.floor(x); px < Math.min(width, Math.ceil(x + w)); px++) {
+        const i = (py * width + px) * 4
+        rgba[i] = r
+        rgba[i + 1] = g
+        rgba[i + 2] = b
+      }
+    }
+  }
+  return { width, height, rgba }
+}
