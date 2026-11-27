@@ -24,3 +24,9 @@
 
 - Vérifié après synchronisation du détecteur : `npm run check` (97 tests), build Ubuntu, Edge avec le hors ligne et les gestes souris/tactile émulé, Firefox avec les quatre parcours synthétiques. Voir `QUALITE.md` V-27-2241-WB.
 - Les têtes vérifiées des PR #4 et #6 ont une CI verte. Leur intégration dans `main` est requise pour que la CI de la PR #3 trouve les modules PDF et détection.
+
+### 27/11 22:59 · SESSION · T-WB-1 (intégration sur la branche) · Codex
+
+- Fusionné `origin/main` (`362ef0e`) dans `feat/viewer` après la fusion des PR #7 (contrat C1), #4 (lecteur) et #6 (détecteur). Résolution de `QUALITE.md` en conservant les entrées des trois contributeurs.
+- `App` utilise `openPdf` et `detectCorrections` de `main`. Les doubles de test d’`App.test.tsx` servent aux erreurs et aux réponses asynchrones contrôlées.
+- Vérifié sur la branche intégrée : `npm run check` (97 tests) et build de production sous Ubuntu, avec le service worker généré pour `/night-shift/`.

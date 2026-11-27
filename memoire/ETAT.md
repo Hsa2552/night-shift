@@ -17,12 +17,12 @@
 
 ### T-WB-1 · Interface et lecture sans spoiler
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/viewer`
 - Dépend de : rendu canvas et repère canonique de Salif (S3), détecteur de Hazem (H1)
 - Critères d'acceptation : masquer les corrigés et les révéler par bloc, proposer une lecture progressive multipage au tactile, gérer les quatre types de document et garder le PDF couvert en cas d'erreur.
-- Maturité : intégrée et vérifiée en local avec les modules PDF et détection. W5 vérifié dans Edge sur ordinateur et en émulation mobile.
-- Blocage : la PR de l’interface dépend de l’intégration des PR #4 (PDF) et #6 (détection) dans `main`. Vérification sur téléphone physique à faire. Voir `memoire/journal/wael.md`.
+- Maturité : intégrée avec le lecteur et le détecteur de `main`. W5 vérifié dans Edge sur ordinateur et en émulation mobile.
+- Notes : PR #3. Vérification sur téléphone physique à faire. Voir `memoire/journal/wael.md`.
 
 ### T00 · Choisir le sujet
 
@@ -33,6 +33,14 @@
 - Maturité : sans objet
 - Notes :
 
+### T-S-1 · Lecteur PDF et PWA
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `feat/pdf`
+- Critères d'acceptation : chargement local, extraction, rendu canvas, raster, rotations et ressources PWA.
+- Maturité : intégrée et vérifiée dans une copie locale des trois branches. Import hors ligne dans Edge et révélation tactile en émulation.
+- Notes : code PR #4, contrat C1 validé et publié dans la PR #7. Voir `journal/salif.md`. Hazem suit T-HZ-1 sur `feat/detection` et Wael suit T-WB-1 sur `feat/viewer`.
+
 ### T01 · Socle technique commun
 
 - Statut : en revue · Priorité : P0
@@ -41,6 +49,15 @@
 - Critères d'acceptation : `npm install`, `npm run check` et `npm run build` passent sur une machine propre ; CI verte sur la PR ; page provisoire installable comme application
 - Maturité : testée (en local, voir `QUALITE.md` V-27-1959-CC). Non testé : vrai navigateur, téléphone, CI sur GitHub
 - Notes : décision D-INIT-3 ; description du socle dans `ARCHITECTURE.md`
+
+### T-HZ-1 · Module de détection des corrigés (H1, H2, H3)
+
+- Statut : en cours · Priorité : P0
+- Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection`
+- Dépend de : contrat commun (proposition §11, copiée dans `src/detection/contract.ts`) ; S2 de Salif pour les tests sur vrais PDF
+- Critères d'acceptation : `detectCorrections` renvoie type, blocs et régions corrects sur les quatre configurations ; tests sur données synthétiques puis sur vrais PDF
+- Maturité : testée (synthétique, puis 8 PDF générés via un banc pdf.js). Non testé : annales réelles, intégration dans l'interface
+- Notes : journal `journal/hazem.md`, entrées du 27/11 22:20 et 22:45
 
 ## Terminées ou abandonnées
 
