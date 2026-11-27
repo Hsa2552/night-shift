@@ -51,11 +51,19 @@
 
 ### T-S-3 · Validation du lecteur pour la distribution
 
-- Statut : en revue · Priorité : P0
+- Statut : fusionnée · Priorité : P0
 - Responsable : Salif · Agent : Codex · Branche : `fix/pdf-distribution`
 - Critères d'acceptation : métriques de symboles finies, essais sur annales publiques, mesure multipage, vérification hors ligne et recette HTTPS pour téléphone.
 - Maturité : testée sur Edge et WebKit de Windows. Installation sur téléphone physique et déploiement public à vérifier par l'équipe après activation de Pages.
 - Notes : PR #9. Mesures dans `QUALITE.md` V-27-2342-S et V-27-2348-S.
+
+### T-S-4 · Distribution et résilience de la PWA
+
+- Statut : en cours · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/pwa-distribution`
+- Critères d'acceptation : une mise à jour du cache préserve la lecture en cours, les essais de confidentialité et de libération sont reproductibles, et le propriétaire dispose de la procédure HTTPS.
+- Maturité : correctif de mise à jour testé localement.
+- Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
 
 ### T01 · Socle technique commun
 

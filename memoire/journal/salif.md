@@ -48,3 +48,9 @@
 - Quatre annales publiques, une copie aux quatre rotations et une charge dérivée de 170 pages testées localement. Mesures d'Edge, limites et vérification de WebKit dans `QUALITE.md` V-27-2342-S.
 - La recette HTTPS et l'installation sur téléphone sont précisées dans le README. Le propriétaire doit activer Pages avant la vérification de l'URL publique. Aucune modification des paramètres GitHub.
 - PR #9 ouverte. Parité en ligne/hors ligne sur neuf rasters dans chaque moteur, refus d'un PDF chiffré avec réouverture réussie, mesures des processus Edge sur trois cycles. La copie d'intégration avec le détecteur `e784dc1` affiche deux blocs de QCM hors ligne. Voir `QUALITE.md` V-27-2348-S.
+
+### 28/11 · SESSION · T-S-4 mise à jour PWA · Codex
+
+- Les PR #9 et #10 sont fusionnées. La branche `fix/pwa-distribution` part de `3ed5e93`.
+- Deux builds sur la même origine reproduisaient une erreur 404 du module PDF pendant une mise à jour. Le service worker attend maintenant la fermeture du dernier onglet avant d'activer la nouvelle version. Vérification avant/après dans Edge, dont réouverture hors ligne. Voir `QUALITE.md` V-28-0012-S.
+- Dépôt public, Pages désactivé au contrôle. Les réglages attendus du propriétaire et le repli sur un hébergement statique HTTPS sont décrits dans le README.
