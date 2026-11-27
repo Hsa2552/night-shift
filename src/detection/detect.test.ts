@@ -164,6 +164,49 @@ describe('detectCorrections', () => {
     ])
   })
 
+  it('« Correction de l’exercice N » en fin de document : libellé tiré du titre', async () => {
+    const result = await run(
+      fakePage(0, [
+        'Exercice 1',
+        '1. Résoudre x + 1 = 0.',
+        '2. Résoudre 2x = 4.',
+        'Exercice 2',
+        '1. Dériver x².',
+        '2. Intégrer 2x.',
+      ]),
+      fakePage(1, [
+        "Correction de l'exercice 1",
+        '1. x = -1.',
+        '2. x = 2.',
+        "Correction de l'exercice 2",
+        '1. La dérivée vaut 2x.',
+        '2. Une primitive est x².',
+      ]),
+    )
+    expect(result.kind).toBe('mixed')
+    expect(coverage(result, 0, 6)).toEqual([null, null, null, null, null, null])
+    expect(coverage(result, 1, 6)).toEqual(['c1', 'c1', 'c2', 'c3', 'c3', 'c4'])
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual([
+      'Exercice 1, question 1',
+      'Exercice 1, question 2',
+      'Exercice 2, question 1',
+      'Exercice 2, question 2',
+    ])
+  })
+
+  it('« Solution N » après chaque question : le libellé suit le numéro du titre', async () => {
+    const result = await run(
+      fakePage(0, [
+        '1. Calculer 2 + 2.',
+        '2. Calculer 3 + 3.',
+        'Solution 1. On trouve 4.',
+        'Solution 2. On trouve 6.',
+      ]),
+    )
+    expect(coverage(result, 0, 4)).toEqual([null, null, 'c1', 'c2'])
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual(['Question 1', 'Question 2'])
+  })
+
   it('corrigé uniquement : tout est masqué, découpé par exercice, titre visible', async () => {
     const result = await run(
       fakePage(0, [

@@ -47,7 +47,7 @@ const LEVELS = 5
 function applyMarker(ctx: Ctx, m: QuestionMarker): Ctx {
   const next = ctx.slice(0, m.level)
   while (next.length < m.level) next.push(undefined)
-  next[m.level] = m.kind === 'letter' ? m.value : `${m.kind}:${m.value}`
+  next[m.level] = m.value
   return next
 }
 
@@ -150,10 +150,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     `${keyOf(c.slice(0, m.level))}#${m.level}#${m.style}`
 
   const remember = (m: QuestionMarker) => {
-    displays.set(
-      `${m.level}#${m.kind === 'letter' ? m.value : `${m.kind}:${m.value}`}`,
-      markerDisplay(m),
-    )
+    displays.set(`${m.level}#${m.value}`, markerDisplay(m))
   }
   const close = (end: number) => {
     if (st.current) {
@@ -175,6 +172,20 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       close(i - 1)
       open(i, grouped)
     }
+  }
+
+  /**
+   * Titre de correction : applique le libellé qu'il porte (« Exercice 2 : corrigé »,
+   * « Correction de l'exercice 2 ») et indique si le bloc ouvre une section découpable.
+   */
+  const labelFromCorrection = (q: QuestionMarker | null, c: CorrectionMarker): boolean => {
+    for (const m of [q, c.target]) {
+      if (!m) continue
+      remember(m)
+      ctx = applyMarker(ctx, m)
+    }
+    const level = c.target?.level ?? q?.level
+    return c.headerOnly || (level !== undefined && level <= 1)
   }
 
   /** Une question nouvelle qui continue la numérotation de l'énoncé termine la correction. */
@@ -215,11 +226,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     if (st.mode === 'correction' && st.current) {
       const cur = st.current
       if (c) {
-        if (q) {
-          remember(q)
-          ctx = applyMarker(ctx, q)
-        }
-        split(i, c.headerOnly)
+        split(i, labelFromCorrection(q, c))
       } else if (q) {
         const after = applyMarker(ctx, q)
         if (correctionFromStart) {
@@ -248,11 +255,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
 
     // Mode énoncé.
     if (c) {
-      if (q) {
-        remember(q)
-        ctx = applyMarker(ctx, q)
-      }
-      open(i, c.headerOnly)
+      open(i, labelFromCorrection(q, c))
       modeAt.push('correction')
     } else {
       if (q) statementQuestion(i, q)
@@ -399,7 +402,8 @@ function mergeLabelOnlyBlocks(drafts: Draft[], flow: Line[], parsed: Parsed[]) {
     if (d.start !== d.end || next.start !== d.end + 1 || d.inlineX !== undefined) continue
     const p = parsed[d.start]!
     const bareLabel = p.q !== null && p.q.rest.replace(/[\s:.\-–]/g, '').length === 0
-    const header = p.c?.headerOnly === true
+    const bareTarget = p.c?.target?.rest.replace(/[\s:.\-–]/g, '').length === 0
+    const header = p.c?.headerOnly === true || bareTarget
     if (!bareLabel && !header) continue
     if (flow[d.start]!.pageIndex !== flow[next.start]!.pageIndex && !header) continue
     next.start = d.start

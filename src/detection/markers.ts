@@ -129,11 +129,11 @@ export function nextValue(value: string): string | null {
 }
 
 const CORRECTION_WORD =
-  '(?:elements?\\s+de\\s+(?:correction|reponse)s?|propositions?\\s+de\\s+(?:correction|corrige)s?|indications?\\s+de\\s+correction|bonnes?\\s+reponses?|corriges?|corrections?|solutions?|reponses?|answers?|correcting)'
+  '(?:grilles?\\s+de\\s+(?:correction|reponse)s?|cles?\\s+de\\s+correction|answer\\s+keys?|elements?\\s+de\\s+(?:correction|reponse)s?|propositions?\\s+de\\s+(?:correction|corrige)s?|indications?\\s+de\\s+correction|bonnes?\\s+reponses?|corriges?|corrections?|solutions?|reponses?|answers?|correcting)'
 
 /** Ce qui peut suivre le mot-clé pour qu'il s'agisse bien d'un marqueur, et non d'une phrase. */
 const CORRECTION_TAIL =
-  "(?:\\s*$|\\s*[:.\\-–—)]|\\s+(?:de\\s+l\\s*['’]\\s*exercice|de\\s+la\\s+question|du\\s+probleme|de\\s+la\\s+partie|des\\s+exercices|des\\s+questions|du\\s+sujet|de\\s+l\\s*['’]\\s*examen|du\\s+td|du\\s+tp|du\\s+devoir|du\\s+partiel|detaille|complete?|type|to\\s+(?:exercise|question|problem)|for\\s+(?:exercise|question|problem)|(?:n\\s*[°o]\\s*)?\\d|[ivx]{1,4}\\b|q\\s*\\d)|\\s+[a-e]\\s*(?:$|[.,;]))"
+  "(?:\\s*$|\\s*[:.\\-–—)]|\\s+(?:de\\s+l\\s*['’]\\s*exercice|de\\s+la\\s+question|du\\s+probleme|de\\s+la\\s+partie|des\\s+exercices|des\\s+questions|du\\s+sujet|de\\s+l\\s*['’]\\s*examen|du\\s+td|du\\s+tp|du\\s+devoir|du\\s+partiel|detaille|complete?|type|to\\s+(?:exercise|question|problem)|for\\s+(?:exercise|question|problem)|(?:n\\s*[°o]\\s*)?\\d|[ivx]{1,4}\\b|q\\s*\\d|(?:exercices?|exercises?|questions?|problemes?|problems?|parties?)\\s*(?:n\\s*[°o]\\s*)?(?:\\d|[ivx]{1,4}\\b))|\\s+[a-e]\\s*(?:$|[.,;]))"
 
 const CORRECTION_START_RE = new RegExp(`^${CORRECTION_WORD}${CORRECTION_TAIL}`)
 
@@ -145,13 +145,41 @@ const HEADER_ONLY_RE = new RegExp(
 export interface CorrectionMarker {
   /** Vrai si la ligne ne contient que le titre (« Corrigé », « Solutions ») : début de section. */
   headerOnly: boolean
+  /** Question ou exercice désigné par le titre : « Correction de l'exercice 2 », « Solution 3 ». */
+  target?: QuestionMarker
 }
+
+const WORD_PREFIX_RE = new RegExp(`^${CORRECTION_WORD}`)
+const TARGET_LINK_RE = /^\s*(?:de\s+l\s*['’]\s*|de\s+la\s+|du\s+|to\s+|for\s+|of\s+)?/
+const BARE_NUMBER_RE = /^(?:n\s*[°o]\s*)?(\d{1,3})(?!\d|[.,]\d)/
 
 /** Reconnaît une ligne qui commence par un marqueur explicite de correction. */
 export function parseCorrectionStart(text: string): CorrectionMarker | null {
-  const folded = fold(text.replace(LEADING_DECORATION, '')).trim()
+  const stripped = text.replace(LEADING_DECORATION, '').trim()
+  const folded = fold(stripped)
   if (!CORRECTION_START_RE.test(folded)) return null
-  return { headerOnly: HEADER_ONLY_RE.test(folded) }
+  const marker: CorrectionMarker = { headerOnly: HEADER_ONLY_RE.test(folded) }
+  const word = WORD_PREFIX_RE.exec(folded)![0]
+  const link = TARGET_LINK_RE.exec(folded.slice(word.length))![0]
+  const rest = stripped.slice(word.length + link.length)
+  const target = parseQuestion(rest)
+  if (target && target.kind !== 'letter') {
+    marker.target = target
+  } else {
+    const bare = BARE_NUMBER_RE.exec(fold(rest))
+    if (bare) {
+      const value = String(Number(bare[1]))
+      marker.target = {
+        kind: 'question',
+        level: 2,
+        value,
+        style: 'question',
+        display: `Question ${value}`,
+        rest: rest.slice(bare[0].length),
+      }
+    }
+  }
+  return marker
 }
 
 /**

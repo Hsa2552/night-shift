@@ -34,3 +34,10 @@
 - Vérifié : banc pdf.js relancé avec `mapTextItem` de `feat/pdf` (commit `716f64a`, copie locale hors dépôt) à la place de mon extraction simplifiée : mêmes 8 résultats sur 8, régions décalées d'un ou deux points seulement. Raster à l'échelle 1 (celle de `getRaster` de Salif) : détection par couleur OK.
 - Lu : `DocumentViewer` de `feat/viewer` (commit `992e8fb`) accepte directement `DetectionResult.blocks` (types structurellement identiques). Aucun adaptateur nécessaire.
 - Non vérifié : appel réel `openPdf` puis `detectCorrections` puis `DocumentViewer` dans un navigateur (attend la fusion des trois branches).
+
+### 27/11 22:45 · SESSION · T-HZ-1 conventions de titres de correction · Claude Code
+
+- Correction : les heures des deux entrées précédentes (22:45 et 22:55) étaient estimées et en avance ; l'horloge de la machine indiquait 22:32 au début de cette session.
+- Fait : titres de correction qui désignent leur cible (« Correction de l'exercice 2 », « Corrigé exercice 3 », « Solution de la question 4 », « Solution 5. », « Answer to question 2 ») : le libellé du bloc vient du titre, et une section d'exercice est découpée par question ; nouveaux marqueurs « Grille de réponses », « Clé de correction », « Answer key ».
+- Vérifié : `npm run check` OK (77 tests) ; banc pdf.js : 8 PDF sur 8 inchangés.
+- État GitHub : PR #6 ouverte, CI verte et fusionnable sur `dca91b3` ; aucune fusion dans main pour l'instant (Règles v1 : fusion humaine).

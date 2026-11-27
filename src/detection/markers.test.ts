@@ -58,7 +58,24 @@ describe('parseCorrectionStart', () => {
     ['Answer: 42', false],
     ['Réponse B', false],
   ])('%s', (text, headerOnly) => {
-    expect(parseCorrectionStart(text)).toEqual({ headerOnly })
+    expect(parseCorrectionStart(text)).toMatchObject({ headerOnly })
+  })
+
+  it.each([
+    ["Correction de l'exercice 2", 'exercise', '2'],
+    ['Corrigé exercice 3', 'exercise', '3'],
+    ['Solution de la question 4', 'question', '4'],
+    ['Solution 5.', 'question', '5'],
+    ['Answer to question 2', 'question', '2'],
+  ])('%s désigne sa cible', (text, kind, value) => {
+    const target = parseCorrectionStart(text)?.target
+    expect(target?.kind).toBe(kind)
+    expect(target?.value).toBe(value)
+  })
+
+  it('reconnaît les grilles de réponses', () => {
+    expect(parseCorrectionStart('Grille de réponses')).toMatchObject({ headerOnly: true })
+    expect(parseCorrectionStart('Answer key')).toMatchObject({ headerOnly: true })
   })
 
   it.each([
