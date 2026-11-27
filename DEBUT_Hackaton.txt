@@ -1,0 +1,1526 @@
+# UNSPOIL — NIGHT SHIFT 2026
+## Prompt commun de lancement des trois agents de développement
+
+## 1. Contexte et identification
+
+Nous sommes trois étudiants ingénieurs à l'ENSAI et participons au hackathon Night Shift 2026.
+
+Notre sujet est définitivement choisi : **Unspoil**.
+
+Nous travaillons simultanément sur un repository GitHub commun :
+
+https://github.com/Hsa2552/night-shift
+
+Les trois membres et leurs agents sont :
+
+- Hazem : Claude Code.
+- Salif : Codex.
+- Wael : Codex.
+
+Ce prompt est identique pour les trois agents. Le prénom ajouté à la fin détermine ta mission.
+
+Lis l'ensemble du prompt pour comprendre les interactions entre les modules, puis exécute la mission qui t'est attribuée.
+
+Tu es directement un agent de développement. Nous attendons que tu modifies le code, exécutes les commandes nécessaires, réalises les tests et avances concrètement sur ton périmètre.
+
+Nous ne voulons pas uniquement des recommandations ou des prompts à transmettre à d'autres agents.
+
+L'échéance absolue est le samedi 28 novembre 2026 à 13 h, heure de Paris.
+
+Notre développement commence maintenant.
+
+## 2. Source de vérité concernant le produit
+
+Cette spécification remplace toutes les anciennes descriptions d'Unspoil.
+
+Ne réintroduis aucune fonctionnalité provenant d'une ancienne discussion ou d'une ancienne spécification si elle n'est pas présente ici.
+
+Le sujet est choisi. Nous ne souhaitons plus faire de brainstorming.
+
+L'application doit rester extrêmement simple du point de vue de l'utilisateur.
+
+## 3. Problème et solution
+
+Un étudiant possède une annale ou un document d'exercices au format PDF.
+
+Le document contient des questions et leurs corrections, mélangées dans un même fichier.
+
+Les corrections peuvent apparaître :
+
+- Sous les questions.
+- À côté des questions.
+- Dans une autre colonne.
+- Entre deux questions.
+- Sous forme de réponses rédigées.
+- Sous forme de réponses indiquées dans un QCM.
+- Dans une partie distincte du document.
+
+L'étudiant souhaite résoudre les questions sans voir les réponses.
+
+**Unspoil est une PWA permettant de masquer automatiquement les corrections d'un PDF tout en conservant les questions visibles.**
+
+Le document original doit conserver sa mise en page.
+
+Nous ne voulons pas transformer le PDF en quiz, générer de nouveaux exercices ou reconstruire son contenu.
+
+Nous voulons simplement rendre le PDF original utilisable pour un entraînement sans spoiler.
+
+## 4. Fonctionnement exact du produit
+
+### 4.1. Importation
+
+L'utilisateur ouvre Unspoil et importe un PDF depuis son appareil.
+
+Le logiciel est capable d'afficher ce PDF fidèlement.
+
+Il traite son contenu afin d'identifier les questions et les éventuelles corrections.
+
+### 4.2. Fonctionnalité principale : masquer les corrigés
+
+L'utilisateur dispose d'un bouton principal :
+
+**Masquer les corrigés**
+
+Lorsqu'il clique sur ce bouton :
+
+1. L'algorithme déterministe analyse le document.
+2. Il identifie les régions correspondant probablement à des corrections.
+3. Il recouvre ces régions avec des masques blancs opaques.
+4. Les questions restent visibles.
+5. Le document conserve sa mise en page originale.
+
+Les masques ne doivent pas être des floutages.
+
+Ils doivent être blancs et totalement opaques.
+
+Chaque bloc de correction détecté possède un bouton :
+
+**Afficher le corrigé**
+
+Lorsque l'utilisateur clique dessus, seul le bloc de correction correspondant est révélé.
+
+Les autres corrections restent masquées.
+
+L'utilisateur doit également pouvoir remasquer le bloc.
+
+Cette interaction doit être simple, sans configuration laborieuse.
+
+### 4.3. Fonctionnalité de secours : révélation progressive
+
+L'algorithme déterministe ne pourra pas reconnaître tous les formats de documents.
+
+Nous avons donc besoin d'un mécanisme de secours indépendant de l'algorithme.
+
+Son fonctionnement :
+
+1. Le document est entièrement masqué par défaut.
+2. Un trait horizontal délimite la partie visible et la partie masquée.
+3. L'utilisateur fait glisser ce trait verticalement.
+4. Le document apparaît progressivement au-dessus du trait.
+5. Tout ce qui se situe en dessous reste couvert par un masque blanc opaque.
+
+L'utilisateur peut déplacer le trait dans les deux sens.
+
+Il doit pouvoir avancer progressivement dans le document sans apercevoir la suite.
+
+Le mécanisme doit fonctionner :
+
+- À la souris.
+- Au tactile.
+- Sur les documents multipages.
+- Indépendamment du contenu du document.
+- Même lorsqu'aucun texte n'est extractible.
+
+Le mécanisme de secours doit être accessible manuellement, y compris lorsque l'algorithme automatique a produit un résultat imparfait.
+
+Il ne dépend d'aucune détection sémantique.
+
+### 4.4. Cas critique A : PDF contenant uniquement un sujet
+
+Certains documents contiennent des questions, mais aucune correction.
+
+Le logiciel doit, autant que possible, reconnaître ce cas.
+
+Lorsqu'il dispose d'indices suffisants pour considérer qu'aucune correction n'a été détectée, il affiche :
+
+**Aucun corrigé n'a été détecté.**
+
+Il ne doit pas créer arbitrairement des masques sur les questions.
+
+Attention : ne pas parvenir à identifier une correction n'est pas nécessairement équivalent à déterminer que le document est un sujet sans corrigé.
+
+Il faut distinguer :
+
+- Un document probablement constitué uniquement de questions.
+- Un document dont la structure n'est pas reconnue.
+
+Dans le second cas, proposer le mécanisme de secours plutôt que prétendre avoir reconnu un sujet sans corrigé.
+
+### 4.5. Cas critique B : PDF contenant uniquement un corrigé
+
+Certains documents contiennent uniquement la correction, sans les énoncés.
+
+Le logiciel doit rester utile dans ce cas.
+
+Il doit essayer de :
+
+1. Identifier les différentes questions ou exercices à partir de leur numérotation et de la structure du corrigé.
+2. Segmenter le corrigé en blocs.
+3. Masquer initialement tous ces blocs.
+4. Permettre de révéler indépendamment la correction de chaque question.
+
+Si le découpage par question est impossible ou trop incertain, proposer la révélation progressive.
+
+Il ne faut pas inventer les énoncés absents.
+
+### 4.6. Cas critique C : document mixte non reconnu
+
+Si le logiciel ne parvient pas à distinguer suffisamment les questions et les réponses :
+
+- Il signale que la détection automatique est incertaine.
+- Il propose le mécanisme de révélation progressive.
+- Il ne prétend pas avoir correctement identifié toutes les corrections.
+
+### 4.7. Protection contre l'affichage accidentel
+
+Puisque l'objectif est d'éviter les spoilers, une proposition de comportement initial est de garder le document couvert pendant son importation et son analyse, jusqu'à l'action de masquage.
+
+L'utilisateur doit pouvoir utiliser le mécanisme de secours sans avoir préalablement vu le document original.
+
+Ce comportement initial doit être cohérent avec le parcours utilisateur et validé rapidement entre les trois membres.
+
+## 5. Résumé des quatre configurations documentaires
+
+| Configuration | Comportement attendu |
+|---|---|
+| Questions et corrections mélangées | Questions visibles, corrections masquées indépendamment |
+| Sujet uniquement | Message « Aucun corrigé n'a été détecté » |
+| Corrigé uniquement | Corrections masquées et découpées par question |
+| Format non reconnu | Proposition du mode de révélation progressive |
+
+Ces quatre configurations doivent guider la conception de l'algorithme, de l'interface et des tests.
+
+## 6. Contraintes non négociables
+
+- Le produit est une PWA.
+- Le format d'entrée est le PDF.
+- L'algorithme de détection est déterministe.
+- Aucune API d'IA ni aucun LLM ne sont nécessaires au fonctionnement.
+- Les masques sont blancs et opaques.
+- Le document original conserve sa mise en page.
+- L'interface est simple.
+- Le produit fonctionne sur ordinateur et téléphone.
+- Le rendu est le repository GitHub.
+- Aucun résultat de test ne doit être inventé.
+
+Nous privilégions le traitement intégralement côté navigateur, sans backend, puisque le socle PWA existant le permet et que les besoins fonctionnels ne justifient pas de serveur.
+
+Le fonctionnement hors ligne après chargement et mise en cache des ressources doit être recherché et vérifié.
+
+Les PDF des utilisateurs ne doivent pas être envoyés à des services externes.
+
+## 7. Ce que nous ne voulons PAS développer
+
+Les anciennes spécifications contenaient des fonctionnalités qui ne font pas partie du produit actuel.
+
+Ne développe pas :
+
+- Un quiz interactif.
+- Un système de cases de QCM à cocher.
+- Un système de score.
+- Un système de notation.
+- Un module de correction des réponses de l'étudiant.
+- Une reconstruction des questions en HTML.
+- Un module AMC constituant à lui seul l'application.
+- Un système de comparaison entre deux PDF.
+- Un mode sujet et corrigé côte à côte.
+- Un système de gestion de plusieurs documents.
+- Des comptes utilisateurs.
+- Une bibliothèque d'annales.
+- Un système de flashcards.
+- Une gamification.
+- Un moteur de génération de contenu.
+- Une extension de navigateur.
+- Une application mobile native.
+- Des fonctionnalités sociales.
+- Un backend non nécessaire.
+
+Un détecteur spécialisé pour une convention de QCM peut être pertinent, mais uniquement en tant que sous-partie de l'algorithme général de détection des corrections.
+
+La seule difficulté technique majeure doit rester la détection déterministe.
+
+## 8. État actuel du repository
+
+Le repository contient déjà un socle technique.
+
+Il utilise :
+
+- React.
+- TypeScript strict.
+- Vite.
+- Tailwind CSS.
+- vite-plugin-pwa.
+- Vitest.
+- Testing Library.
+- Oxlint.
+- Prettier.
+- GitHub Actions.
+
+Les fichiers existants comprennent notamment :
+
+    AGENTS.md
+    CLAUDE.md
+    README.md
+    package.json
+    package-lock.json
+    vite.config.ts
+    index.html
+    public/
+    src/
+        App.tsx
+        App.test.tsx
+        main.tsx
+        index.css
+        test/
+    memoire/
+        INDEX.md
+        CONTEXTE.md
+        PRODUIT.md
+        ARCHITECTURE.md
+        CONTRATS.md
+        DECISIONS.md
+        DESIGN.md
+        ETAT.md
+        QUALITE.md
+        LIVRAISON.md
+        journal/
+    .github/
+
+Le fichier App.tsx contient actuellement une page provisoire.
+
+La configuration PWA existe déjà.
+
+PDF.js n'est pas encore installé dans l'état du repository qui nous a servi de référence.
+
+Les contrats intermodules ne sont pas encore définis.
+
+La mémoire indique encore que le sujet n'est pas choisi. Cette information est désormais obsolète : les humains ont décidé de développer Unspoil.
+
+Vérifie néanmoins l'état actuel de ta branche et d'origin/main avant toute modification : les deux autres agents travaillent simultanément.
+
+Ne réinitialise pas le projet.
+
+Ne remplace pas la stack existante sans raison majeure.
+
+Ne crée pas une deuxième structure de documentation.
+
+Utilise la mémoire existante du repository.
+
+## 9. Règles de collaboration
+
+Les fichiers AGENTS.md et CLAUDE.md contiennent les règles communes des agents.
+
+Tu dois les respecter.
+
+Commence par le protocole de début de session défini dans AGENTS.md.
+
+Lis ensuite memoire/ETAT.md et les fichiers de mémoire pertinents pour ta tâche.
+
+Chaque agent possède son périmètre de fichiers.
+
+Les trois agents doivent travailler simultanément, sans attendre inutilement les autres.
+
+Les modifications communes doivent être coordonnées.
+
+Les fichiers suivants sont verrouillés conformément aux règles du repository :
+
+- AGENTS.md
+- CLAUDE.md
+- memoire/ARCHITECTURE.md
+- memoire/CONTRATS.md
+
+Leur modification nécessite une validation humaine et une branche dédiée.
+
+Salif coordonne la création du contrat technique initial.
+
+Hazem et Wael peuvent immédiatement concevoir, programmer et tester les parties indépendantes de leur module à partir de données fictives, sans modifier les contrats verrouillés.
+
+Ils adaptent ensuite leurs modules au contrat commun validé.
+
+Ne pousse jamais directement sur main.
+
+Les fusions sur main sont effectuées par les humains via Pull Request.
+
+N'écrase jamais le travail d'un autre agent.
+
+Les tests doivent être placés à côté du code concerné, conformément aux conventions existantes.
+
+Chaque membre utilise son propre journal dans memoire/journal/.
+
+Ne crée pas de tâche de développement en arrière-plan susceptible de modifier le dépôt après l'échéance.
+
+## 10. Architecture commune proposée
+
+Le produit se décompose en trois modules.
+
+### Module PDF — Salif
+
+Responsable de :
+
+- Charger le PDF.
+- Fournir les dimensions des pages.
+- Extraire le texte et sa géométrie.
+- Fournir les données visuelles si nécessaire.
+- Afficher les pages.
+- Garantir un repère de coordonnées commun.
+
+### Module détection — Hazem
+
+Responsable de :
+
+- Analyser les données fournies par le module PDF.
+- Déterminer le type probable de document.
+- Identifier les régions de correction.
+- Regrouper les régions par question.
+- Indiquer les incertitudes.
+- Retourner des résultats exploitables sans dépendre de React.
+
+### Module interface — Wael
+
+Responsable de :
+
+- Présenter l'application à l'utilisateur.
+- Déclencher les opérations.
+- Afficher les pages fournies par le module PDF.
+- Appliquer les régions produites par le détecteur.
+- Gérer les masques blancs.
+- Gérer la révélation indépendante des corrections.
+- Gérer le mécanisme de secours.
+- Intégrer le parcours utilisateur complet.
+
+Arborescence proposée :
+
+    src/
+        App.tsx
+        App.test.tsx
+        index.css
+        shared/
+            types.ts
+        pdf/
+        detection/
+        viewer/
+        components/
+
+Cette arborescence est une proposition à valider rapidement, pas une raison de bloquer le démarrage.
+
+## 11. Contrat technique initial proposé
+
+Le contrat suivant constitue une base de départ pour les trois agents.
+
+Salif est chargé de le vérifier, de l'adapter si nécessaire, de le faire valider par les humains et de l'inscrire dans memoire/CONTRATS.md.
+
+### Convention géométrique
+
+Toutes les régions sont exprimées dans le repère canonique de leur page :
+
+- Origine en haut à gauche.
+- Axe x vers la droite.
+- Axe y vers le bas.
+- Coordonnées indépendantes du zoom.
+- Dimensions de référence correspondant au viewport PDF à échelle 1.
+- Rotation de la page prise en compte.
+- Indices des pages commençant à zéro.
+
+Proposition TypeScript :
+
+```typescript
+export interface Rect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface TextItem {
+  text: string
+  bbox: Rect
+  fontSize?: number
+  fontName?: string
+  hasEOL?: boolean
+}
+
+export interface PageData {
+  pageIndex: number
+  width: number
+  height: number
+  textItems: TextItem[]
+}
+
+export interface RasterData {
+  width: number
+  height: number
+  rgba: Uint8ClampedArray
+}
+
+export interface DetectionInput {
+  pages: PageData[]
+  getRaster?: (
+    pageIndex: number
+  ) => Promise<RasterData>
+}
+
+export interface PageRegion {
+  pageIndex: number
+  bbox: Rect
+}
+
+export interface CorrectionBlock {
+  id: string
+  questionLabel?: string
+  regions: PageRegion[]
+}
+
+export type DocumentKind =
+  | 'mixed'
+  | 'statement_only'
+  | 'correction_only'
+  | 'unknown'
+
+export interface DetectionResult {
+  kind: DocumentKind
+  blocks: CorrectionBlock[]
+  warnings: string[]
+  needsFallback: boolean
+}
+
+export type DetectCorrections = (
+  input: DetectionInput
+) => Promise<DetectionResult>
+```
+
+Principes :
+
+- Un bloc de correction peut contenir plusieurs rectangles.
+- Un bloc peut s'étendre sur plusieurs pages.
+- Le bouton de révélation concerne un bloc entier, et non nécessairement un rectangle individuel.
+- Les données du détecteur ne dépendent pas de React.
+- Le détecteur ne décide pas de la manière dont les boutons sont affichés.
+- L'interface ne réimplémente pas l'algorithme de détection.
+- Les régions sont converties en coordonnées écran uniquement pour leur affichage.
+- Les données raster sont facultatives et peuvent être obtenues à la demande afin d'éviter de conserver toutes les pages en mémoire.
+- Les informations réellement disponibles dans PDF.js doivent être vérifiées.
+- Une information absente du PDF ne doit pas être inventée.
+
+Le module PDF doit exposer un moyen de charger un fichier local, récupérer ses PageData, obtenir éventuellement le rendu raster d'une page et afficher une page dans un canvas.
+
+Salif définit précisément cette interface avec Wael.
+
+Les trois agents doivent utiliser une version unique du contrat après sa validation.
+
+---
+
+# SECTION HAZEM — CLAUDE CODE
+
+## 12. Ta mission : l'algorithme déterministe
+
+Tu es Hazem.
+
+Tu es responsable de la principale difficulté scientifique et technique du produit : identifier les corrections dans un PDF sans utiliser d'intelligence artificielle.
+
+Tu développes le module de détection.
+
+Ton périmètre proposé :
+
+    src/detection/
+    memoire/journal/hazem.md
+
+Tu ne développes pas le lecteur PDF général ni l'interface utilisateur.
+
+Tu ne modifies pas App.tsx.
+
+Tu travailles avec les données documentaires fournies par Salif et retournes des résultats directement utilisables par Wael.
+
+### 12.1. Objectif algorithmique
+
+À partir du texte, de la géométrie et éventuellement de l'image des pages, produire :
+
+- Le type probable du document.
+- Les blocs de correction.
+- Leur position exacte.
+- Leur regroupement par question lorsque possible.
+- Les avertissements utiles.
+- L'indication qu'un mécanisme de secours est nécessaire lorsque la détection est trop incertaine.
+
+### 12.2. Construire un moteur modulaire
+
+Ne cherche pas immédiatement une règle universelle.
+
+Construis plusieurs détecteurs spécialisés capables de reconnaître différentes conventions.
+
+Pistes à explorer, à vérifier expérimentalement :
+
+**Détection textuelle**
+
+- Correction.
+- Corrigé.
+- Solution.
+- Réponse.
+- Answer.
+- Solution de l'exercice.
+- Autres marqueurs explicites pertinents.
+
+**Détection structurelle**
+
+- Titres de questions.
+- Numérotation des exercices.
+- Début et fin d'une correction.
+- Corrections placées entre deux questions.
+- Corrections regroupées à la fin.
+- Corrections seules, organisées par question.
+
+**Analyse géométrique**
+
+- Reconstruction des lignes.
+- Regroupement en paragraphes.
+- Colonnes.
+- Alignements.
+- Espaces verticaux.
+- Indentations.
+- Positions relatives des questions et corrections.
+
+**Analyse visuelle**
+
+- Couleurs distinguant les réponses.
+- Surlignages.
+- Cases remplies de QCM.
+- Symboles de correction.
+- Autres conventions visuelles effectivement exploitables.
+
+Ne suppose pas qu'une couleur, une police ou une position spatiale possède toujours une signification particulière.
+
+Ces informations sont des indices, pas des preuves universelles.
+
+### 12.3. Priorités de développement
+
+P0 :
+
+1. Construire une représentation exploitable des lignes et blocs.
+2. Reconnaître les marqueurs explicites de questions et de corrections.
+3. Détecter un document mixte dans les configurations simples.
+4. Segmenter un corrigé seul par question.
+5. Reconnaître autant que possible un sujet sans corrigé.
+6. Gérer explicitement les formats inconnus.
+7. Retourner des rectangles corrects à l'interface.
+
+P1, selon les performances obtenues sur les documents de test :
+
+- Détection des corrections par couleur.
+- Détection de conventions de QCM.
+- Documents multicolonnes.
+- Corrections réparties sur plusieurs pages.
+- Combinaison de plusieurs indices.
+- Exploitation de l'image pour les documents sans texte extractible.
+
+Le choix exact des détecteurs et de leur ordre doit être motivé par leur utilité et les documents disponibles.
+
+### 12.4. Règles importantes
+
+Une absence de correspondance avec tes expressions régulières ne doit pas automatiquement conduire à classer un document comme statement_only.
+
+Un document dont la structure est inconnue doit pouvoir être classé unknown.
+
+Ne considère pas le mot « solution » au milieu d'une question comme un marqueur certain de correction.
+
+Un même bloc peut couvrir plusieurs lignes, figures ou équations.
+
+Ne masque pas uniquement les mots extraits du texte PDF lorsqu'une correction contient également des éléments graphiques.
+
+Les zones ambiguës ne doivent pas donner lieu à une promesse de détection réussie.
+
+Un faux négatif peut révéler une réponse. Un faux positif masque une question. Les deux erreurs sont importantes, avec une asymétrie particulière concernant les spoilers.
+
+### 12.5. Tests
+
+Construis des tests avec des données synthétiques permettant de commencer sans lecteur PDF opérationnel.
+
+Couvre notamment :
+
+- Question suivie de sa correction.
+- Plusieurs questions et corrections alternées.
+- Correction placée à droite d'une question.
+- Corrigé regroupé en fin de document.
+- Corrigé uniquement.
+- Sujet uniquement.
+- Document ambigu.
+- Document sans texte extractible.
+- Question contenant le mot « solution ».
+- Correction s'étendant sur plusieurs pages.
+- QCM avec convention de correction reconnaissable.
+
+Teste ensuite le moteur sur de vrais PDF disponibles légalement.
+
+N'annonce aucune performance universelle à partir de quelques documents.
+
+Les tests doivent vérifier les régions produites, pas uniquement le type du document.
+
+### 12.6. Démarrage immédiat de Hazem
+
+- Lis les règles et l'état du repository.
+- Crée ou récupère ta branche dédiée, par exemple feat/detection.
+- Transmets rapidement à Salif les informations PDF dont tu as besoin.
+- Commence les fonctions de reconstruction des lignes et de segmentation.
+- Utilise immédiatement des données fictives compatibles avec le contrat proposé.
+- Implémente un premier détecteur testable.
+- Ajoute progressivement les conventions les plus utiles.
+- Documente les cas reconnus et les limites.
+- Intègre le contrat définitif dès sa validation.
+
+Tu ne dois pas attendre que le lecteur PDF soit terminé pour commencer.
+
+Ta priorité est de produire rapidement un premier moteur réel, puis d'améliorer sa robustesse.
+
+---
+
+# SECTION SALIF — CODEX
+
+## 13. Ta mission : infrastructure PDF, contrats et PWA
+
+Tu es Salif.
+
+Tu es responsable de la couche technique commune qui permettra aux deux autres modules d'exploiter les documents.
+
+Ton périmètre proposé :
+
+    src/pdf/
+    src/shared/
+    package.json
+    package-lock.json
+    vite.config.ts
+    index.html
+    public/
+    memoire/journal/salif.md
+
+Les modifications de l'architecture et des contrats suivent les règles spécifiques des fichiers verrouillés.
+
+Tu coordonnes les dépendances communes et la définition des interfaces.
+
+Tu ne développes pas l'algorithme de reconnaissance des corrections.
+
+Tu ne développes pas les interactions utilisateur spécifiques au masquage ou au mécanisme de secours.
+
+### 13.1. Initialisation commune
+
+Le repository existe déjà.
+
+Ta première mission est de lever les blocages administratifs et techniques.
+
+Le sujet Unspoil vient d'être validé par les humains.
+
+Mets à jour la mémoire produit et les tâches avec leur autorisation explicite.
+
+Assure-toi que :
+
+- PRODUIT.md décrit le nouveau périmètre et n'indique plus que le sujet est non choisi.
+- ETAT.md contient les trois tâches et leurs responsables.
+- Les décisions humaines sont inscrites dans DECISIONS.md.
+- Les contrats communs sont proposés, validés puis documentés.
+
+Respecte les procédures du repository concernant les branches et les fusions humaines.
+
+Cette mise à jour commune doit être courte et rapide.
+
+### 13.2. Contrats
+
+Tu es responsable de la coordination des interfaces.
+
+Vérifie le contrat TypeScript proposé dans la section commune.
+
+Identifie immédiatement :
+
+- Les données nécessaires à Hazem.
+- Les données nécessaires à Wael.
+- La convention de coordonnées.
+- Les interfaces du lecteur PDF.
+- La représentation des régions de correction.
+- Les méthodes de rendu.
+- La gestion du chargement et des erreurs.
+
+Communique la proposition aux deux autres membres.
+
+Après validation humaine, publie le contrat sur la branche dédiée et fais-le intégrer rapidement dans main.
+
+Ne modifie pas ensuite les interfaces communes sans prévenir les membres concernés.
+
+### 13.3. Lecteur PDF
+
+Installe une bibliothèque de lecture PDF adaptée au navigateur, prioritairement pdfjs-dist.
+
+Vérifie sa compatibilité avec les versions existantes de React, TypeScript et Vite.
+
+Développe une couche indépendante de l'interface permettant :
+
+- D'ouvrir un PDF local.
+- De récupérer son nombre de pages.
+- De récupérer les dimensions des pages.
+- D'extraire les fragments textuels.
+- De récupérer leur géométrie.
+- De récupérer les informations typographiques réellement disponibles.
+- De fournir un rendu raster pour l'analyse visuelle.
+- De rendre une page sur un canvas.
+- De libérer les ressources lorsqu'un document est fermé.
+
+Le PDF doit rester sur l'appareil.
+
+Ne convertis pas le document en HTML.
+
+### 13.4. Géométrie
+
+Le positionnement correct des masques est indispensable.
+
+Tu dois garantir la cohérence entre :
+
+- Les coordonnées textuelles extraites.
+- Le repère canonique de la page.
+- Les coordonnées des pixels du raster.
+- Les coordonnées CSS de l'affichage.
+
+Les masques doivent rester alignés lorsque :
+
+- Le document est zoomé.
+- La taille de l'écran change.
+- Le document contient plusieurs pages de tailles différentes.
+- Une page possède une rotation.
+- Le téléphone change d'orientation.
+
+Fournis une interface suffisamment simple pour que Wael n'ait pas à réimplémenter les transformations PDF.
+
+Documente clairement les unités.
+
+### 13.5. PWA
+
+La configuration vite-plugin-pwa est déjà présente.
+
+Ne la recrée pas inutilement.
+
+Adapte-la au produit :
+
+- Nom Unspoil.
+- Métadonnées pertinentes.
+- Ressources nécessaires au lecteur PDF.
+- Worker PDF.js.
+- Chemins d'assets compatibles avec le BASE_PATH existant.
+- Fonctionnement sur ordinateur et téléphone.
+
+Vérifie que les ressources indispensables peuvent être utilisées hors ligne après mise en cache.
+
+Si certaines polices, ressources ou fichiers du moteur PDF sont nécessaires, assure-toi qu'ils sont disponibles localement.
+
+Ne revendique pas le fonctionnement hors ligne avant de l'avoir effectivement testé.
+
+### 13.6. Tests
+
+Teste notamment :
+
+- Chargement d'un PDF valide.
+- Gestion d'un fichier invalide.
+- PDF multipage.
+- Extraction du texte.
+- Dimensions des pages.
+- Transformation des coordonnées.
+- Cohérence entre le texte et le canvas.
+- Pages tournées.
+- Génération des données raster.
+- Compilation du projet.
+- Fonctionnement de la PWA.
+
+Utilise des PDF créés par l'équipe ou dont la publication est autorisée.
+
+### 13.7. Démarrage immédiat de Salif
+
+- Lis les règles et l'état du repository.
+- Coordonne la mise à jour des fichiers de mémoire.
+- Propose et fais valider les contrats communs en priorité.
+- Communique immédiatement les interfaces à Hazem et Wael.
+- Crée ta branche de développement, par exemple feat/pdf.
+- Installe et configure PDF.js.
+- Implémente le chargement du PDF.
+- Fournis le premier PageData exploitable.
+- Implémente le rendu canvas et l'accès éventuel aux pixels.
+- Vérifie la compatibilité avec le module de détection et l'interface.
+
+Ne passe pas trop de temps à perfectionner la PWA avant de fournir aux deux autres agents une première infrastructure exploitable.
+
+Ton premier livrable essentiel est un PDF réellement chargé, affiché et représenté sous une forme exploitable par Hazem.
+
+---
+
+# SECTION WAEL — CODEX
+
+## 14. Ta mission : application, interface et expérience utilisateur
+
+Tu es Wael.
+
+Tu es responsable du produit tel qu'il sera effectivement utilisé par l'étudiant.
+
+Tu développes l'interface, le masquage automatique, les interactions de révélation et le mécanisme de secours.
+
+Tu coordonnes l'intégration fonctionnelle des modules de Hazem et Salif dans l'application.
+
+Ton périmètre proposé :
+
+    src/App.tsx
+    src/App.test.tsx
+    src/index.css
+    src/viewer/
+    src/components/
+    memoire/journal/wael.md
+
+Tu ne réimplémentes pas le moteur PDF.
+
+Tu ne réimplémentes pas l'algorithme de détection.
+
+### 14.1. Philosophie UX
+
+Unspoil est un outil simple.
+
+L'utilisateur doit immédiatement comprendre ce qu'il peut faire.
+
+Il ne faut pas créer un dashboard, une multiplication d'écrans ou une interface artificiellement sophistiquée.
+
+Le PDF doit occuper la majeure partie de l'espace disponible.
+
+Les interactions doivent être évidentes.
+
+Les deux fonctionnalités essentielles sont :
+
+- Masquer automatiquement les corrigés.
+- Révéler progressivement le document lorsque nécessaire.
+
+### 14.2. Interface principale
+
+Développe une interface permettant :
+
+- D'importer un PDF.
+- D'accéder au lecteur.
+- De déclencher le bouton « Masquer les corrigés ».
+- D'afficher l'état du traitement.
+- D'afficher les résultats ou les avertissements.
+- D'accéder au mode de révélation progressive.
+
+Les textes doivent être courts et compréhensibles.
+
+Exemples :
+
+- Masquer les corrigés.
+- Afficher le corrigé.
+- Remasquer le corrigé.
+- Révélation progressive.
+- Aucun corrigé n'a été détecté.
+- Ce document n'a pas pu être reconnu automatiquement.
+
+### 14.3. Moteur de masquage
+
+À partir des CorrectionBlock retournés par Hazem :
+
+- Positionner des rectangles blancs opaques sur le document.
+- Associer les rectangles appartenant à un même bloc.
+- Créer un bouton « Afficher le corrigé » par bloc.
+- Gérer l'état masqué ou révélé de chaque bloc.
+- Révéler uniquement le bloc choisi.
+- Permettre son remasquage.
+
+Un bloc constitué de plusieurs rectangles ou situé sur plusieurs pages doit rester une entité logique unique.
+
+Le rendu du document ne doit pas être modifié.
+
+Les masques doivent suivre les transformations du lecteur.
+
+Utilise les conventions géométriques de Salif.
+
+### 14.4. Mécanisme de secours
+
+Il s'agit d'une fonctionnalité fondamentale, et non d'une amélioration facultative.
+
+Développe immédiatement ce mécanisme, puisqu'il est indépendant du détecteur de Hazem.
+
+Le document est couvert par un masque blanc opaque.
+
+Une ligne horizontale manipulable délimite la partie visible et la partie cachée.
+
+Lorsque l'utilisateur déplace cette ligne vers le bas, la partie située au-dessus apparaît.
+
+Lorsqu'il remonte la ligne, le contenu est remasqué.
+
+L'interaction doit être fluide.
+
+Prends en compte :
+
+- Les événements de pointeur.
+- La souris.
+- Le tactile.
+- Le déplacement continu.
+- Les limites de la page.
+- Le zoom.
+- Le défilement.
+- Les documents multipages.
+
+Proposition d'implémentation à évaluer : maintenir une frontière de révélation dans le repère du document, puis calculer pour chaque page la partie visible et la partie couverte.
+
+Les pages situées avant cette frontière sont visibles ; celles situées après restent couvertes.
+
+Tu peux choisir une implémentation plus simple si elle respecte le comportement attendu.
+
+Évite qu'un défilement révèle automatiquement des pages qui devraient rester cachées.
+
+### 14.5. Gestion des différents résultats du détecteur
+
+Pour mixed :
+
+- Afficher les questions.
+- Masquer les blocs de correction.
+- Permettre leur révélation individuelle.
+
+Pour statement_only :
+
+- Afficher « Aucun corrigé n'a été détecté ».
+- Ne pas créer de masques arbitraires.
+
+Pour correction_only :
+
+- Maintenir les corrections couvertes.
+- Permettre leur révélation par question.
+
+Pour unknown :
+
+- Afficher un avertissement.
+- Proposer ou activer le mécanisme de secours.
+
+Si needsFallback est vrai, présenter clairement la possibilité de révélation progressive.
+
+Même lorsque le détecteur considère avoir reconnu un document, l'utilisateur doit pouvoir basculer manuellement vers le mode de secours.
+
+### 14.6. Responsive design
+
+L'expérience doit fonctionner sur ordinateur et téléphone.
+
+Privilégie :
+
+- Un document occupant la largeur disponible.
+- Des boutons suffisamment grands au tactile.
+- Une barre d'actions simple.
+- Une interface lisible.
+- Des contrastes suffisants.
+- Une navigation clavier lorsque pertinente.
+
+Ne produis pas une application mobile distincte.
+
+L'interface responsive existante est celle de la PWA.
+
+### 14.7. Développer sans attendre les autres
+
+Utilise des données fictives représentant :
+
+- Une page de PDF.
+- Plusieurs blocs de correction.
+- Des blocs multipages.
+- Un sujet sans corrigé.
+- Un corrigé seul.
+- Un format inconnu.
+
+Développe le moteur de masquage et le mécanisme de secours indépendamment du vrai lecteur.
+
+Utilise temporairement une page de démonstration ou un composant fictif reproduisant les dimensions d'une page.
+
+Les mocks sont uniquement des outils de développement.
+
+Ils ne doivent pas être présentés comme une détection automatique réelle.
+
+Remplace-les par les résultats du vrai moteur lors de l'intégration.
+
+### 14.8. Tests
+
+Teste notamment :
+
+- Un clic sur « Afficher le corrigé » révèle le bon bloc.
+- Les autres corrections restent cachées.
+- Le remasquage fonctionne.
+- Les masques sont opaques.
+- Plusieurs rectangles d'un même bloc sont révélés ensemble.
+- Le changement de taille ne décale pas les masques.
+- Le mécanisme de secours démarre avec le contenu caché.
+- Le déplacement du trait révèle uniquement le contenu attendu.
+- Le trait peut être remonté.
+- Les pages suivantes restent couvertes.
+- L'interface réagit correctement aux quatre types de documents.
+- Les interactions principales sont utilisables sur téléphone.
+
+Vérifie également qu'une erreur de chargement ou de détection n'entraîne pas un affichage accidentel du corrigé.
+
+### 14.9. Démarrage immédiat de Wael
+
+- Lis les règles et l'état du repository.
+- Crée ta branche, par exemple feat/viewer.
+- Communique à Salif les besoins exacts du lecteur et des coordonnées.
+- Crée un premier composant représentant une page.
+- Implémente les masques blancs à partir de données fictives.
+- Implémente la révélation indépendante des blocs.
+- Implémente le mécanisme de secours.
+- Développe le parcours d'importation et les états de l'interface.
+- Intègre progressivement les vrais modules de Salif et Hazem.
+- Teste le parcours complet sur ordinateur et téléphone.
+
+Tu peux commencer immédiatement sans attendre le détecteur ni le lecteur définitif.
+
+---
+
+# CONSIGNES FINALES COMMUNES
+
+## 15. Parallélisation et intégration
+
+La stratégie de développement est la suivante :
+
+Pendant que Salif développe le lecteur PDF, Hazem travaille sur des données documentaires fictives et Wael sur des pages fictives.
+
+Une fois le premier contrat commun validé, chacun adapte son module à ce contrat.
+
+Une fois le premier PDF chargé par Salif :
+
+- Hazem peut tester son moteur sur les vraies données extraites.
+- Wael peut afficher le vrai document avec des régions fictives.
+
+Une fois le premier détecteur disponible :
+
+- Wael remplace les régions fictives par les résultats réels.
+- Salif vérifie la cohérence du rendu et des coordonnées.
+- Hazem poursuit l'amélioration de son algorithme.
+
+Cette organisation doit permettre d'obtenir rapidement une version intégrée sans attendre que chaque module soit parfait.
+
+## 16. Priorités collectives
+
+P0 :
+
+- Import et affichage d'un vrai PDF.
+- Mécanisme de secours fonctionnel.
+- Premier détecteur déterministe.
+- Masques blancs correctement positionnés.
+- Révélation indépendante des blocs.
+- Gestion des trois types de documents et des formats inconnus.
+- PWA fonctionnelle.
+- Repository exécutable et documenté.
+
+P1 :
+
+- Amélioration du rappel et de la précision de la détection.
+- Reconnaissance de davantage de conventions.
+- Robustesse des documents complexes.
+- Amélioration de l'ergonomie.
+- Tests sur davantage de PDF.
+
+Aucune nouvelle fonctionnalité indépendante de ce périmètre ne doit être ajoutée.
+
+## 17. Critères d'acceptation
+
+Le produit est fonctionnel si nous pouvons réellement démontrer les scénarios suivants.
+
+### Scénario 1
+
+Importer une annale contenant des questions suivies de leurs corrections.
+
+Cliquer sur « Masquer les corrigés ».
+
+Les questions restent visibles.
+
+Les corrections sont couvertes par des masques blancs.
+
+Cliquer sur « Afficher le corrigé » révèle uniquement la correction correspondante.
+
+### Scénario 2
+
+Importer un corrigé sans énoncé.
+
+Les corrections sont masquées.
+
+Lorsque la numérotation est reconnue, chaque correction peut être révélée indépendamment.
+
+### Scénario 3
+
+Importer un sujet sans corrigé.
+
+Le logiciel affiche « Aucun corrigé n'a été détecté » lorsqu'il reconnaît suffisamment cette configuration.
+
+### Scénario 4
+
+Importer un document dont la structure n'est pas reconnue.
+
+Activer la révélation progressive.
+
+Le document est initialement couvert.
+
+Faire glisser le trait permet de découvrir progressivement le contenu.
+
+Le contenu situé après le trait reste masqué.
+
+### Scénario 5
+
+Utiliser l'application sur ordinateur et téléphone.
+
+Vérifier le fonctionnement de la PWA et, après mise en cache des ressources nécessaires, tester réellement son utilisation hors ligne.
+
+## 18. Utilisation efficace des agents
+
+Tu dois économiser ton contexte et tes ressources.
+
+- Lis les fichiers pertinents plutôt que l'intégralité du repository à chaque opération.
+- Utilise les conventions existantes.
+- Évite les refactorisations inutiles.
+- Ne génère pas une documentation disproportionnée.
+- Commence par les tests ciblés.
+- Utilise npm run check conformément aux règles du dépôt avant les commits.
+- Utilise npm run build pour vérifier le build de production.
+- Signale immédiatement les dépendances bloquantes.
+- Ne demande pas de validation pour chaque décision locale mineure et réversible.
+- Demande une validation humaine pour les décisions globales ou les modifications de fichiers verrouillés.
+- Ne répète pas le prompt dans tes réponses.
+
+Lorsque tu dois communiquer une information aux autres membres, utilise le format suivant :
+
+À TRANSMETTRE À L'ÉQUIPE
+
+- Auteur :
+- Information ou décision proposée :
+- Modules concernés :
+- Contrat affecté :
+- Action attendue :
+- Bloquant : oui/non.
+
+Maintiens la mémoire existante du repository de manière concise.
+
+## 19. Instruction de lancement
+
+Le prénom ajouté après ce prompt identifie ta mission.
+
+Tu dois maintenant :
+
+1. Exécuter le protocole de début de session du repository.
+2. Vérifier l'état réel du code et de ta branche.
+3. Identifier les fichiers dont tu es responsable.
+4. Donner un plan opérationnel très court.
+5. Signaler immédiatement les interfaces à coordonner.
+6. Commencer les modifications concrètes sur les parties indépendantes de ton module.
+7. Respecter les validations humaines nécessaires pour les fichiers communs.
+8. Exécuter les tests pertinents.
+9. Avancer jusqu'à obtenir une première fonctionnalité testable.
+
+N'attends pas que les deux autres agents aient terminé.
+
+Ne cherche pas à réaliser seul l'intégralité du projet.
+
+Ne recommence pas le brainstorming.
+
+Notre hackathon commence maintenant.
+
+# ADDENDUM — COLLABORATION AUTONOME ET SYNCHRONISATION MULTI-AGENTS
+
+## 1. Objectif
+
+Nous voulons automatiser au maximum la collaboration entre nos trois agents :
+
+- Hazem : Claude Code, détection déterministe.
+- Salif : Codex, infrastructure PDF et PWA.
+- Wael : Codex, interface et interactions.
+
+Les humains ne doivent pas servir de messagers entre les agents.
+
+Nous voulons éviter les interventions manuelles répétitives concernant Git, les commits, les push, les Pull Requests, les tests, les synchronisations et la disponibilité des modules.
+
+GitHub et la mémoire versionnée du repository constituent notre canal de communication commun.
+
+## 2. Modification des règles communes
+
+Les règles actuelles d'AGENTS.md imposent notamment une validation humaine des fusions dans main.
+
+Nous souhaitons assouplir cette règle pour autoriser les fusions automatisées de changements ordinaires, après validation collective de ce nouveau protocole.
+
+Salif est chargé de préparer cette modification dans une branche dédiée, en respectant le processus de modification des fichiers verrouillés.
+
+Il doit :
+
+- Incrémenter la version des règles.
+- Actualiser les passages contradictoires d'AGENTS.md et de memoire/INDEX.md.
+- Vérifier les permissions et protections GitHub.
+- Documenter précisément les conditions des fusions automatisées.
+- Faire valider le nouveau protocole par les humains.
+- Faire intégrer cette modification rapidement.
+- Indiquer aux autres membres de relancer leurs sessions conformément aux règles du repository.
+
+En attendant cette validation, les règles existantes restent applicables.
+
+Ne modifie pas unilatéralement les paramètres de sécurité GitHub.
+
+## 3. Autonomie opérationnelle
+
+Une fois les autorisations nécessaires accordées, tu es autorisé à réaliser sans demander une confirmation humaine supplémentaire pour chaque opération :
+
+- Git fetch.
+- Inspection des changements distants.
+- Intégration de main dans ta branche.
+- Installation des dépendances validées.
+- Création de commits sur ta branche.
+- Push sur ta branche.
+- Création et actualisation des Pull Requests.
+- Exécution des tests.
+- Consultation des résultats de la CI.
+- Correction des erreurs appartenant à ton périmètre.
+- Mise à jour de ta section de la mémoire.
+- Reprise d'une tâche dont les dépendances sont devenues disponibles.
+- Fusion conditionnelle de tes PR ordinaires, uniquement après validation du nouveau protocole de fusion.
+
+Utilise les autorisations ciblées de ton environnement d'exécution. Ne désactive pas globalement les mécanismes de sécurité.
+
+Ne demande pas à l'humain d'effectuer une opération que tes outils et tes permissions te permettent d'effectuer directement.
+
+## 4. GitHub comme canal de communication
+
+Chaque agent doit publier régulièrement ses avancées exploitables.
+
+Ne conserve pas plusieurs heures de travail uniquement sur ta machine.
+
+Pour chaque jalon significatif :
+
+1. Termine une unité de travail cohérente.
+2. Exécute les tests pertinents.
+3. Vérifie le diff.
+4. Mets à jour ton journal et ton bloc de tâche.
+5. Commit.
+6. Push.
+7. Crée ou actualise la Pull Request.
+8. Vérifie la CI.
+9. Procède à la fusion si tu disposes de l'autorisation et que toutes les conditions sont réunies.
+10. Poursuis immédiatement la tâche suivante.
+
+Utilise les fichiers de mémoire existants. Ne crée pas une deuxième infrastructure de communication.
+
+Dans ton journal, indique clairement :
+
+- Le jalon disponible.
+- Les fonctionnalités exportées.
+- Les fichiers concernés.
+- Les tests réalisés.
+- Le niveau de maturité.
+- Les modules qui peuvent désormais utiliser cette livraison.
+
+Un module partiellement implémenté mais testé peut constituer une livraison utile.
+
+## 5. Synchronisation automatique
+
+Effectue un contrôle de l'état distant :
+
+- Au démarrage.
+- Avant chaque tâche significative.
+- Avant chaque push.
+- Avant chaque intégration.
+- Lorsqu'une dépendance devient nécessaire.
+- Après une longue phase de développement.
+
+Procédure :
+
+1. Vérifie ta branche et tes modifications locales.
+2. Exécute git fetch origin.
+3. Inspecte les nouveaux commits et fichiers.
+4. Détermine si origin/main contient de nouvelles modifications pertinentes.
+5. Sauvegarde proprement tes modifications locales si nécessaire.
+6. Intègre origin/main dans ta branche conformément aux règles Git.
+7. Actualise les dépendances uniquement si nécessaire.
+8. Relis les contrats affectés.
+9. Exécute les tests pertinents.
+10. Reprends immédiatement ton travail.
+
+Ne réalise pas un pull à l'aveugle.
+
+Ne supprime pas de modifications locales.
+
+N'utilise pas force-push, reset --hard ou une autre commande destructive.
+
+Si une intégration révèle un conflit complexe sur un fichier appartenant à un autre agent, signale précisément le conflit et travaille sur une tâche indépendante en attendant sa résolution.
+
+## 6. Fusion conditionnelle
+
+Une fois la nouvelle politique approuvée par les humains, utilise GitHub CLI si disponible.
+
+La fusion d'une PR ordinaire dans main est autorisée seulement si :
+
+- Elle concerne ton périmètre.
+- Elle ne modifie aucun fichier verrouillé sans autorisation.
+- Elle ne contient pas de conflit.
+- Les tests locaux pertinents réussissent.
+- La CI GitHub a terminé avec succès sur la version exacte du code à fusionner.
+- La PR respecte les contrats communs.
+- Les protections et éventuelles exigences de revue GitHub sont satisfaites.
+- L'échéance du hackathon n'est pas dépassée.
+- L'équipe n'a pas annoncé l'arrêt des modifications.
+
+La CI existante vérifie le typage, le lint, le formatage, les tests et le build.
+
+Vérifie les résultats effectifs. L'existence d'un workflow ne garantit pas que son succès est obligatoire pour fusionner.
+
+Avant une fusion :
+
+- Récupère l'état actuel de main.
+- Vérifie que la branche est à jour conformément à la politique retenue.
+- Vérifie que le commit testé est bien le commit à fusionner.
+
+Si nécessaire, utilise l'option --match-head-commit de GitHub CLI pour éviter de fusionner un commit différent de celui qui a été vérifié.
+
+Ne contourne jamais une protection avec des privilèges administrateur.
+
+N'active pas une fusion différée susceptible de se déclencher après l'échéance.
+
+Privilégie une fusion immédiate et conditionnelle une fois la CI terminée.
+
+Si une fusion nécessite malgré tout une intervention humaine, formule une seule demande précise avec le lien de la PR et les résultats des vérifications.
+
+## 7. Gestion dynamique des dépendances
+
+Une dépendance bloquante n'est pas une raison pour terminer ta session ou attendre passivement.
+
+Lorsque tu as besoin d'un module développé par un autre agent :
+
+1. Vérifie sa disponibilité réelle sur origin/main.
+2. Consulte les derniers commits et le journal du responsable.
+3. Vérifie si le contrat ou la fonctionnalité nécessaire existe déjà.
+4. Si elle est disponible, synchronise ta branche, intègre-la et poursuis.
+5. Sinon, identifie immédiatement une tâche indépendante.
+
+Ordre de priorité des tâches indépendantes :
+
+- Développement sur des mocks compatibles avec le contrat commun.
+- Tests unitaires.
+- Gestion des cas limites.
+- Création de fixtures synthétiques.
+- Amélioration de la robustesse.
+- Documentation strictement nécessaire.
+- Préparation de l'intégration.
+
+Ne réimplémente pas entièrement un module appartenant à un autre agent.
+
+Ne modifie pas les contrats communs pour contourner temporairement une dépendance.
+
+## 8. Attente active en dernier recours
+
+Si toutes les tâches indépendantes utiles sont terminées et qu'une dépendance précise bloque réellement la suite :
+
+- Identifie exactement le jalon attendu.
+- Vérifie sa disponibilité dans GitHub.
+- Maintiens la session active, si ton environnement le permet.
+- Utilise une attente au premier plan, bornée, avec vérification distante toutes les 30 à 60 secondes.
+- Utilise une commande shell pour attendre plutôt qu'une succession de raisonnements IA inutiles.
+- Dès que le jalon est disponible, synchronise ta branche et reprends automatiquement la tâche.
+- N'utilise pas de boucle intensive consommant inutilement des ressources.
+
+Cette attente doit avoir une durée maximale raisonnable et respecter l'heure d'arrêt commune.
+
+Ne lance pas de processus détaché, de tâche différée ou d'automatisation susceptible de modifier le dépôt après l'échéance.
+
+Si ton environnement termine la session, refuse l'attente ou ne permet pas une reprise automatique, indique clairement cette limitation. Ne prétends pas pouvoir surveiller GitHub alors que tu es inactif.
+
+## 9. Jalons intermédiaires
+
+### Salif
+
+S1 — Contrats communs validés et disponibles.
+
+S2 — Chargement PDF, dimensions et extraction textuelle fonctionnels.
+
+S3 — Rendu des pages, coordonnées et accès aux données visuelles.
+
+S4 — PWA et vérifications techniques finales.
+
+Hazem doit pouvoir exploiter S2 sans attendre S4.
+
+Wael doit pouvoir exploiter S3 sans attendre S4.
+
+### Hazem
+
+H1 — Premier détecteur fonctionnel sur des conventions simples.
+
+H2 — Classification des documents et segmentation des corrections.
+
+H3 — Amélioration de la robustesse et reconnaissance de conventions supplémentaires.
+
+Wael doit pouvoir intégrer H1 sans attendre H3.
+
+Les améliorations ultérieures doivent conserver les interfaces communes.
+
+### Wael
+
+W1 — Masques blancs et révélation individuelle sur données fictives.
+
+W2 — Mécanisme de secours fonctionnel avec un trait déplaçable.
+
+W3 — Intégration du vrai lecteur PDF dès que S3 est disponible.
+
+W4 — Intégration du premier détecteur dès que H1 est disponible.
+
+W5 — Tests complets, ergonomie et gestion des cas limites.
+
+Wael peut commencer W1 et W2 immédiatement, indépendamment de Salif et Hazem.
+
+## 10. Stratégie de réduction du temps mort
+
+Maintiens une liste ordonnée de tâches restantes.
+
+Dès qu'une tâche est terminée :
+
+1. Publie son résultat exploitable.
+2. Vérifie les dépendances devenues disponibles.
+3. Sélectionne la prochaine tâche utile.
+4. Exécute-la immédiatement.
+
+Ne termine pas ta réponse après avoir simplement annoncé qu'une dépendance est manquante si d'autres tâches sont réalisables.
+
+Ne demande pas « souhaites-tu que je continue ? » alors qu'il reste des tâches clairement définies dans ton périmètre.
+
+Ne produis pas de compte rendu interminable entre deux opérations.
+
+Ne relis pas l'ensemble du repository après chaque synchronisation. Inspecte les changements pertinents.
+
+## 11. Gestion des ressources IA
+
+Ne consomme pas inutilement de tokens pour surveiller GitHub.
+
+Utilise des commandes déterministes pour :
+
+- Vérifier les commits.
+- Consulter les Pull Requests.
+- Consulter la CI.
+- Comparer les branches.
+- Identifier la disponibilité d'un fichier ou d'une interface.
+
+Réserve le raisonnement IA à la programmation, au débogage, aux décisions techniques et aux cas complexes.
+
+## 12. Arrêt obligatoire
+
+L'échéance officielle est le samedi 28 novembre 2026 à 13 h, heure de Paris.
+
+Avant chaque action susceptible de modifier le repository distant, vérifie que l'heure limite n'est pas dépassée et que l'équipe n'a pas annoncé l'arrêt des modifications.
+
+L'équipe peut décider d'arrêter plus tôt.
+
+Aucune modification, fusion, automatisation différée ou reprise automatique ne doit intervenir après l'arrêt.
+
+## 13. Instruction immédiate
+
+Applique ce protocole en complément de ta mission individuelle.
+
+Commence directement par les tâches réalisables dans ton périmètre.
+
+Publie fréquemment tes jalons.
+
+Récupère automatiquement les avancées des autres agents.
+
+Ne laisse pas une dépendance te bloquer si une autre tâche utile est réalisable.
+
+Ne sollicite les humains que pour les autorisations indispensables, les décisions collectives, les conflits complexes ou les véritables blocages.
+
+L'objectif est que les trois agents avancent simultanément, s'intègrent continuellement et nécessitent le minimum d'interventions humaines.
