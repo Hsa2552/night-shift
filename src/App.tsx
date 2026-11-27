@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import type { PdfDocument } from './pdf'
 import type { PageData, PageDimensions } from './shared/types'
+import { clipCorrectionBlocks } from './viewer/correctionGeometry'
 import { DocumentViewer } from './viewer/DocumentViewer'
 import type { ViewerMode } from './viewer/DocumentViewer'
 import { PdfCanvas } from './viewer/PdfCanvas'
@@ -67,8 +68,12 @@ export default function App() {
       currentPdf.current = pdf
       const pages: PageDimensions[] = []
       for (let index = 0; index < pdf.pageCount; index += 1) {
-        pages.push(await pdf.getPageDimensions(index))
+        const page = await pdf.getPageDimensions(index)
         if (request !== revision.current) return
+        if (![page.width, page.height].every((size) => Number.isFinite(size) && size > 0)) {
+          throw new Error('Dimensions de page invalides')
+        }
+        pages.push(page)
       }
       if (pages.length === 0) throw new Error('Document vide')
       setDocument({ id: request, name: file.name, pdf, pages })
@@ -109,7 +114,7 @@ export default function App() {
       setWarnings(result.warnings)
 
       if (result.kind === 'unknown' || result.needsFallback) {
-        setMessage('La détection est incertaine. La révélation progressive est activée.')
+        setMessage('La détection est incertaine. Fais glisser le trait pour découvrir le document.')
         setMode({ kind: 'progressive' })
         return
       }
@@ -120,15 +125,18 @@ export default function App() {
         return
       }
 
-      if (result.blocks.length === 0) {
-        setMessage('Aucun bloc exploitable. La révélation progressive est activée.')
+      const blocks = clipCorrectionBlocks(result.blocks, document.pages)
+      if (!blocks?.length) {
+        setMessage(
+          'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
+        )
         setMode({ kind: 'progressive' })
         return
       }
 
-      const count = result.blocks.length
+      const count = blocks.length
       setMessage(count === 1 ? '1 bloc de corrigé détecté.' : `${count} blocs de corrigé détectés.`)
-      setMode({ kind: 'automatic', blocks: result.blocks })
+      setMode({ kind: 'automatic', blocks })
     } catch {
       if (request !== revision.current) return
       setError('L’analyse a échoué. La révélation progressive reste disponible.')
@@ -147,13 +155,14 @@ export default function App() {
     setMode({ kind: 'progressive' })
   }
 
-  const status =
-    busy === 'opening'
-      ? 'Ouverture du PDF…'
-      : busy === 'detecting'
-        ? 'Analyse du PDF…'
-        : message ||
-          (mode.kind === 'progressive' ? 'Fais glisser le trait pour découvrir le document.' : '')
+  let status = message
+  if (busy === 'opening') status = 'Ouverture du PDF…'
+  else if (busy === 'detecting') status = 'Analyse du PDF…'
+  else if (!message && mode.kind === 'progressive') {
+    status = 'Fais glisser le trait pour découvrir le document.'
+  } else if (!message && !error && document && mode.kind === 'covered') {
+    status = 'Le PDF est couvert. Choisis comment le découvrir.'
+  }
 
   return (
     <div className="unspoil">

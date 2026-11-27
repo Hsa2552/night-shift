@@ -78,17 +78,32 @@ export function DocumentViewer({ pages, mode, renderPage }: DocumentViewerProps)
           >
             {actions && (
               <div className="pdf-viewer-actions">
-                {actions.map(({ block, label }) => (
-                  <button key={block.id} type="button" onClick={() => toggleBlock(block.id)}>
-                    {revealed.has(block.id) ? 'Remasquer le corrigé' : 'Afficher le corrigé'} —{' '}
-                    {label}
-                  </button>
-                ))}
+                {actions.map(({ block, label }) => {
+                  const isRevealed = revealed.has(block.id)
+                  const action = isRevealed ? 'Remasquer le corrigé' : 'Afficher le corrigé'
+                  return (
+                    <button
+                      key={block.id}
+                      type="button"
+                      aria-label={`${action} — ${label}`}
+                      data-revealed={isRevealed ? true : undefined}
+                      onClick={() => toggleBlock(block.id)}
+                    >
+                      <span className="pdf-viewer-block-label">{label}</span>
+                      <span className="pdf-viewer-block-action">{action}</span>
+                    </button>
+                  )
+                })}
               </div>
             )}
             <div
               className="pdf-viewer-page"
               data-page-position={index}
+              data-fully-covered={
+                mode.kind === 'covered' || (mode.kind === 'progressive' && visible === 0)
+                  ? true
+                  : undefined
+              }
               style={{ aspectRatio: `${page.width} / ${page.height}` }}
             >
               {renderPage(page)}

@@ -30,3 +30,9 @@
 - Fusionné `origin/main` (`362ef0e`) dans `feat/viewer` après la fusion des PR #7 (contrat C1), #4 (lecteur) et #6 (détecteur). Résolution de `QUALITE.md` en conservant les entrées des trois contributeurs.
 - `App` utilise `openPdf` et `detectCorrections` de `main`. Les doubles de test d’`App.test.tsx` servent aux erreurs et aux réponses asynchrones contrôlées.
 - Vérifié sur la branche intégrée : `npm run check` (97 tests) et build de production sous Ubuntu, avec le service worker généré pour `/night-shift/`.
+
+### 27/11 23:03 · SESSION · T-WB-1 (masques et commandes) · Codex
+
+- Les rectangles valides sont limités à la page. Si un bloc contient une région non affichable, le document reste couvert et la révélation progressive prend le relais. Le canvas d’une page totalement couverte est aussi masqué en CSS.
+- Les commandes affichent le libellé du bloc sur une ligne distincte de l’action. Elles restent hors du PDF et se répartissent en grille selon la largeur de la page.
+- Vérifié : `npm run check` (101 tests), build Ubuntu et parcours Edge sur huit PDF synthétiques, écran mobile émulé à 390 px et mode hors ligne. L’alignement ne change pas avec la largeur. Le trait du graphique dans `mixte.pdf` reste visible en dehors de la région détectée (Q-27-2233-WB).

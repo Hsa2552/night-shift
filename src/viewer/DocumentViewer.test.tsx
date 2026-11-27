@@ -37,6 +37,7 @@ describe('lecteur', () => {
   it('couvre chaque page avant la sélection du mode de lecture', () => {
     render(<DocumentViewer pages={pages} mode={{ kind: 'covered' }} renderPage={renderPage} />)
     expect(screen.getAllByTestId('page-cover')).toHaveLength(2)
+    expect(document.querySelectorAll('[data-fully-covered]')).toHaveLength(2)
     expect(screen.queryByRole('slider')).toBeNull()
   })
 

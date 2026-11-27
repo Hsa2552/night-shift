@@ -107,11 +107,50 @@ describe('Unspoil', () => {
       })
       await importDocument()
       startAnalysis()
-      await screen.findByText('La détection est incertaine. La révélation progressive est activée.')
+      await screen.findByText(
+        'La détection est incertaine. Fais glisser le trait pour découvrir le document.',
+      )
       expect(screen.getByText('Une page ne contient pas de texte.')).toBeTruthy()
       expect(screen.getByTestId('progressive-mask').style.top).toBe('0%')
     },
   )
+
+  it('contient les rectangles partiellement hors page dans les limites du PDF', async () => {
+    detect.mockResolvedValue({
+      kind: 'mixed',
+      blocks: [
+        { ...block, regions: [{ pageIndex: 0, bbox: { x: -20, y: 540, width: 100, height: 90 } }] },
+      ],
+      warnings: [],
+      needsFallback: false,
+    })
+    await importDocument()
+    startAnalysis()
+    const mask = await screen.findByTestId('correction-mask')
+    expect(mask.style.left).toBe('0%')
+    expect(mask.style.top).toBe('90%')
+    expect(mask.style.width).toBe('20%')
+    expect(mask.style.height).toBe('10%')
+  })
+
+  it.each([
+    { ...block, regions: [{ ...block.regions[0], pageIndex: 6 }] },
+    { ...block, regions: [{ pageIndex: 0, bbox: { x: 500, y: 20, width: 20, height: 20 } }] },
+    { ...block, id: 'invalide', regions: [] },
+  ])('couvre tout le PDF si un bloc ne peut pas être placé ($regions)', async (invalid) => {
+    detect.mockResolvedValue({
+      kind: 'mixed',
+      blocks: [block, { ...invalid, id: 'zone-invalide' }],
+      warnings: [],
+      needsFallback: false,
+    })
+    await importDocument()
+    startAnalysis()
+    await screen.findByText(/Les masques ne peuvent pas être placés/)
+    expect(screen.getByTestId('progressive-mask').style.top).toBe('0%')
+    expect(screen.queryByTestId('correction-mask')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Afficher le corrigé/ })).toBeNull()
+  })
 
   it('garde le document couvert si l’extraction échoue et permet la révélation progressive', async () => {
     const pdf = fakePdf()
