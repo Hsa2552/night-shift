@@ -21,8 +21,8 @@
 - Responsable : Wael · Agent : Codex · Branche : `feat/viewer`
 - Dépend de : rendu canvas et repère canonique de Salif (S3), détecteur de Hazem (H1)
 - Critères d'acceptation : masquer les corrigés et les révéler par bloc, proposer une lecture progressive multipage au tactile, gérer les quatre types de document et garder le PDF couvert en cas d'erreur.
-- Maturité : W1 et W2 testés sur des pages synthétiques. W3 à W5 à poursuivre avec les modules réels.
-- Notes : `memoire/journal/wael.md`.
+- Maturité : intégrée et vérifiée en local avec les modules PDF et détection. W5 vérifié dans Edge sur ordinateur et en émulation mobile.
+- Blocage : la PR de l’interface dépend de l’intégration des PR #4 (PDF) et #6 (détection) dans `main`. Vérification sur téléphone physique à faire. Voir `memoire/journal/wael.md`.
 
 ### T00 · Choisir le sujet
 

@@ -127,7 +127,7 @@ export default function App() {
       }
 
       const count = result.blocks.length
-      setMessage(count === 1 ? '1 bloc de corrigé masqué.' : `${count} blocs de corrigé masqués.`)
+      setMessage(count === 1 ? '1 bloc de corrigé détecté.' : `${count} blocs de corrigé détectés.`)
       setMode({ kind: 'automatic', blocks: result.blocks })
     } catch {
       if (request !== revision.current) return

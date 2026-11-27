@@ -72,7 +72,7 @@ describe('Unspoil', () => {
       await importDocument()
       startAnalysis()
       expect(screen.getByTestId('page-cover')).toBeTruthy()
-      await screen.findByText('1 bloc de corrigé masqué.')
+      await screen.findByText('1 bloc de corrigé détecté.')
       expect(screen.queryByTestId('page-cover')).toBeNull()
       expect(screen.getByTestId('correction-mask')).toBeTruthy()
       fireEvent.click(screen.getByRole('button', { name: /Afficher le corrigé/ }))
