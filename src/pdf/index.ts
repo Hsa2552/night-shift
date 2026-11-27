@@ -121,11 +121,13 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
     renderPage,
     async getRaster(pageIndex) {
       const canvas = globalThis.document.createElement('canvas')
+      // Initialize before PDF.js so its opaque canvas context does not introduce
+      // colored subpixel edges around black text in the pixels used for detection.
+      const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true })
+      if (!context) throw new Error('Le contexte canvas 2D est indisponible.')
       try {
         await renderPage(pageIndex, canvas, { pixelRatio: 1 })
         const { width, height } = canvas
-        const context = canvas.getContext('2d')
-        if (!context) throw new Error('Le contexte canvas 2D est indisponible.')
         return { width, height, rgba: context.getImageData(0, 0, width, height).data }
       } finally {
         canvas.width = 0

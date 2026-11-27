@@ -15,3 +15,9 @@
 ### 27/11 · SESSION · T-S-1 dimensions seules pour la révélation progressive · Codex
 
 - PR #4. `getPageDimensions(index)` renvoie `{ pageIndex, width, height }` dans le repère canonique, sans extraction du texte. Wael peut construire le lecteur couvert et activer la révélation progressive avant toute analyse.
+
+### 27/11 · SESSION · T-S-1 vérification croisée · Codex
+
+- Les branches de Hazem (`dca91b3`) et de Wael (`992e8fb`) fonctionnent avec le lecteur dans un montage temporaire. Edge classe correctement les huit PDF de test de Hazem hors ligne. Le canvas de visualisation et les masques restent alignés après redimensionnement à 390 px.
+- Le raster d'analyse utilise un contexte RGBA pour préserver la neutralité du texte noir et permettre le détecteur couleur. Voir `QUALITE.md` V-27-2226-S.
+- La CI de la PR #4 a validé `ee2107d`. L'accord humain sur le contrat verrouillé reste attendu. La proposition de fusion conditionnelle est en revue collective dans la PR brouillon #5.
