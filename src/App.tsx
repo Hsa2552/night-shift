@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ChangeEvent } from 'react'
 import { Brand, ThemeToggle } from './components/Brand'
+import { FileInput, Home } from './components/Home'
 import type { PdfDocument } from './pdf'
 import type { PageData, PageDimensions } from './shared/types'
 import { clipCorrectionBlocks } from './viewer/correctionGeometry'
@@ -23,6 +23,7 @@ export default function App() {
   const [document, setDocument] = useState<OpenDocument>()
   const [mode, setMode] = useState<ViewerMode>({ kind: 'covered' })
   const [busy, setBusy] = useState<'opening' | 'detecting'>()
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [message, setMessage] = useState('')
   const [warnings, setWarnings] = useState<string[]>([])
   const [error, setError] = useState('')
@@ -37,11 +38,20 @@ export default function App() {
     }
   }, [])
 
-  async function importPdf(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0]
-    event.currentTarget.value = ''
-    if (!file) return
+  function returnHome() {
+    revision.current += 1
+    if (currentPdf.current) closePdf(currentPdf.current)
+    currentPdf.current = null
+    setDocument(undefined)
+    setPendingFile(null)
+    setBusy(undefined)
+    setMode({ kind: 'covered' })
+    setMessage('')
+    setWarnings([])
+    setError('')
+  }
 
+  async function importPdf(file: File) {
     const request = ++revision.current
     if (currentPdf.current) closePdf(currentPdf.current)
     currentPdf.current = null
@@ -50,6 +60,7 @@ export default function App() {
     setMessage('')
     setWarnings([])
     setError('')
+    setPendingFile(null)
 
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
       setBusy(undefined)
@@ -58,6 +69,7 @@ export default function App() {
     }
 
     setBusy('opening')
+    setPendingFile(file)
     try {
       const { openPdf } = await import('./pdf')
       if (request !== revision.current) return
@@ -78,15 +90,20 @@ export default function App() {
       }
       if (pages.length === 0) throw new Error('Document vide')
       setDocument({ id: request, name: file.name, pdf, pages })
-    } catch {
+    } catch (cause) {
       if (request !== revision.current) return
       if (currentPdf.current) closePdf(currentPdf.current)
       currentPdf.current = null
       setError(
-        'Impossible d’ouvrir ce PDF. Vérifie qu’il s’ouvre et ne demande pas de mot de passe.',
+        cause instanceof Error && cause.name === 'PasswordException'
+          ? 'Ce PDF est protégé par un mot de passe. Importe une copie déverrouillée.'
+          : 'Impossible d’ouvrir ce PDF. Vérifie que le fichier s’ouvre, puis réessaie.',
       )
     } finally {
-      if (request === revision.current) setBusy(undefined)
+      if (request === revision.current) {
+        setBusy(undefined)
+        setPendingFile(null)
+      }
     }
   }
 
@@ -166,23 +183,32 @@ export default function App() {
   }
 
   return (
-    <div className="unspoil">
+    <div
+      className="unspoil"
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes('Files')) event.preventDefault()
+      }}
+      onDrop={(event) => {
+        if (event.dataTransfer.types.includes('Files')) event.preventDefault()
+      }}
+    >
+      <a className="skip-link" href="#main-content">
+        Aller au contenu
+      </a>
       <header className="unspoil-header">
-        <Brand />
-        <ThemeToggle />
+        <div className="site-header-inner">
+          <Brand onHome={document ? returnHome : undefined} />
+          <div className="site-header-controls">
+            {!document && <a href="#fonctionnement">Comment ça marche</a>}
+            <ThemeToggle />
+          </div>
+        </div>
       </header>
-      <main className="unspoil-main">
-        <section className={document ? 'unspoil-toolbar' : 'unspoil-import'}>
-          {document ? (
+      {document ? (
+        <main className="unspoil-main" id="main-content" tabIndex={-1}>
+          <section className="unspoil-toolbar">
             <h1 className="unspoil-filename">{document.name}</h1>
-          ) : (
-            <>
-              <h1>Révise sans voir les corrigés.</h1>
-              <p>Importe une annale ou une feuille d’exercices au format PDF.</p>
-            </>
-          )}
-          <div className="unspoil-actions">
-            {document && (
+            <div className="unspoil-actions">
               <>
                 <button
                   className="unspoil-button unspoil-button-primary"
@@ -202,37 +228,36 @@ export default function App() {
                   Révélation progressive
                 </button>
               </>
-            )}
-            <label className={`unspoil-button${document ? '' : ' unspoil-button-primary'}`}>
-              <input type="file" accept="application/pdf,.pdf" onChange={importPdf} />
-              {document ? 'Changer de PDF' : 'Importer un PDF'}
-            </label>
-          </div>
-          <p role="status" className="unspoil-status">
-            {status}
-          </p>
-          {error && (
-            <p role="alert" className="unspoil-error">
-              {error}
+              <FileInput className="unspoil-button" onFile={importPdf}>
+                Changer de PDF
+              </FileInput>
+            </div>
+            <p role="status" className="unspoil-status">
+              {status}
             </p>
-          )}
-          {warnings.length > 0 && (
-            <ul className="unspoil-warnings">
-              {warnings.map((warning, index) => (
-                <li key={index}>{warning}</li>
-              ))}
-            </ul>
-          )}
-        </section>
-        {document && (
+            {error && (
+              <p role="alert" className="unspoil-error">
+                {error}
+              </p>
+            )}
+            {warnings.length > 0 && (
+              <ul className="unspoil-warnings">
+                {warnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+              </ul>
+            )}
+          </section>
           <DocumentViewer
             key={document.id}
             pages={document.pages}
             mode={mode}
             renderPage={(page) => <PdfCanvas pdf={document.pdf} page={page} />}
           />
-        )}
-      </main>
+        </main>
+      ) : (
+        <Home onFile={importPdf} pending={pendingFile} onCancel={returnHome} error={error} />
+      )}
     </div>
   )
 }
