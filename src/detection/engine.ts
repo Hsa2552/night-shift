@@ -293,25 +293,23 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   let kind: DocumentKind
 
   if (drafts.length > 0) {
-    let statementChars = 0
-    let correctionChars = 0
-    flow.forEach((line, i) => {
-      const chars = line.text.length
-      const inline = parsed[i]!.inline
-      if (modeAt[i] === 'correction' && inline !== null) {
-        statementChars += inline
-        correctionChars += chars - inline
-      } else if (modeAt[i] === 'correction') correctionChars += chars
-      else if (modeAt[i] === 'statement') {
-        const q = parsed[i]!.q
-        statementChars += q ? q.rest.trim().length : chars
+    // Le document est mixte dès qu'une question visible a un énoncé, ou qu'une ligne
+    // d'énoncé contient une phrase. Le texte après « Exercice N » ou « Partie N » est un
+    // titre (« Exercice 2 : Probabilités ») et ne compte pas.
+    const hasStatement = flow.some((line, i) => {
+      const p = parsed[i]!
+      if (modeAt[i] === 'statement') {
+        if (!p.q) return isSentence(line.text)
+        if (p.q.kind === 'part' || p.q.kind === 'exercise') return false
+        return hasWord(p.q.rest)
       }
+      if (modeAt[i] === 'correction' && p.inline !== null) {
+        const before = line.text.slice(0, p.inline)
+        return p.q ? hasWord(before.slice(before.length - p.q.rest.length)) : isSentence(before)
+      }
+      return false
     })
-    // Énoncé quasi absent (seulement des libellés) : corrigé seul.
-    // Énoncé négligeable dans l'absolu ET devant les corrections : au-delà de 40 caractères
-    // de vraies questions, le document est mixte quelle que soit la longueur des corrections.
-    const noStatement = statementChars < 40 && statementChars < 0.2 * correctionChars
-    kind = correctionFromStart || noStatement ? 'correction_only' : 'mixed'
+    kind = correctionFromStart || !hasStatement ? 'correction_only' : 'mixed'
     if (byColor) warnings.push(WARNINGS.color)
     if (kind === 'correction_only' && drafts.length === 1 && !drafts[0]!.label) {
       warnings.push(WARNINGS.unsegmented)
@@ -669,4 +667,16 @@ function suspiciousFont(flow: Line[], parsed: Parsed[]): boolean {
     spansByFont.set(font, spans)
   })
   return [...spansByFont.values()].some((spans) => spans.size >= 2)
+}
+
+/** Au moins deux mots et huit lettres : une phrase, pas un simple libellé. */
+function isSentence(text: string): boolean {
+  const words = text.split(/\s+/).filter((w) => /\p{L}/u.test(w))
+  const letters = (text.match(/\p{L}/gu) ?? []).length
+  return words.length >= 2 && letters >= 8
+}
+
+/** Au moins un mot de quatre lettres. */
+function hasWord(text: string): boolean {
+  return /\p{L}{4,}/u.test(text)
 }

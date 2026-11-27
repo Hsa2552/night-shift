@@ -234,6 +234,19 @@ describe('detectCorrections', () => {
     expect(result.blocks.map((b) => b.questionLabel)).toEqual(['Exercice 1', 'Exercice 2'])
   })
 
+  it('corrigé seul à exercices titrés et marqués : corrigé seul, titres visibles', async () => {
+    const result = await run(
+      fakePage(0, [
+        'Exercice 1 : Probabilités',
+        'Solution : la probabilité vaut 1/2.',
+        'Exercice 2 : Algèbre',
+        'Solution : la matrice est inversible.',
+      ]),
+    )
+    expect(result.kind).toBe('correction_only')
+    expect(coverage(result, 0, 4)).toEqual([null, 'c1', null, 'c2'])
+  })
+
   it('corrigé uniquement sans numérotation : repli proposé', async () => {
     const result = await run(
       fakePage(0, ['Solutions', 'La dérivée vaut 2x.', "L'intégrale vaut 1/3."]),
