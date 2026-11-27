@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
+import { Brand, ThemeToggle } from './components/Brand'
 import type { PdfDocument } from './pdf'
 import type { PageData, PageDimensions } from './shared/types'
 import { clipCorrectionBlocks } from './viewer/correctionGeometry'
@@ -167,7 +168,8 @@ export default function App() {
   return (
     <div className="unspoil">
       <header className="unspoil-header">
-        <span className="unspoil-brand">Unspoil</span>
+        <Brand />
+        <ThemeToggle />
       </header>
       <main className="unspoil-main">
         <section className={document ? 'unspoil-toolbar' : 'unspoil-import'}>

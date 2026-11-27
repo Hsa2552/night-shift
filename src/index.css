@@ -1,11 +1,12 @@
 @import 'tailwindcss';
+@import './mako.css';
 
 body {
   margin: 0;
   min-width: 18rem;
-  background: #f3f4fa;
-  color: #1b2139;
-  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
 }
 
 .unspoil {
@@ -13,9 +14,12 @@ body {
 }
 
 .unspoil-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0.75rem max(1rem, calc((100% - 56rem) / 2));
-  border-bottom: 1px solid #dce0ef;
-  background: #fff;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .unspoil-brand {
