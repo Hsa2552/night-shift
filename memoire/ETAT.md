@@ -15,6 +15,15 @@
 
 ## Tâches actives
 
+### T-WB-1 · Interface et lecture sans spoiler
+
+- Statut : en cours · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/viewer`
+- Dépend de : rendu canvas et repère canonique de Salif (S3), détecteur de Hazem (H1)
+- Critères d'acceptation : masquer les corrigés et les révéler par bloc, proposer une lecture progressive multipage au tactile, gérer les quatre types de document et garder le PDF couvert en cas d'erreur.
+- Maturité : W1 et W2 testés sur des pages synthétiques. W3 à W5 à poursuivre avec les modules réels.
+- Notes : `memoire/journal/wael.md`.
+
 ### T00 · Choisir le sujet
 
 - Statut : à faire · Priorité : P0

@@ -22,7 +22,12 @@
 
 ## Problèmes connus et risques
 
-_Aucun pour l'instant._
+### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · ouvert
+
+- Gravité : le build PWA local ne se termine pas sur ce poste.
+- Constat : `npm run build` compile le client, puis Application Control refuse de charger `rollup.win32-x64-msvc.node` lorsque le plugin PWA génère le service worker.
+- Vérification indépendante : build GitHub Actions sur Linux à vérifier sur la PR de l’interface.
+- Responsable ou tâche : T-WB-1.
 
 ## Données de démonstration
 
