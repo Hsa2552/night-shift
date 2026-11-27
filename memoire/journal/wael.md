@@ -42,3 +42,8 @@
 - Le trait prend le focus quand la révélation progressive s’active. Le glissement met à jour la frontière au plus une fois par image, tient compte de la fenêtre visible et distingue le simple appui du déplacement. Au relâchement, la dernière position est appliquée et le défilement s’arrête.
 - Vérifié : `npm run check` (102 tests), build Ubuntu, gestes souris et tactile émulé dans Edge, défilement au bord, PDF sans texte, rechargement hors ligne. Les quatre parcours d’import et les commandes par bloc passent aussi dans Firefox.
 - Non vérifié : gestes sur téléphone physique et Safari. La région du graphique de `mixte.pdf` reste suivie côté détection.
+
+### 27/11 23:09 · SESSION · T-WB-1 (rendu multipage) · Codex
+
+- Les canvas éloignés de la fenêtre libèrent leur bitmap et le recréent à leur retour dans la zone de préchargement. Le défilement ne change aucune couverture.
+- Vérifié : document graphique synthétique de huit pages dans Edge, `npm run check` (102 tests), build Ubuntu, parcours Edge et Firefox et nouvel import hors ligne dans Edge.

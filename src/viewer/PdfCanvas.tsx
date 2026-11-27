@@ -49,7 +49,15 @@ export const PdfCanvas = memo(function PdfCanvas({
     const visibility = new IntersectionObserver(
       ([entry]) => {
         nearby = entry.isIntersecting
-        if (nearby) redraw()
+        if (nearby) {
+          redraw()
+        } else if (controller) {
+          controller.abort()
+          controller = undefined
+          previousWidth = 0
+          canvas.width = 0
+          canvas.height = 0
+        }
       },
       { rootMargin: '400px 0px' },
     )
@@ -64,7 +72,7 @@ export const PdfCanvas = memo(function PdfCanvas({
 
   return (
     <>
-      <canvas ref={canvasRef} aria-hidden="true" />
+      <canvas ref={canvasRef} width={0} height={0} aria-hidden="true" />
       {error && (
         <p className="pdf-viewer-render-error" role="status">
           Impossible d’afficher cette page.

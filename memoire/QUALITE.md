@@ -61,6 +61,12 @@
 - Résultat : 102 tests réussis. Les rectangles partiellement hors page sont limités à la page. Toute région inutilisable maintient le document couvert. Les boutons révèlent et remasquent chaque bloc indépendamment. Un appui simple sur le trait ne révèle rien. Le défilement au bord démarre pendant le glissement et s’arrête au relâchement. L’import, le rendu et l’analyse restent utilisables hors ligne dans Edge.
 - Limites : téléphone physique et Safari à vérifier. Le bord du graphique dans `mixte.pdf` reste suivi dans Q-27-2233-WB.
 
+### V-27-2309-WB · Libération des canvas au défilement
+
+- Protocole : build Ubuntu, Edge sur un PDF graphique synthétique de huit pages. Descente à la dernière page puis retour en haut, PDF couvert pendant tout le parcours.
+- Résultat : le canvas de la page éloignée repasse à zéro pixel et se recalcule au retour. Les huit masques de couverture restent présents. `npm run check` (102 tests), les parcours Edge et Firefox et le test hors ligne Edge passent après la modification.
+- Limites : consommation mémoire globale et temps de rendu sur téléphone physique non mesurés.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
