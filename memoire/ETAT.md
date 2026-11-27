@@ -55,6 +55,7 @@
 - Responsable : Salif · Agent : Codex · Branche : `fix/pdf-distribution`
 - Critères d'acceptation : métriques de symboles finies, essais sur annales publiques, mesure multipage, vérification hors ligne et recette HTTPS pour téléphone.
 - Maturité : testée sur Edge et WebKit de Windows. Installation sur téléphone physique et déploiement public à vérifier par l'équipe après activation de Pages.
+- Notes : PR #9. Mesures dans `QUALITE.md` V-27-2342-S et V-27-2348-S.
 
 ### T01 · Socle technique commun
 

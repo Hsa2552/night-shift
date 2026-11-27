@@ -144,6 +144,14 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - PWA — Après activation du service worker, rechargement hors ligne puis premier import dans Edge. Les critères d'installabilité du navigateur passent. WebKit 27.2 sous Windows avec profil iPhone émulé passe aussi le rechargement, l'import et le repli progressif sur le scan. Le serveur a refusé les requêtes une fois le réseau simulé coupé. Le build de production et les 111 tests passent.
 - Limites — Contrôle échantillonné du rendu sans comparaison pixel à pixel avec un lecteur de référence. Les fragments des équations restent du texte géométrique. Les documents sans couche texte passent par la révélation progressive. Safari sur matériel Apple et l'installation physique ne sont pas validés par WebKit sous Windows. L'adresse publique standard de Pages répondait 404 lors du contrôle. [Portée de Playwright WebKit](https://playwright.dev/docs/browsers#webkit)
 
+### V-27-2348-S · Parité des rasters et mémoire du navigateur
+
+- Protocole — Même build HTTPS local. Comparer les empreintes SHA-256 des rasters RGBA des pages échantillonnées avant et après rechargement sans serveur. Dans un seul profil Edge 158.0.4370.45, ouvrir et fermer trois fois la copie de 170 pages. Relever après GC les octets privés des processus signalés par CDP avec `Get-Process`. Le rendu ne visite que trois pages par cycle, comme dans la mesure précédente.
+- Parité — Les neuf rasters de Liège, Nantes et du corrigé manuscrit MIT correspondent bit à bit entre en ligne et hors ligne dans chaque moteur testé (Edge et WebKit). La comparaison se fait à l'intérieur d'un même moteur. Deux variantes non embarquées de Times New Roman ont émis un avertissement de police système. L'essai ne compare pas leur rendu à celui d'une police originale embarquée.
+- Mémoire — Total des octets privés d'Edge, en Mo décimaux arrondis. Avant ouverture 312 Mo. Avec le PDF ouvert 534, 556 puis 569 Mo. Après chaque fermeture 462, 486 puis 488 Mo. Le total inclut les autres processus du moteur, dont le GPU et le service réseau, et une partie reste allouée après fermeture. Ces relevés ponctuels ne mesurent pas le pic. Trois cycles ne permettent pas de conclure à une fuite ni à une limite de capacité mobile.
+- PDF atypique — Un PDF synthétique chiffré a été refusé sans afficher de canvas. L'ouverture suivante d'une annale de Liège hors ligne a réussi dans le même onglet.
+- Intégration — Dans une copie du build avec le détecteur `e784dc1` de Hazem, Edge classe le `qcm-cases.pdf` synthétique en `mixed`, avec deux blocs et aucun avertissement. L'interface affiche six régions masquées et annonce deux blocs hors ligne. La suite d'intégration réussit 127 tests. Le test d'évaluation facultatif passe séparément avec `UNSPOIL_EVAL_DIR` pointant sur les exemples du détecteur.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
