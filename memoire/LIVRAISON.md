@@ -8,6 +8,8 @@
 - [ ] Le dépôt est accessible au jury (public, ou accès donné).
 - [ ] Un clone propre s'installe et se lance en suivant uniquement le README.
 - [ ] Les tests pertinents ont été lancés, résultats notés dans `QUALITE.md`.
+- [ ] La CI GitHub est verte sur le dernier commit de main.
+- [ ] Le site déployé (si l'équipe en a un) correspond au dernier commit de main et s'installe sur téléphone.
 - [ ] README complet : problème, solution, fonctionnalités réellement disponibles, installation, lancement, tests, limitations, démo, équipe.
 - [ ] Ce qui est simulé ou fictif est signalé dans le README et dans l'interface.
 - [ ] Aucun secret dans le dépôt ni dans son historique (pas de `.env`, pas de clé dans le code).

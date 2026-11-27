@@ -1,0 +1,11 @@
+# Fins de ligne identiques sur Windows, macOS et Linux :
+# évite les faux conflits entre machines et entre agents.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff2 binary

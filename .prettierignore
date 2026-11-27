@@ -1,0 +1,7 @@
+dist
+dev-dist
+coverage
+node_modules
+package-lock.json
+# La mémoire et la documentation sont écrites à la main : Prettier n'y touche pas.
+*.md
