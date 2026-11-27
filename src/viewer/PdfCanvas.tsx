@@ -1,13 +1,13 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import type { PdfDocument } from '../pdf'
-import type { ViewerPage } from './DocumentViewer'
+import type { PageDimensions } from '../shared/types'
 
 export const PdfCanvas = memo(function PdfCanvas({
   pdf,
   page,
 }: {
   pdf: PdfDocument
-  page: ViewerPage
+  page: PageDimensions
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [error, setError] = useState(false)

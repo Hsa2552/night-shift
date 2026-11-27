@@ -1,36 +1,20 @@
 import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import type { CorrectionBlock, PageDimensions, PageRegion } from '../shared/types'
 import { useProgressiveReveal } from './useProgressiveReveal'
-
-export interface ViewerPage {
-  pageIndex: number
-  width: number
-  height: number
-}
-
-interface ViewerRegion {
-  pageIndex: number
-  bbox: { x: number; y: number; width: number; height: number }
-}
-
-interface ViewerBlock {
-  id: string
-  questionLabel?: string
-  regions: ViewerRegion[]
-}
 
 export type ViewerMode =
   | { kind: 'covered' }
   | { kind: 'progressive' }
-  | { kind: 'automatic'; blocks: readonly ViewerBlock[] }
+  | { kind: 'automatic'; blocks: readonly CorrectionBlock[] }
 
 interface DocumentViewerProps {
-  pages: readonly ViewerPage[]
+  pages: readonly PageDimensions[]
   mode: ViewerMode
-  renderPage: (page: ViewerPage) => ReactNode
+  renderPage: (page: PageDimensions) => ReactNode
 }
 
-function maskPosition({ bbox }: ViewerRegion, page: ViewerPage): CSSProperties {
+function maskPosition({ bbox }: PageRegion, page: PageDimensions): CSSProperties {
   return {
     left: `${(100 * bbox.x) / page.width}%`,
     top: `${(100 * bbox.y) / page.height}%`,
@@ -49,8 +33,8 @@ export function DocumentViewer({ pages, mode, renderPage }: DocumentViewerProps)
   const progressive = useProgressiveReveal(pages, mode.kind === 'progressive')
   const widestPage = pages.reduce((maximum, page) => Math.max(maximum, page.width), 0)
   const pageOrder = new Map(pages.map((page, index) => [page.pageIndex, index]))
-  const masksByPage = new Map<number, ViewerRegion[]>()
-  const actionsByPage = new Map<number, { block: ViewerBlock; label: string }[]>()
+  const masksByPage = new Map<number, PageRegion[]>()
+  const actionsByPage = new Map<number, { block: CorrectionBlock; label: string }[]>()
 
   if (mode.kind === 'automatic' && mode.blocks.length > 0) {
     for (const [index, block] of mode.blocks.entries()) {
