@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 
 function clamp(value: number, max: number) {
@@ -13,8 +13,13 @@ interface Drag {
   frame: number
 }
 
-export function useProgressiveReveal(pages: readonly { height: number }[]) {
+export function useProgressiveReveal(pages: readonly { height: number }[], enabled: boolean) {
   const [position, setPosition] = useState(0)
+  const [wasEnabled, setWasEnabled] = useState(enabled)
+  if (enabled !== wasEnabled) {
+    setWasEnabled(enabled)
+    if (position !== 0) setPosition(0)
+  }
   const drag = useRef<Drag | null>(null)
   const slider = useRef<HTMLDivElement>(null)
   const focusSlider = useRef(false)
@@ -32,12 +37,12 @@ export function useProgressiveReveal(pages: readonly { height: number }[]) {
     pageStarts.findLastIndex((start) => start <= position),
   )
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     return () => {
       if (drag.current) cancelAnimationFrame(drag.current.frame)
       drag.current = null
     }
-  }, [])
+  }, [enabled])
 
   useLayoutEffect(() => {
     if (focusSlider.current) {

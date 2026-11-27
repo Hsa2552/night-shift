@@ -41,8 +41,13 @@ function maskPosition({ bbox }: ViewerRegion, page: ViewerPage): CSSProperties {
 
 export function DocumentViewer({ pages, mode, renderPage }: DocumentViewerProps) {
   const [revealed, setRevealed] = useState(new Set<string>())
-  const progressive = useProgressiveReveal(pages)
-  const widestPage = Math.max(...pages.map((page) => page.width))
+  const [previousKind, setPreviousKind] = useState(mode.kind)
+  if (previousKind !== mode.kind) {
+    setPreviousKind(mode.kind)
+    if (revealed.size > 0) setRevealed(new Set())
+  }
+  const progressive = useProgressiveReveal(pages, mode.kind === 'progressive')
+  const widestPage = pages.reduce((maximum, page) => Math.max(maximum, page.width), 0)
   const pageOrder = new Map(pages.map((page, index) => [page.pageIndex, index]))
   const masksByPage = new Map<number, ViewerRegion[]>()
   const actionsByPage = new Map<number, { block: ViewerBlock; label: string }[]>()

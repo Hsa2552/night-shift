@@ -1,13 +1,227 @@
-// Page provisoire du socle technique. Aucune fonctionnalité produit :
-// à remplacer dès que le sujet est choisi (voir memoire/PRODUIT.md).
+import { useEffect, useRef, useState } from 'react'
+import type { ChangeEvent } from 'react'
+import type { PdfDocument } from './pdf'
+import type { PageData, PageDimensions } from './shared/types'
+import { DocumentViewer } from './viewer/DocumentViewer'
+import type { ViewerMode } from './viewer/DocumentViewer'
+import { PdfCanvas } from './viewer/PdfCanvas'
+
+interface OpenDocument {
+  id: number
+  name: string
+  pdf: PdfDocument
+  pages: PageDimensions[]
+}
+
+function closePdf(pdf: PdfDocument) {
+  void pdf.close().catch(() => undefined)
+}
+
 export default function App() {
+  const [document, setDocument] = useState<OpenDocument>()
+  const [mode, setMode] = useState<ViewerMode>({ kind: 'covered' })
+  const [busy, setBusy] = useState<'opening' | 'detecting'>()
+  const [message, setMessage] = useState('')
+  const [warnings, setWarnings] = useState<string[]>([])
+  const [error, setError] = useState('')
+  const currentPdf = useRef<PdfDocument | null>(null)
+  const revision = useRef(0)
+
+  useEffect(() => {
+    return () => {
+      revision.current += 1
+      if (currentPdf.current) closePdf(currentPdf.current)
+      currentPdf.current = null
+    }
+  }, [])
+
+  async function importPdf(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!file) return
+
+    const request = ++revision.current
+    if (currentPdf.current) closePdf(currentPdf.current)
+    currentPdf.current = null
+    setDocument(undefined)
+    setMode({ kind: 'covered' })
+    setMessage('')
+    setWarnings([])
+    setError('')
+
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setBusy(undefined)
+      setError('Choisis un fichier PDF.')
+      return
+    }
+
+    setBusy('opening')
+    try {
+      const { openPdf } = await import('./pdf')
+      if (request !== revision.current) return
+      const pdf = await openPdf(file)
+      if (request !== revision.current) {
+        closePdf(pdf)
+        return
+      }
+      currentPdf.current = pdf
+      const pages: PageDimensions[] = []
+      for (let index = 0; index < pdf.pageCount; index += 1) {
+        pages.push(await pdf.getPageDimensions(index))
+        if (request !== revision.current) return
+      }
+      if (pages.length === 0) throw new Error('Document vide')
+      setDocument({ id: request, name: file.name, pdf, pages })
+    } catch {
+      if (request !== revision.current) return
+      if (currentPdf.current) closePdf(currentPdf.current)
+      currentPdf.current = null
+      setError(
+        'Impossible d’ouvrir ce PDF. Vérifie qu’il s’ouvre et ne demande pas de mot de passe.',
+      )
+    } finally {
+      if (request === revision.current) setBusy(undefined)
+    }
+  }
+
+  async function maskCorrections() {
+    if (!document) return
+    const request = ++revision.current
+    setMode({ kind: 'covered' })
+    setBusy('detecting')
+    setError('')
+    setMessage('')
+    setWarnings([])
+
+    try {
+      const pages: PageData[] = []
+      for (const { pageIndex } of document.pages) {
+        pages.push(await document.pdf.getPageData(pageIndex))
+        if (request !== revision.current) return
+      }
+      const { detectCorrections } = await import('./detection')
+      if (request !== revision.current) return
+      const result = await detectCorrections({
+        pages,
+        getRaster: (index) => document.pdf.getRaster(index),
+      })
+      if (request !== revision.current) return
+      setWarnings(result.warnings)
+
+      if (result.kind === 'unknown' || result.needsFallback) {
+        setMessage('La détection est incertaine. La révélation progressive est activée.')
+        setMode({ kind: 'progressive' })
+        return
+      }
+
+      if (result.kind === 'statement_only') {
+        setMessage('Aucun corrigé n’a été détecté.')
+        setMode({ kind: 'automatic', blocks: [] })
+        return
+      }
+
+      if (result.blocks.length === 0) {
+        setMessage('Aucun bloc exploitable. La révélation progressive est activée.')
+        setMode({ kind: 'progressive' })
+        return
+      }
+
+      const count = result.blocks.length
+      setMessage(count === 1 ? '1 bloc de corrigé masqué.' : `${count} blocs de corrigé masqués.`)
+      setMode({ kind: 'automatic', blocks: result.blocks })
+    } catch {
+      if (request !== revision.current) return
+      setError('L’analyse a échoué. La révélation progressive reste disponible.')
+    } finally {
+      if (request === revision.current) setBusy(undefined)
+    }
+  }
+
+  function showProgressively() {
+    if (mode.kind === 'progressive') return
+    revision.current += 1
+    setBusy(undefined)
+    setError('')
+    setMessage('')
+    setWarnings([])
+    setMode({ kind: 'progressive' })
+  }
+
+  const status =
+    busy === 'opening'
+      ? 'Ouverture du PDF…'
+      : busy === 'detecting'
+        ? 'Analyse du PDF…'
+        : message ||
+          (mode.kind === 'progressive' ? 'Fais glisser le trait pour découvrir le document.' : '')
+
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-slate-900 p-6 text-center text-slate-100">
-      <h1 className="text-3xl font-bold">Night Shift 2026</h1>
-      <p className="max-w-md text-slate-300">
-        Socle technique prêt. Le sujet n&apos;est pas encore choisi.
-      </p>
-      <p className="text-sm text-slate-400">React, TypeScript, Vite, application installable</p>
-    </main>
+    <div className="unspoil">
+      <header className="unspoil-header">
+        <span className="unspoil-brand">Unspoil</span>
+      </header>
+      <main className="unspoil-main">
+        <section className={document ? 'unspoil-toolbar' : 'unspoil-import'}>
+          {document ? (
+            <h1 className="unspoil-filename">{document.name}</h1>
+          ) : (
+            <>
+              <h1>Révise sans voir les corrigés.</h1>
+              <p>Importe une annale ou une feuille d’exercices au format PDF.</p>
+            </>
+          )}
+          <div className="unspoil-actions">
+            {document && (
+              <>
+                <button
+                  className="unspoil-button unspoil-button-primary"
+                  type="button"
+                  disabled={busy === 'detecting' || mode.kind === 'automatic'}
+                  onClick={() => void maskCorrections()}
+                >
+                  Masquer les corrigés
+                </button>
+                <button
+                  className="unspoil-button"
+                  type="button"
+                  aria-pressed={mode.kind === 'progressive'}
+                  aria-disabled={mode.kind === 'progressive'}
+                  onClick={showProgressively}
+                >
+                  Révélation progressive
+                </button>
+              </>
+            )}
+            <label className={`unspoil-button${document ? '' : ' unspoil-button-primary'}`}>
+              <input type="file" accept="application/pdf,.pdf" onChange={importPdf} />
+              {document ? 'Changer de PDF' : 'Importer un PDF'}
+            </label>
+          </div>
+          <p role="status" className="unspoil-status">
+            {status}
+          </p>
+          {error && (
+            <p role="alert" className="unspoil-error">
+              {error}
+            </p>
+          )}
+          {warnings.length > 0 && (
+            <ul className="unspoil-warnings">
+              {warnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+        {document && (
+          <DocumentViewer
+            key={document.id}
+            pages={document.pages}
+            mode={mode}
+            renderPage={(page) => <PdfCanvas pdf={document.pdf} page={page} />}
+          />
+        )}
+      </main>
+    </div>
   )
 }
