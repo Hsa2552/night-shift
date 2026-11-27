@@ -55,3 +55,10 @@
 - Vérifié : 90 tests ; évaluation : `QUALITE.md` V-27-2330-HZ.
 - Trouvé dans le module PDF : Q-27-2330-HZ (métriques NaN), transmis à Salif.
 - Non vérifié : vraies annales ; parcours dans le navigateur avec l'interface de Wael (PR #3 non fusionnée).
+
+### 27/11 23:55 · SESSION · T-HZ-2 test dans le navigateur · Claude Code
+
+- Fait : parcours réel dans Edge (vrais `openPdf`, détecteur et interface de Wael fusionnés localement, rien poussé de cette fusion) ; corrections issues de ce test : cadre suivi vers le haut dans le cas courant, arrondi des limites vers l'extérieur, encre graphique relative au fond de page, tableau question / réponse découpé par ligne, régions bornées à la page (l'interface rejette tout le résultat si une région est invalide), texte non localisé : repli.
+- Vérifié : 95 tests ; évaluation 15/15 types, 0/109 corrections visibles, 1/65 énoncés masqués ; Edge : `QUALITE.md` V-27-2355-HZ.
+- Pour Wael : `clipCorrectionBlocks` rejette tout le résultat pour une seule région invalide ; le détecteur ne produit plus de telles régions, mais un rejet partiel (région ignorée) serait plus sûr qu'un rejet total si tu le juges utile.
+- Suite : vraies annales dès réception (`UNSPOIL_EVAL_DIR`, fichiers `.a-annoter.json` à corriger en `.verite.json`).

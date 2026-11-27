@@ -55,6 +55,13 @@
 - Correctif : `src/detection/graphics.ts` suit dans le raster l'encre hors texte qui traverse la limite d'un masque (vers le bas, et vers le haut pour un cadre qui entoure la correction), sans dépasser la moitié de la ligne visible voisine
 - Résultat : figure de `mixte.pdf` entièrement couverte dans l'évaluation ci-dessus (rendu Node). Non vérifié dans le navigateur de Wael
 
+### V-27-2355-HZ · Détecteur avec les vrais modules PDF et interface, dans Edge
+
+- Par : Hazem (Claude Code) · Commit : voir la branche `feat/detection-robustesse`
+- Commande ou protocole : copie de travail locale non poussée = `feat/detection-robustesse` + `origin/feat/viewer` (PR #3) ; `vite build` puis `vite preview` ; Edge (headless, playwright-core installé hors dépôt) : import de chaque PDF de `src/detection/samples/`, clic « Masquer les corrigés », capture d'écran et relevé de la position des masques dans le DOM. Également `openPdf` + `detectCorrections` appelés dans la page via le serveur Vite de dev
+- Résultat : 15/15 documents avec le comportement attendu dans l'interface. Défauts trouvés ainsi puis corrigés : cadre de `encadre.pdf` visible (ligne précédente non transmise au suivi graphique hors marqueurs en cours de ligne, seuil d'encre trop bas pour un gris clair) ; colonne de réponses de `tableau.pdf` en un seul bloc ; `qcm-cases.pdf` annoncé « Aucun corrigé » à cause de Q-27-2330-HZ (désormais : repli et avertissement). Reste : trace quasi invisible (luminance supérieure à 245) du bas du cadre de `encadre.pdf` ; haut des lettres de la question 2 de `mixte.pdf` légèrement rogné (la figure touche le texte)
+- Limites : Edge de bureau seulement ; pas de téléphone ni Safari ; documents synthétiques
+
 ## Problèmes connus et risques
 
 _Aucun pour l'instant._
