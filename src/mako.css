@@ -77,7 +77,7 @@ label:focus-within {
 .brand {
   display: inline-flex;
   align-items: center;
-  width: 116px;
+  width: 128px;
   min-height: 44px;
   flex: 0 0 auto;
 }
@@ -126,6 +126,12 @@ button.brand {
 .icon-button:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+:root[data-theme-changing] *,
+:root[data-theme-changing] *::before,
+:root[data-theme-changing] *::after {
+  transition: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

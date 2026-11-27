@@ -69,7 +69,10 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
   const widestPage = pages.reduce((maximum, page) => Math.max(maximum, page.width), 0)
   const scale = widestPage ? width / widestPage : 0
   const pageOrder = new Map(pages.map((page, index) => [page.pageIndex, index]))
-  const masksByPage = new Map<number, { region: PageRegion; action?: BlockAction }[]>()
+  const masksByPage = new Map<
+    number,
+    { region: PageRegion; action?: BlockAction; grouped: boolean; marker: boolean }[]
+  >()
   const actionsByPage = new Map<number, BlockAction[]>()
 
   if (mode.kind === 'automatic') {
@@ -80,15 +83,14 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
       )
       if (firstPage === pages.length) continue
 
-      const onFirstPage = block.regions.filter(
-        (region) => pageOrder.get(region.pageIndex) === firstPage,
-      )
-      const full = onFirstPage.find(
-        ({ bbox }) => bbox.width * scale >= 158 && bbox.height * scale >= 44,
-      )
+      const grouped = block.regions.length > 1
+      // A region in a group of options must never receive a special affordance.
+      const candidate = grouped ? undefined : block.regions[0]
       const inline =
-        full ??
-        onFirstPage.find(({ bbox }) => bbox.width * scale >= 48 && bbox.height * scale >= 44)
+        candidate && candidate.bbox.width * scale >= 48 && candidate.bbox.height * scale >= 44
+          ? candidate
+          : undefined
+      const full = inline && inline.bbox.width * scale >= 172
       const action = {
         id: block.id,
         label: block.questionLabel ?? 'Bloc ' + (index + 1),
@@ -106,7 +108,12 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
         const order = pageOrder.get(region.pageIndex)
         if (order === undefined) continue
         const masks = masksByPage.get(order) ?? []
-        masks.push({ region, action: region === inline ? action : undefined })
+        masks.push({
+          region,
+          action: region === inline ? action : undefined,
+          grouped,
+          marker: grouped && region.bbox.width <= 48 && region.bbox.height <= 48,
+        })
         masksByPage.set(order, masks)
       }
     }
@@ -172,11 +179,13 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
                   style={{ top: 100 * visible + '%' }}
                 />
               )}
-              {masksByPage.get(index)?.map(({ region, action }, maskIndex) => (
+              {masksByPage.get(index)?.map(({ region, action, grouped, marker }, maskIndex) => (
                 <div
                   key={maskIndex}
                   className="pdf-viewer-mask pdf-viewer-region"
                   data-testid="correction-mask"
+                  data-grouped-mask={grouped || undefined}
+                  data-neutral-marker={marker || undefined}
                   aria-hidden={action ? undefined : true}
                   style={maskPosition(region, page)}
                 >

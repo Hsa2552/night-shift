@@ -61,8 +61,8 @@
   column-gap: clamp(1.8rem, 4.9vw, 6rem);
   width: var(--shell);
   margin-inline: auto;
-  min-height: min(76svh, 47rem);
-  padding-block: clamp(3.25rem, 7.3vw, 7.5rem);
+  min-height: min(72svh, 44rem);
+  padding-block: clamp(2.85rem, 5.8vw, 5.5rem);
 }
 
 .home-intro {
@@ -72,9 +72,9 @@
 
 .home-intro h1 {
   font-size: clamp(2.9rem, 6.5vw, 6.25rem);
-  font-weight: 740;
+  font-weight: 720;
   line-height: 0.98;
-  letter-spacing: -0.077em;
+  letter-spacing: -0.048em;
 }
 
 .home-intro em {
@@ -240,6 +240,8 @@
 .demo-preview {
   overflow: hidden;
   min-width: 0;
+  width: min(100%, 35rem);
+  justify-self: end;
   border: 1px solid var(--line-strong);
   border-radius: 15px;
   background: var(--workbench);
@@ -350,6 +352,7 @@
   }
   .demo-preview {
     max-width: 38rem;
+    justify-self: start;
   }
   .home-guide {
     grid-template-columns: 1fr;
@@ -361,7 +364,7 @@
     --header-height: 56px;
   }
   .brand {
-    width: 100px;
+    width: 108px;
   }
   .site-header-controls a {
     font-size: 0.76rem;

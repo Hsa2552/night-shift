@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { Icon } from './Icon'
 
 type Theme = 'light' | 'dark'
@@ -28,11 +28,22 @@ export function ThemeToggle() {
     return () => media?.removeEventListener('change', update)
   }, [])
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    root.dataset.themeChanging = ''
+    root.dataset.theme = theme
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute('content', theme === 'dark' ? '#0B1020' : '#F8FAFC')
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        delete root.dataset.themeChanging
+      })
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      delete root.dataset.themeChanging
+    }
   }, [theme])
 
   function toggle() {

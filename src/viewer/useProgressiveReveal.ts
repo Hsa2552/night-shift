@@ -51,7 +51,16 @@ export function useProgressiveReveal(pages: readonly { height: number }[], enabl
   )
 
   useLayoutEffect(() => {
-    if (enabled) slider.current?.focus({ preventScroll: true })
+    if (enabled) {
+      const handle = slider.current
+      const bounds = handle?.getBoundingClientRect()
+      const toolbar = handle?.closest('.reader')?.querySelector('.reader-toolbar')
+      const top = toolbar?.getBoundingClientRect().bottom ?? 0
+      handle?.focus({ preventScroll: true })
+      if (bounds && (bounds.top < top + 6 || bounds.bottom > window.innerHeight)) {
+        handle?.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+      }
+    }
     return () => {
       if (drag.current?.frame !== undefined) cancelAnimationFrame(drag.current.frame)
       drag.current = null

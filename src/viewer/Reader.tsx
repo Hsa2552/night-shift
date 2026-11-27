@@ -117,7 +117,9 @@ export function Reader({
     setZoom(value)
     if (oldTop !== undefined) {
       requestAnimationFrame(() => {
-        if (focused?.isConnected) window.scrollBy(0, focused.getBoundingClientRect().top - oldTop)
+        if (!focused?.isConnected) return
+        const delta = focused.getBoundingClientRect().top - oldTop
+        if (delta !== 0) window.scrollBy(0, delta)
       })
     }
   }
@@ -239,7 +241,8 @@ export function Reader({
             {total > 0 && (
               <div className="reader-progress">
                 <span aria-live="polite">
-                  {Math.min(revealed, total)} / {total} corrections révélées
+                  {Math.min(revealed, total)} / {total}{' '}
+                  {total === 1 ? 'correction révélée' : 'corrections révélées'}
                 </span>
                 <progress aria-label="Corrections révélées" value={revealed} max={total} />
               </div>
