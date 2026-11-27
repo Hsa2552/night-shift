@@ -28,3 +28,9 @@
 - Pour Salif : le rendu raster a besoin de `standardFontDataUrl` (sans lui, les polices standard ne sont pas dessinées dans le raster) ; ton `openPdf` le fournit déjà, à garder disponible hors ligne.
 - Maturité : testée (synthétique et banc pdf.js hors dépôt). Non intégrée : pas encore appelée par l'interface.
 - Suite : intégrer main dès la fusion de `feat/pdf` ; tests sur de vrais PDF via `openPdf` ; aide à l'intégration W4.
+
+### 27/11 22:55 · SESSION · T-HZ-1 compatibilité avec `feat/pdf` et `feat/viewer` · Claude Code
+
+- Vérifié : banc pdf.js relancé avec `mapTextItem` de `feat/pdf` (commit `716f64a`, copie locale hors dépôt) à la place de mon extraction simplifiée : mêmes 8 résultats sur 8, régions décalées d'un ou deux points seulement. Raster à l'échelle 1 (celle de `getRaster` de Salif) : détection par couleur OK.
+- Lu : `DocumentViewer` de `feat/viewer` (commit `992e8fb`) accepte directement `DetectionResult.blocks` (types structurellement identiques). Aucun adaptateur nécessaire.
+- Non vérifié : appel réel `openPdf` puis `detectCorrections` puis `DocumentViewer` dans un navigateur (attend la fusion des trois branches).
