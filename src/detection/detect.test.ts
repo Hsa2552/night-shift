@@ -500,6 +500,18 @@ describe('detectCorrections', () => {
     }
   })
 
+  it('fragment de texte sans position valide : pas de « aucun corrigé », repli', async () => {
+    const page = fakePage(0, ['1. Calculer f(1).', '2. Calculer f(2).'])
+    page.textItems.push({
+      text: '4',
+      bbox: { x: Number.NaN, y: Number.NaN, width: Number.NaN, height: Number.NaN },
+    })
+    const result = await run(page)
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
+    expect(result.warnings).toContain(WARNINGS.unplaced)
+  })
+
   it('est déterministe', async () => {
     const page = fakePage(0, ['1. Calculer 2 + 2.', 'Correction : 4.', '2. Calculer 3 + 3.'])
     expect(await run(page)).toEqual(await run(page))

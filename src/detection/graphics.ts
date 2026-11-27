@@ -11,6 +11,8 @@ export interface PageInk {
   sy: number
   /** 1 si le pixel est dans un fragment de texte (marge de 1 pixel). */
   text: Uint8Array
+  /** Luminance en dessous de laquelle un pixel est de l'encre (fond de page moins 10). */
+  inkBelow: number
 }
 
 export function buildPageInk(raster: RasterData, page: PageData): PageInk {
@@ -25,7 +27,21 @@ export function buildPageInk(raster: RasterData, page: PageData): PageInk {
     const y1 = Math.min(raster.height, Math.ceil((item.bbox.y + item.bbox.height) * sy) + 1)
     for (let y = y0; y < y1; y++) text.fill(1, y * raster.width + x0, y * raster.width + x1)
   }
-  return { raster, sx, sy, text }
+  return { raster, sx, sy, text, inkBelow: backgroundLuminance(raster) - 10 }
+}
+
+/** Luminance la plus fréquente (le fond de page), sur un échantillon de pixels. */
+function backgroundLuminance(raster: RasterData): number {
+  const histogram = new Uint32Array(256)
+  const { rgba } = raster
+  const step = Math.max(1, Math.floor(rgba.length / 4 / 20000)) * 4
+  for (let i = 0; i < rgba.length; i += step) {
+    if (rgba[i + 3]! < 128) continue
+    histogram[Math.round(0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!)]!++
+  }
+  let best = 255
+  for (let l = 0; l < 256; l++) if (histogram[l]! > histogram[best]!) best = l
+  return best
 }
 
 /** Encre (sombre ou colorée) qui n'appartient à aucun fragment de texte. */
@@ -40,7 +56,8 @@ function isGraphic(ink: PageInk, x: number, y: number): boolean {
   const g = rgba[i + 1]!
   const b = rgba[i + 2]!
   const lum = 0.299 * r + 0.587 * g + 0.114 * b
-  return lum < 200 || Math.max(r, g, b) - Math.min(r, g, b) >= 60
+  // Relatif au fond : un cadre gris clair, même éclairci par l'anticrénelage, est de l'encre.
+  return lum < ink.inkBelow || Math.max(r, g, b) - Math.min(r, g, b) >= 60
 }
 
 /**

@@ -37,6 +37,7 @@ export const WARNINGS = {
   unsegmented: 'Corrigé détecté, mais son découpage par question est impossible.',
   uncovered: "Certaines questions n'ont pas de corrigé détecté.",
   color: 'Corrigés repérés uniquement par leur couleur : vérifiez le résultat.',
+  unplaced: "Une partie du texte n'a pas pu être localisée : des corrigés peuvent rester visibles.",
   noVisualCheck:
     "Aucun marqueur de corrigé, mais l'analyse visuelle de la page a échoué : détection incertaine.",
   suspicious:
@@ -443,6 +444,21 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     } else {
       warnings.push(WARNINGS.textlessPagesNoMask(human))
     }
+  }
+
+  // Fragments de texte sans position exploitable (métriques de police invalides) : une
+  // correction peut s'y trouver. On le signale et on ne promet pas « aucun corrigé ».
+  const unplaced = input.pages.some((p) =>
+    p.textItems.some(
+      (t) =>
+        t.text.trim() !== '' &&
+        ![t.bbox.x, t.bbox.y, t.bbox.width, t.bbox.height].every(Number.isFinite),
+    ),
+  )
+  if (unplaced) {
+    warnings.push(WARNINGS.unplaced)
+    needsFallback = true
+    if (kind === 'statement_only') kind = 'unknown'
   }
 
   return { kind, blocks, warnings, needsFallback }

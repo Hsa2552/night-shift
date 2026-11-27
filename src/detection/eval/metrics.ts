@@ -53,6 +53,29 @@ export function coverage(bbox: Rect, pageIndex: number, regions: PageRegion[]): 
 export const LEAK_THRESHOLD = 0.95
 export const OVERMASK_THRESHOLD = 0.05
 
+/** Part du contour de `bbox` couverte : l'encre d'un cadre ou d'une figure est sur ses bords. */
+export function edgeCoverage(bbox: Rect, pageIndex: number, regions: PageRegion[]): number {
+  const onPage = regions.filter((r) => r.pageIndex === pageIndex).map((r) => r.bbox)
+  const points: [number, number][] = []
+  const n = 50
+  for (let k = 0; k <= n; k++) {
+    const fx = bbox.x + (k / n) * bbox.width
+    const fy = bbox.y + (k / n) * bbox.height
+    points.push([fx, bbox.y + 1], [fx, bbox.y + bbox.height - 1])
+    points.push([bbox.x + 1, fy], [bbox.x + bbox.width - 1, fy])
+  }
+  const inside = points.filter(([x, y]) =>
+    onPage.some((r) => x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height),
+  ).length
+  return inside / points.length
+}
+
+/** Figures : couverture du contour ; texte : couverture de la surface. */
+const covered = (e: TruthElement, regions: PageRegion[]) =>
+  e.text === '[figure]'
+    ? edgeCoverage(e.bbox, e.pageIndex, regions)
+    : coverage(e.bbox, e.pageIndex, regions)
+
 export function evaluate(truth: Truth, result: DetectionResult): Evaluation {
   const regions = result.blocks.flatMap((b) => b.regions)
   const corrections = truth.elements.filter((e) => e.role === 'c')
@@ -62,10 +85,8 @@ export function evaluate(truth: Truth, result: DetectionResult): Evaluation {
     expectedKind: truth.kind,
     kind: result.kind,
     corrections: corrections.length,
-    leaked: corrections.filter((e) => coverage(e.bbox, e.pageIndex, regions) < LEAK_THRESHOLD),
+    leaked: corrections.filter((e) => covered(e, regions) < LEAK_THRESHOLD),
     questions: questions.length,
-    overmasked: questions.filter(
-      (e) => coverage(e.bbox, e.pageIndex, regions) > OVERMASK_THRESHOLD,
-    ),
+    overmasked: questions.filter((e) => covered(e, regions) > OVERMASK_THRESHOLD),
   }
 }
