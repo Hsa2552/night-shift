@@ -60,12 +60,12 @@
 
 ### T-HZ-2 · Robustesse et généralisation du détecteur (phase 2)
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue (PR #10) · Priorité : P0
 - Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection-robustesse`
 - Dépend de : contrat C1 (fusionné) ; vraies annales fournies par l'équipe pour l'évaluation locale
 - Critères d'acceptation : corrections visibles et énoncés masqués mesurés séparément (`src/detection/eval/`) et en baisse sur de vraies annales ; tests de régression pour chaque défaut corrigé
-- Maturité : testée (90 tests, 15 PDF synthétiques annotés). Non testé : vraies annales, navigateur avec l'interface
-- Notes : journal `journal/hazem.md`, entrée du 27/11 23:35 ; T-HZ-1 (H1 à H3 initiaux) fusionnée par la PR #6
+- Maturité : intégrée (main à jour, vérifiée dans Edge avec l'interface et le lecteur ; évaluation V-28-0005-HZ). Non testé : vraies annales, téléphone
+- Notes : journal `journal/hazem.md`, entrées du 27/11 23:35 à 28/11 00:05 ; T-HZ-1 fusionnée par la PR #6 ; dépendance ouverte : Q-27-2330-HZ (Salif)
 
 ## Terminées ou abandonnées
 

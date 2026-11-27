@@ -16,7 +16,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
-import { mapTextItem } from '../../pdf/text-geometry.ts'
+import { readPageText } from '../../pdf/read-text.ts'
 import type { DetectionInput, PageData, RasterData } from '../contract.ts'
 import { detectCorrections } from '../index.ts'
 import { layoutPage } from '../layout.ts'
@@ -37,20 +37,8 @@ async function load(file: string): Promise<DetectionInput & { raster: boolean }>
   for (let p = 0; p < doc.numPages; p++) {
     const page = await doc.getPage(p + 1)
     const { width, height, transform } = page.getViewport({ scale: 1 })
-    const { items, styles } = await page.getTextContent()
-    // Contournement local (signalé à Salif) : pdf.js renvoie ascent/descent à NaN pour
-    // certaines polices de symboles ; mapTextItem produit alors un rectangle NaN.
-    const finite = (v: number | undefined) => (Number.isFinite(v) ? v : undefined)
-    const textItems = items.flatMap((item) => {
-      if (!('str' in item)) return []
-      const style = styles[item.fontName]
-      const safe = style && {
-        ...style,
-        ascent: finite(style.ascent)!,
-        descent: finite(style.descent)!,
-      }
-      return [mapTextItem(item, safe, transform)]
-    })
+    // Même lecture que le module PDF (readPageText), sans contournement : on mesure l'application réelle.
+    const textItems = await readPageText(page, transform, false)
     pages.push({ pageIndex: p, width, height, textItems })
   }
   // Même principe que getRaster du module PDF : échelle 1, fond blanc. La fabrique de

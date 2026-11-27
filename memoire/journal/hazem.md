@@ -62,3 +62,10 @@
 - Vérifié : 95 tests ; évaluation 15/15 types, 0/109 corrections visibles, 1/65 énoncés masqués ; Edge : `QUALITE.md` V-27-2355-HZ.
 - Pour Wael : `clipCorrectionBlocks` rejette tout le résultat pour une seule région invalide ; le détecteur ne produit plus de telles régions, mais un rejet partiel (région ignorée) serait plus sûr qu'un rejet total si tu le juges utile.
 - Suite : vraies annales dès réception (`UNSPOIL_EVAL_DIR`, fichiers `.a-annoter.json` à corriger en `.verite.json`).
+
+### 28/11 00:05 · SESSION · T-HZ-2 clôture de la phase 2 · Claude Code
+
+- Fait : `origin/main` (`ee99d1d`, PR #3 et #8) intégrée par `git merge`, sans conflit ; l'évaluation lit désormais le texte avec `readPageText` du module PDF, sans contournement, pour mesurer l'application réelle ; QUALITE et ETAT mis à jour (Q-27-2233-WB résolu, Q-27-2330-HZ toujours ouvert).
+- Vérifié : `npm run check` (126 tests), `npm run build`, évaluation et Edge : `QUALITE.md` V-28-0005-HZ.
+- PR : #10 (`feat/detection-robustesse`), ouverte par l'équipe ; je ne la fusionne pas.
+- Suite : plan de phase 3 présenté à l'équipe ; aucune modification de phase 3 avant validation.

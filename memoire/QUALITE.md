@@ -88,6 +88,13 @@
 - Résultat : le canvas de la page éloignée repasse à zéro pixel et se recalcule au retour. Les huit masques de couverture restent présents. `npm run check` (102 tests), les parcours Edge et Firefox et le test hors ligne Edge passent après la modification.
 - Limites : consommation mémoire globale et temps de rendu sur téléphone physique non mesurés.
 
+### V-28-0005-HZ · Clôture de la phase 2 : main à jour (PR #3 et #8), évaluation et Edge
+
+- Par : Hazem (Claude Code) · Commit : voir la PR #10 (`feat/detection-robustesse`, main `ee99d1d` intégrée)
+- Commande ou protocole : `npm run check` (126 tests, 1 ignoré : l'évaluation sans dossier) ; `npm run build` ; évaluation avec la lecture réelle du module PDF (`readPageText`, sans contournement NaN), avec et sans raster ; `vite build` + `vite preview` de la branche, 15 PDF importés dans Edge avec l'interface de main
+- Résultat : avec raster, type correct 14/15, corrections hors blocs 6/109 (les 6 cases de `qcm-cases.pdf`, perdues par Q-27-2330-HZ ; le document est classé `unknown` et reste entièrement couvert dans l'interface), énoncés masqués 1/65. Texte seul : 12/15, 18/109, 0/65. Edge : les 15 documents ont le comportement attendu (blocs, libellés, avertissements, repli)
+- Limites : corpus synthétique créé par l'équipe ; aucune vraie annale ; téléphone et Safari non testés par moi
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
@@ -103,11 +110,18 @@
 - Reproduction : ouvrir `src/detection/samples/mixte.pdf` dans l’interface intégrée, masquer les corrigés et observer le bas du graphique juste au-dessus de la question 2. Le texte du corrigé est couvert, mais un trait se trouve sous la limite du masque.
 - Responsable : détection. Remonté sur [la PR #6](https://github.com/Hsa2552/night-shift/pull/6#issuecomment-7228546114).
 
+### Q-27-2233-WB · Bord du graphique visible dans `mixte.pdf` · résolu
+
+- Constat (Wael) : un trait du graphique du premier bloc restait sous la limite du masque.
+- Résolution : suivi des graphiques dans le raster (`src/detection/graphics.ts`), vérifié sous Node et dans Edge avec l'interface et le lecteur à jour de main (V-27-2355-HZ, V-28-0005-HZ). Effet secondaire connu : la figure de ce document touche la question 2, dont le haut des lettres est légèrement rogné.
+- Responsable ou tâche : Hazem, T-HZ-2
+
 ### Q-27-2330-HZ · Fragments de texte perdus quand pdf.js renvoie des métriques NaN · ouvert
 
 - Gravité : gênant (risque de correction laissée visible)
 - Constat et reproduction : pour certaines polices de symboles (ZapfDingbats dans `src/detection/samples/qcm-cases.pdf`), `styles[fontName].ascent` et `.descent` valent `NaN`. `mapTextItem` (`src/pdf/text-geometry.ts`) utilise `??`, qui ne remplace pas `NaN` : le rectangle devient `NaN` et le détecteur ne voit pas le fragment. Une correction écrite dans une telle police ne serait jamais masquée.
 - Contournement : dans l'outil d'évaluation seulement (métriques NaN remplacées par les valeurs par défaut). Correctif proposé : `Number.isFinite(style?.ascent) ? style.ascent : ...`, idem pour `descent`
+- État au 28/11 00:05 : toujours présent après la PR #8 (`text-geometry.ts` utilise encore `??`). Effet constaté dans Edge sur `qcm-cases.pdf` : le détecteur signale le texte non localisé et l'interface garde le document entièrement couvert (révélation progressive) ; aucune case n'est visible, mais le masquage automatique n'est pas proposé.
 - Responsable ou tâche : Salif (module PDF)
 
 ## Données de démonstration
