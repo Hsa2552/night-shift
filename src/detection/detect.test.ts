@@ -478,6 +478,28 @@ describe('detectCorrections', () => {
     expect(coverage(result, 0, 6)).toEqual([null, null, 'c1', null, null, 'c2'])
   })
 
+  it('toutes les régions sont finies, non vides et dans leur page (exigence de l’interface)', async () => {
+    const page = fakePage(0, [
+      { text: '☐ Lyon', x: 0 },
+      { text: '☑ Paris', x: 0 },
+      '1. Calculer.',
+      'Correction : 4.',
+      { text: 'Réponse : B', x: 590 },
+    ])
+    const result = await run(page)
+    for (const block of result.blocks) {
+      expect(block.regions.length).toBeGreaterThan(0)
+      for (const { bbox } of block.regions) {
+        expect([bbox.x, bbox.y, bbox.width, bbox.height].every(Number.isFinite)).toBe(true)
+        expect(bbox.width).toBeGreaterThan(0)
+        expect(bbox.height).toBeGreaterThan(0)
+        expect(bbox.x).toBeGreaterThanOrEqual(0)
+        expect(bbox.x + bbox.width).toBeLessThanOrEqual(A4.width)
+        expect(bbox.y + bbox.height).toBeLessThanOrEqual(A4.height)
+      }
+    }
+  })
+
   it('est déterministe', async () => {
     const page = fakePage(0, ['1. Calculer 2 + 2.', 'Correction : 4.', '2. Calculer 3 + 3.'])
     expect(await run(page)).toEqual(await run(page))

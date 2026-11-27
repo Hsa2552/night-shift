@@ -414,6 +414,11 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     }
     built.push({ label: d.label, regions })
   }
+  // Régions bornées à la page ; les rectangles vides ou non finis sont retirés (l'interface
+  // rejette tout le résultat si une seule région est invalide).
+  const pageSize = new Map(input.pages.map((p) => [p.pageIndex, p]))
+  for (const b of built)
+    b.regions = b.regions.flatMap((r) => sanitize(r, pageSize.get(r.pageIndex)))
   const blocks: CorrectionBlock[] = built
     .filter((b) => b.regions.length > 0)
     .map((b, n) => ({
@@ -826,4 +831,24 @@ function isSentence(text: string): boolean {
 /** Au moins un mot de quatre lettres. */
 function hasWord(text: string): boolean {
   return /\p{L}{4,}/u.test(text)
+}
+
+/** Borne une région à sa page ; renvoie [] si elle est vide, hors page ou non finie. */
+function sanitize(
+  r: PageRegion,
+  page: { width: number; height: number } | undefined,
+): PageRegion[] {
+  const { x, y, width, height } = r.bbox
+  if (!page || ![x, y, width, height].every(Number.isFinite)) return []
+  const left = Math.max(0, x)
+  const top = Math.max(0, y)
+  const right = Math.min(page.width, x + width)
+  const bottom = Math.min(page.height, y + height)
+  if (right - left < 0.5 || bottom - top < 0.5) return []
+  return [
+    {
+      pageIndex: r.pageIndex,
+      bbox: { x: left, y: top, width: right - left, height: bottom - top },
+    },
+  ]
 }
