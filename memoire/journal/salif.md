@@ -27,3 +27,17 @@
 - Salif a validé C1. Le contrat est consigné dans la PR #7 sur `contrat/interfaces-pdf` (CI verte). Les exports correspondants sont dans la PR #4.
 - Le parcours réel sur les branches de Wael (`204ed83`) et de Hazem (`86ec9e4`), assemblées avec `feat/pdf`, passe les 94 tests et le build. Edge a importé et analysé les quatre types de PDF synthétiques hors ligne. Le geste tactile et la couverture des pages suivantes ont été vérifiés en émulation. Voir `QUALITE.md` V-27-2236-S.
 - Les entrées de Salif sont regroupées pour faciliter la fusion des trois PR sans écraser les vérifications des autres membres. La PR #5 attend l'accord collectif.
+
+### 27/11 · SESSION · T-S-2 robustesse PDF et recette · Codex
+
+- Les PR #7, #4 et #6 sont dans `main`. La PR #3 a intégré `main` et sa tête `0d70cc7` fournit l'interface de la recette intégrée.
+- Sur `fix/pdf-robustesse`, les rectangles de texte suivent les axes de la matrice PDF, même avec inclinaison. Les bitmaps peuvent être réduits sur les très grandes pages. Les dimensions CSS, la géométrie canonique et les signatures de C1 sont conservées.
+- Vérifié : 90 tests sur la branche PDF, 104 dans la copie intégrée, les deux builds et Edge hors ligne. Le PDF synthétique de 80 pages a exercé le recadrage de la première page et les budgets d'affichage et d'analyse. Voir `QUALITE.md` V-27-2304-S.
+- Le README décrit un test commun sur ordinateur et téléphone à partir du même commit. La publication Pages exige l'activation par un mainteneur. Le workflow existant construit uniquement `main`.
+- PR #5 : proposition finalisée. La protection serveur de `main`, l'accord de Salif, Hazem et Wael et la fusion humaine des Règles v2 sont des prérequis à l'automatisation.
+
+### 27/11 · SESSION · T-S-2 extraction par lots et pistes pour le détecteur · Codex
+
+- L'extraction convertit chaque lot du flux PDF.js avant de lire le suivant. La page ne conserve qu'un tableau complet de fragments, dans le format C1. Le test de régression couvre 250 lignes accentuées, deux polices et la conservation des métriques entre lots.
+- Un essai dans Edge sur `mixte.pdf` a enregistré 351 opérations PDF.js et un tracé d'environ x 88–293 et y 155–224. Les bornes de cette API sont quantifiées et ne suffisent pas à classer un tracé comme corrigé. Relevé transmis à Hazem dans la PR #6. Le raster actuel peut aussi servir à vérifier la marge sous le masque.
+- Vérification du correctif de Wael `96cce8c` : dans le parcours hors ligne sur PDF synthétique de 80 pages, le lecteur garde 3 canvas non vides après le même défilement qui en laissait 13. La première page se rend à nouveau en y revenant. Voir le protocole et les limites dans `QUALITE.md` V-27-2314-S.
