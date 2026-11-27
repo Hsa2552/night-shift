@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { A4, fakeItem, fakePage } from './fixtures.ts'
-import { layoutPage } from './layout.ts'
+import { layoutPage, stripDetachedAccents } from './layout.ts'
 
 describe('layoutPage', () => {
   it('regroupe les fragments d’une même ligne et les joint dans l’ordre', () => {
@@ -60,5 +60,19 @@ describe('layoutPage', () => {
 
   it('signale une page sans texte', () => {
     expect(layoutPage({ pageIndex: 0, ...A4, textItems: [] }).hasText).toBe(false)
+  })
+})
+
+describe('stripDetachedAccents', () => {
+  it('rend lisibles les mots aux accents détachés, abscisses alignées', () => {
+    const text = 'Corrig´e du Contrˆole, `a rendre'
+    const xs = Array.from({ length: text.length }, (_, i) => i)
+    const out = stripDetachedAccents(text, xs)
+    expect(out.text).toBe('Corrige du Controle, a rendre')
+    expect(out.charX).toHaveLength(out.text.length)
+    expect(out.charX[7]).toBe(8) // le « e » après l'accent garde sa position d'origine
+  })
+  it('garde un accent isolé entre espaces', () => {
+    expect(stripDetachedAccents('a ´ b', [0, 1, 2, 3, 4]).text).toBe('a ´ b')
   })
 })

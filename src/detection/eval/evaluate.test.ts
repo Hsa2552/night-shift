@@ -131,6 +131,24 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
         }
       }
       const truth = JSON.parse(readFileSync(truthPath, 'utf8')) as Truth
+      if (process.env.UNSPOIL_EVAL_TRACE && f.startsWith(process.env.UNSPOIL_EVAL_TRACE)) {
+        // Trace ligne par ligne : zone, rôle annoté, bloc couvrant (diagnostic local).
+        const trace = input.pages.flatMap((page) =>
+          layoutPage(page).lines.map((l) => {
+            const block = result.blocks.find((b) =>
+              b.regions.some((r) => coverage(l.bbox, page.pageIndex, [r]) > 0.5),
+            )
+            const role = truth.elements.find(
+              (e) =>
+                e.pageIndex === page.pageIndex &&
+                Math.abs(e.bbox.y - l.bbox.y) < 0.5 &&
+                Math.abs(e.bbox.x - l.bbox.x) < 0.5,
+            )?.role
+            return `${role ?? '?'}\t${block?.id ?? '-'}\t${l.area.id}\tp${page.pageIndex + 1}\t${l.text.slice(0, 70)}`
+          }),
+        )
+        writeFileSync(path.replace(/\.pdf$/i, '.trace.txt'), trace.join('\n'))
+      }
       const ev = evaluate(truth, result)
       evaluated++
       corrections += ev.corrections

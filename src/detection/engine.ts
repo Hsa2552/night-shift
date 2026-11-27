@@ -722,6 +722,16 @@ function lineRegions(d: Draft, flow: Line[]): BoundedRegion[] {
     } else {
       y1 = area.y1
     }
+    // Garantie : la région couvre au moins les lignes du groupe, même si la zone calculée
+    // par la mise en page est plus étroite (faux colonnage dû à des formules éclatées).
+    let gx0 = area.x0
+    let gx1 = area.x1
+    for (let k = i; k <= j; k++) {
+      y0 = Math.min(y0, flow[k]!.bbox.y)
+      y1 = Math.max(y1, bottomOf(flow[k]!))
+      gx0 = Math.min(gx0, flow[k]!.bbox.x)
+      gx1 = Math.max(gx1, flow[k]!.bbox.x + flow[k]!.bbox.width)
+    }
     if (i === d.start && d.inlineX !== undefined) {
       // Première ligne : seulement la partie à droite du marqueur.
       const x = Math.max(area.x0, d.inlineX - pad)
@@ -751,7 +761,7 @@ function lineRegions(d: Draft, flow: Line[]): BoundedRegion[] {
       regions.push({
         region: {
           pageIndex: first.pageIndex,
-          bbox: { x: area.x0, y: y0, width: area.x1 - area.x0, height: y1 - y0 },
+          bbox: { x: gx0, y: y0, width: gx1 - gx0, height: y1 - y0 },
         },
         next: bounded,
         prev: above,
