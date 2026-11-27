@@ -21,3 +21,9 @@
 - Les branches de Hazem (`dca91b3`) et de Wael (`992e8fb`) fonctionnent avec le lecteur dans un montage temporaire. Edge classe correctement les huit PDF de test de Hazem hors ligne. Le canvas de visualisation et les masques restent alignés après redimensionnement à 390 px.
 - Le raster d'analyse utilise un contexte RGBA pour préserver la neutralité du texte noir et permettre le détecteur couleur. Voir `QUALITE.md` V-27-2226-S.
 - La CI de la PR #4 a validé `ee2107d`. L'accord humain sur le contrat verrouillé reste attendu. La proposition de fusion conditionnelle est en revue collective dans la PR brouillon #5.
+
+### 27/11 · SESSION · T-S-1 contrat et application intégrée · Codex
+
+- Salif a validé C1. Le contrat est consigné dans la PR #7 sur `contrat/interfaces-pdf` (CI verte). Les exports correspondants sont dans la PR #4.
+- Le parcours réel sur les branches de Wael (`204ed83`) et de Hazem (`86ec9e4`), assemblées avec `feat/pdf`, passe les 94 tests et le build. Edge a importé et analysé les quatre types de PDF synthétiques hors ligne. Le geste tactile et la couverture des pages suivantes ont été vérifiés en émulation. Voir `QUALITE.md` V-27-2236-S.
+- Les entrées de Salif sont regroupées pour faciliter la fusion des trois PR sans écraser les vérifications des autres membres. La PR #5 attend l'accord collectif.

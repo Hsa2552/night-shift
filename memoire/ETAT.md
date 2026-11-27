@@ -24,6 +24,14 @@
 - Maturité : sans objet
 - Notes :
 
+### T-S-1 · Lecteur PDF et PWA
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `feat/pdf`
+- Critères d'acceptation : chargement local, extraction, rendu canvas, raster, rotations et ressources PWA.
+- Maturité : intégrée et vérifiée dans une copie locale des trois branches. Import hors ligne dans Edge et révélation tactile en émulation.
+- Notes : code PR #4, contrat C1 validé et publié dans la PR #7. Voir `journal/salif.md`. Hazem suit T-HZ-1 sur `feat/detection` et Wael suit T-WB-1 sur `feat/viewer`.
+
 ### T01 · Socle technique commun
 
 - Statut : en revue · Priorité : P0
@@ -32,14 +40,6 @@
 - Critères d'acceptation : `npm install`, `npm run check` et `npm run build` passent sur une machine propre ; CI verte sur la PR ; page provisoire installable comme application
 - Maturité : testée (en local, voir `QUALITE.md` V-27-1959-CC). Non testé : vrai navigateur, téléphone, CI sur GitHub
 - Notes : décision D-INIT-3 ; description du socle dans `ARCHITECTURE.md`
-
-### T-S-1 · Lecteur PDF et PWA
-
-- Statut : en revue · Priorité : P0
-- Responsable : Salif · Agent : Codex · Branche : `feat/pdf`
-- Critères d'acceptation : chargement local, extraction, rendu canvas, raster, rotations et ressources PWA.
-- Maturité : testée (S2 et S3 sur PDF synthétique, cache dans Edge).
-- Notes : PR #4, voir `journal/salif.md`. Hazem suit T-HZ-1 sur `feat/detection` et Wael suit T-WB-1 sur `feat/viewer`.
 
 ## Terminées ou abandonnées
 

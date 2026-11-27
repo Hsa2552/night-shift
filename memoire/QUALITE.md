@@ -20,6 +20,16 @@
 - Résultat : types, lint, formatage et test de fumée OK ; build OK ; manifeste servi (nom, icônes 192 et 512, `lang` fr) ; `sw.js`, `registerSW.js` et icônes répondent 200 ; avec `BASE_PATH`, liens, `start_url` et `scope` passent bien sous `/night-shift/`
 - Limites : **non testé** : affichage dans un vrai navigateur, installation sur téléphone, fonctionnement hors ligne sur un appareil, exécution de la CI sur GitHub, déploiement Pages
 
+## Problèmes connus et risques
+
+_Aucun pour l'instant._
+
+## Données de démonstration
+
+_Liste des données fictives ou synthétiques, et où elles sont signalées (code, interface, README)._
+
+## Vérifications du lecteur PDF et de son intégration
+
 ### V-27-2218-S · Lecture PDF et cache hors ligne
 
 - Par : Salif (Codex) · Branche : `feat/pdf`.
@@ -35,13 +45,12 @@
 - Correction : avec un canvas opaque par défaut, Edge produisait des franges colorées autour du texte noir et l'exemple couleur passait à tort en sujet seul. L'initialisation du canvas d'analyse avec un contexte RGBA supprime ces franges sans modifier le canvas affiché.
 - Limites : montage de vérification distinct du parcours d'import de l'application. Gestes sur téléphone physique, installation mobile et annales externes non testés.
 
-## Problèmes connus et risques
+### V-27-2236-S · Parcours de production avec les trois modules
 
-_Aucun pour l'instant._
-
-## Données de démonstration
-
-_Liste des données fictives ou synthétiques, et où elles sont signalées (code, interface, README)._
+- Par : Salif (Codex) · Versions assemblées dans une copie de vérification : PDF `9b771dd`, détection `86ec9e4` et interface `204ed83`.
+- Protocole : `npm run check` et `BASE_PATH=/night-shift/ npm run build`, puis import par l'interface avec Edge sur Windows. Passage hors ligne dès que le service worker est prêt, rechargement et premier import sans réseau.
+- Résultat : 94 tests réussis. Sur les PDF synthétiques de Hazem, l'analyse distingue le document mixte avec corrections en couleur, le corrigé seul, le sujet seul et le cas inconnu. Les masques se révèlent et se referment par bloc. Le repli progressif fonctionne à la souris. Un PDF invalide est rejeté. En émulation tactile 390 × 844, le trait révèle la première page, peut revenir en haut et laisse la page suivante couverte.
+- Limites : appareil mobile physique, Safari et annales externes non testés. Les trois branches n'étaient pas encore fusionnées sur `main`.
 
 ## Modèles
 
