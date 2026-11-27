@@ -132,6 +132,50 @@ describe('detectCorrections', () => {
     ])
   })
 
+  it('tableau question / réponse avec en-têtes : un bloc par ligne du tableau', async () => {
+    const rows: FakeLine[] = [
+      { text: 'Question', x: 72, y: topOf(0) },
+      { text: 'Réponse', x: 360, y: topOf(0) },
+    ]
+    const pairs = [
+      ['1. Traduire « maison »', 'house'],
+      ['2. Traduire « voiture »', 'car'],
+      ['3. Traduire « arbre »', 'tree'],
+    ]
+    pairs.forEach(([q, a], n) => {
+      rows.push({ text: q!, x: 72, y: topOf(n + 1) })
+      rows.push({ text: a!, x: 360, y: topOf(n + 1) })
+    })
+    const result = await run(fakePage(0, rows))
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual([
+      'Question 1',
+      'Question 2',
+      'Question 3',
+    ])
+    expect(coverage(result, 0, 4, 365)).toEqual(['c1', 'c1', 'c2', 'c3'])
+    expect(coverage(result, 0, 4, 80)).toEqual([null, null, null, null])
+  })
+
+  it('deux colonnes d’article : une correction en colonne droite n’est pas découpée', async () => {
+    const left: FakeLine[] = [
+      '1. Première question assez longue',
+      'suite de la première question',
+      '2. Deuxième question assez longue',
+      'suite de la deuxième question',
+      '3. Troisième question assez longue',
+    ].map((text, n) => ({ text, x: 50, y: topOf(n) }))
+    const right: FakeLine[] = [
+      'Correction : début du corrigé',
+      'deuxième ligne du corrigé long',
+      'troisième ligne du corrigé long',
+      'quatrième ligne du corrigé long',
+      'cinquième ligne du corrigé long',
+    ].map((text, n) => ({ text, x: 320, y: topOf(n) + 8 }))
+    const result = await run(fakePage(0, [...left, ...right]))
+    expect(result.blocks).toHaveLength(1)
+  })
+
   it('réponse sur la même ligne que la question : seule la fin de ligne est masquée', async () => {
     const result = await run(
       fakePage(0, [

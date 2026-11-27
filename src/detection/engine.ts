@@ -307,6 +307,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   }
   close(flow.length - 1)
 
+  splitTableRows(drafts, flow, statementQ, labelAt)
   labelSideBySide(drafts, flow, statementQ, labelAt)
   mergeLabelOnlyBlocks(drafts, flow, parsed)
   drafts.push(...qcmDrafts(flow, parsed, modeAt, labelAt))
@@ -465,6 +466,60 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
 }
 
 // --- Post-traitements -------------------------------------------------------------
+
+/**
+ * Tableau question / réponse : une colonne de réponses dont les lignes sont, pour la plupart,
+ * exactement à la hauteur d'une question de la colonne voisine. Le bloc est découpé en un
+ * bloc par question. Dans une mise en page en deux colonnes d'article, les lignes de
+ * correction ne s'alignent que rarement sur des questions : la règle ne s'applique pas.
+ */
+function splitTableRows(
+  drafts: Draft[],
+  flow: Line[],
+  statementQ: { index: number }[],
+  labelAt: (string | undefined)[],
+) {
+  for (let k = drafts.length - 1; k >= 0; k--) {
+    const d = drafts[k]!
+    if (d.custom || d.inlineX !== undefined) continue
+    const area = flow[d.start]!.area
+    const indices = Array.from({ length: d.end - d.start + 1 }, (_, n) => d.start + n)
+    if (indices.some((i) => flow[i]!.area.id !== area.id)) continue
+    const [page, band] = area.id.split(':')
+    const sibling = statementQ
+      .map(({ index }) => index)
+      .filter((index) => {
+        const [p, b] = flow[index]!.area.id.split(':')
+        return p === page && b === band && flow[index]!.area.id !== area.id
+      })
+    const alignedWith = (i: number) =>
+      sibling.find((q) => Math.abs(flow[q]!.bbox.y - flow[i]!.bbox.y) < 0.3 * flow[i]!.fontSize)
+    const aligned = indices.filter((i) => alignedWith(i) !== undefined)
+    if (aligned.length < 2 || aligned.length < 0.5 * indices.length) continue
+    // Un sous-bloc par question alignée ; les lignes avant la première vont avec elle.
+    const parts: Draft[] = []
+    for (const i of indices) {
+      const q = alignedWith(i)
+      if (q !== undefined || parts.length === 0) {
+        parts.push({
+          start: i,
+          end: i,
+          label: q !== undefined ? labelAt[q] : d.label,
+          grouped: false,
+          questionIndex: q,
+        })
+      } else {
+        parts[parts.length - 1]!.end = i
+      }
+    }
+    // Lignes de tête (« Réponse ») rattachées au premier vrai sous-bloc.
+    if (parts.length > 1 && parts[0]!.questionIndex === undefined) {
+      parts[1]!.start = parts[0]!.start
+      parts.shift()
+    }
+    drafts.splice(k, 1, ...parts)
+  }
+}
 
 /**
  * Correction dans une colonne voisine de sa question (« Réponse » à droite) : le libellé
