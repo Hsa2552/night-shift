@@ -43,11 +43,19 @@
 
 ### T-S-2 · Robustesse PDF et procédure de test
 
-- Statut : en revue · Priorité : P1
+- Statut : fusionnée · Priorité : P1
 - Responsable : Salif · Agent : Codex · Branche : `fix/pdf-robustesse`
 - Critères d'acceptation : repère canonique stable sur texte incliné et pages recadrées, taille des bitmaps bornée et ouverture hors ligne du parcours intégré.
 - Maturité : testée sur Edge et sur un document synthétique de 80 pages, avec test du parcours intégré et du tactile émulé.
 - Notes : protocole de test sur ordinateur et téléphone dans le README. Voir `journal/salif.md`.
+
+### T-S-3 · Validation du lecteur pour la distribution
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/pdf-distribution`
+- Critères d'acceptation : métriques de symboles finies, essais sur annales publiques, mesure multipage, vérification hors ligne et recette HTTPS pour téléphone.
+- Maturité : testée sur Edge et WebKit de Windows. Installation sur téléphone physique et déploiement public à vérifier par l'équipe après activation de Pages.
+- Notes : PR #9. Mesures dans `QUALITE.md` V-27-2342-S et V-27-2348-S.
 
 ### T01 · Socle technique commun
 

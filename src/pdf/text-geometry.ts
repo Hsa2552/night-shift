@@ -13,8 +13,9 @@ export function mapTextItem(
   const fontSize = Math.hypot(c, d)
   const scale = Math.hypot(viewportTransform[0], viewportTransform[1])
   const advance = (vertical ? item.height : item.width) * scale
-  const ascent = style?.ascent ?? (style?.descent != null ? 1 + style.descent : 0.8)
-  const descent = style?.descent ?? -0.2
+  // Some symbol fonts have no usable PDF.js ascent or descent.
+  const descent = style && Number.isFinite(style.descent) ? style.descent : -0.2
+  const ascent = style && Number.isFinite(style.ascent) ? style.ascent : 1 + descent
   const alongX = vertical ? (-c / (fontSize || 1)) * advance : (a / (baselineLength || 1)) * advance
   const alongY = vertical ? (-d / (fontSize || 1)) * advance : (b / (baselineLength || 1)) * advance
   // Use the transformed font axes, so a sheared or mirrored text matrix is preserved.

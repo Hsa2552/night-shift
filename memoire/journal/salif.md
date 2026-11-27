@@ -41,3 +41,10 @@
 - L'extraction convertit chaque lot du flux PDF.js avant de lire le suivant. La page ne conserve qu'un tableau complet de fragments, dans le format C1. Le test de régression couvre 250 lignes accentuées, deux polices et la conservation des métriques entre lots.
 - Un essai dans Edge sur `mixte.pdf` a enregistré 351 opérations PDF.js et un tracé d'environ x 88–293 et y 155–224. Les bornes de cette API sont quantifiées et ne suffisent pas à classer un tracé comme corrigé. Relevé transmis à Hazem dans la PR #6. Le raster actuel peut aussi servir à vérifier la marge sous le masque.
 - Vérification du correctif de Wael `96cce8c` : dans le parcours hors ligne sur PDF synthétique de 80 pages, le lecteur garde 3 canvas non vides après le même défilement qui en laissait 13. La première page se rend à nouveau en y revenant. Voir le protocole et les limites dans `QUALITE.md` V-27-2314-S.
+
+### 27/11 · SESSION · T-S-3 distribution · Codex
+
+- Base `ee99d1d`, branche `fix/pdf-distribution`. Les métriques non finies des polices de symboles utilisent un repli fini sans modifier C1. Reproduit sur le PDF de Hazem avant correction et validé dans le lecteur de production après correction.
+- Quatre annales publiques, une copie aux quatre rotations et une charge dérivée de 170 pages testées localement. Mesures d'Edge, limites et vérification de WebKit dans `QUALITE.md` V-27-2342-S.
+- La recette HTTPS et l'installation sur téléphone sont précisées dans le README. Le propriétaire doit activer Pages avant la vérification de l'URL publique. Aucune modification des paramètres GitHub.
+- PR #9 ouverte. Parité en ligne/hors ligne sur neuf rasters dans chaque moteur, refus d'un PDF chiffré avec réouverture réussie, mesures des processus Edge sur trois cycles. La copie d'intégration avec le détecteur `e784dc1` affiche deux blocs de QCM hors ligne. Voir `QUALITE.md` V-27-2348-S.
