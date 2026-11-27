@@ -8,3 +8,20 @@
 # Fichiers système
 .DS_Store
 Thumbs.db
+
+# Dépendances, build et journaux
+node_modules
+dist
+dist-ssr
+dev-dist
+coverage
+*.local
+logs
+*.log
+npm-debug.log*
+
+# Éditeurs
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.sw?
