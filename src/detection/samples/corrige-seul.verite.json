@@ -1,0 +1,93 @@
+{
+  "kind": "correction_only",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Corrige du partiel d algebre 2025",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 249.616,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Exercice 1",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "La matrice A est diagonalisable car elle possede 3 valeurs propres distinctes.",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 375.496,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Les valeurs propres sont 1, 2 et 3.",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 166.034,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Exercice 2",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Le noyau de f est engendre par le vecteur (1, -1, 0).",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 250.481,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Exercice 3",
+      "bbox": {
+        "x": 72,
+        "y": 167.35000000000014,
+        "width": 54.098,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Le rang vaut 2 d apres le theoreme du rang.",
+      "bbox": {
+        "x": 72,
+        "y": 184.95000000000016,
+        "width": 214.12599999999998,
+        "height": 10.45
+      }
+    }
+  ]
+}

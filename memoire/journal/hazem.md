@@ -47,3 +47,25 @@
 - Fait : QCM dont la bonne option est colorée ou surlignée : toutes les options du groupe sont masquées (sinon la forme du masque trahit la réponse) ; seuil « énoncé négligeable » rendu absolu (un long corrigé ne fait plus passer un document mixte pour un corrigé seul).
 - Vérifié : `npm run check` OK ; banc pdf.js 8 sur 8 ; temps de détection : `QUALITE.md` V-27-2300-HZ.
 - Incident : le commit `2b06206` a été poussé avec un test en échec (ma commande ne s'arrêtait pas sur l'échec de `npm run check`). Corrigé par le commit suivant ; critère « corrigé seul » remplacé : document mixte dès qu'une question numérotée visible a un énoncé ou qu'une ligne d'énoncé contient une phrase, les titres d'exercice ne comptant pas.
+
+### 27/11 23:35 · SESSION · T-HZ-2 robustesse (phase 2) · Claude Code
+
+- Contexte : PR #6 fusionnée ; branche `feat/detection-robustesse` créée depuis main. `src/detection/contract.ts` réexporte désormais `src/shared/types.ts` (contrat C1).
+- Fait : figures et cadres suivis dans le raster (Q-27-2233-WB) ; corrigé seul à titres « Solution N. » sans question ; cases de QCM en police de symboles ; aucun « aucun corrigé » si le rendu raster échoue ; outil d'évaluation `src/detection/eval/` avec vérité terrain ; 16 PDF d'exemple avec `*.verite.json`.
+- Vérifié : 90 tests ; évaluation : `QUALITE.md` V-27-2330-HZ.
+- Trouvé dans le module PDF : Q-27-2330-HZ (métriques NaN), transmis à Salif.
+- Non vérifié : vraies annales ; parcours dans le navigateur avec l'interface de Wael (PR #3 non fusionnée).
+
+### 27/11 23:55 · SESSION · T-HZ-2 test dans le navigateur · Claude Code
+
+- Fait : parcours réel dans Edge (vrais `openPdf`, détecteur et interface de Wael fusionnés localement, rien poussé de cette fusion) ; corrections issues de ce test : cadre suivi vers le haut dans le cas courant, arrondi des limites vers l'extérieur, encre graphique relative au fond de page, tableau question / réponse découpé par ligne, régions bornées à la page (l'interface rejette tout le résultat si une région est invalide), texte non localisé : repli.
+- Vérifié : 95 tests ; évaluation 15/15 types, 0/109 corrections visibles, 1/65 énoncés masqués ; Edge : `QUALITE.md` V-27-2355-HZ.
+- Pour Wael : `clipCorrectionBlocks` rejette tout le résultat pour une seule région invalide ; le détecteur ne produit plus de telles régions, mais un rejet partiel (région ignorée) serait plus sûr qu'un rejet total si tu le juges utile.
+- Suite : vraies annales dès réception (`UNSPOIL_EVAL_DIR`, fichiers `.a-annoter.json` à corriger en `.verite.json`).
+
+### 28/11 00:05 · SESSION · T-HZ-2 clôture de la phase 2 · Claude Code
+
+- Fait : `origin/main` (`ee99d1d`, PR #3 et #8) intégrée par `git merge`, sans conflit ; l'évaluation lit désormais le texte avec `readPageText` du module PDF, sans contournement, pour mesurer l'application réelle ; QUALITE et ETAT mis à jour (Q-27-2233-WB résolu, Q-27-2330-HZ toujours ouvert).
+- Vérifié : `npm run check` (126 tests), `npm run build`, évaluation et Edge : `QUALITE.md` V-28-0005-HZ.
+- PR : #10 (`feat/detection-robustesse`), ouverte par l'équipe ; je ne la fusionne pas.
+- Suite : plan de phase 3 présenté à l'équipe ; aucune modification de phase 3 avant validation.

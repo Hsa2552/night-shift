@@ -1,0 +1,170 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Examen final de statistique, duree 2 heures",
+      "bbox": {
+        "x": 72,
+        "y": 51.5,
+        "width": 287.462,
+        "height": 13.299999999999999
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Documents interdits. Calculatrice autorisee.",
+      "bbox": {
+        "x": 72,
+        "y": 76.14999999999998,
+        "width": 211.464,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Exercice 1 (6 points)",
+      "bbox": {
+        "x": 72,
+        "y": 93.75,
+        "width": 106.65599999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "On lance 100 fois une piece equilibree et on note N le nombre de piles.",
+      "bbox": {
+        "x": 72,
+        "y": 111.35000000000002,
+        "width": 345.57599999999996,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "(a) Donner la loi de N et son esperance.",
+      "bbox": {
+        "x": 72,
+        "y": 128.95000000000005,
+        "width": 194.755,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Solution. N suit une loi binomiale de parametres 100 et 1/2.",
+      "bbox": {
+        "x": 72,
+        "y": 146.55000000000007,
+        "width": 287.815,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Son esperance vaut 50.",
+      "bbox": {
+        "x": 72,
+        "y": 164.1500000000001,
+        "width": 115.797,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "(b) Calculer la variance de N.",
+      "bbox": {
+        "x": 72,
+        "y": 181.7500000000001,
+        "width": 142.31799999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Solution. La variance vaut 100 x 1/2 x 1/2 = 25.",
+      "bbox": {
+        "x": 72,
+        "y": 199.35000000000014,
+        "width": 228.569,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Exercice 2 (8 points)",
+      "bbox": {
+        "x": 72,
+        "y": 216.95000000000016,
+        "width": 106.65599999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Soit X une variable aleatoire de densite f(x) = 2x sur [0, 1].",
+      "bbox": {
+        "x": 72,
+        "y": 234.55000000000018,
+        "width": 283.063,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "(a) Verifier que f est une densite.",
+      "bbox": {
+        "x": 72,
+        "y": 252.1500000000002,
+        "width": 158.147,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Solution. f est positive et son integrale sur [0, 1] vaut 1.",
+      "bbox": {
+        "x": 72,
+        "y": 269.7500000000002,
+        "width": 265.77099999999996,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "(b) Calculer E(X).",
+      "bbox": {
+        "x": 72,
+        "y": 287.35000000000025,
+        "width": 84.95299999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Solution. E(X) = integrale de 2x² = 2/3.",
+      "bbox": {
+        "x": 72,
+        "y": 304.9500000000003,
+        "width": 186.219,
+        "height": 10.45
+      }
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "Fiche de calcul mental",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 170.576,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "1. Combien font 12 x 12 ?",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 124.97099999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Reponse : 144",
+      "bbox": {
+        "x": 360,
+        "y": 79.35000000000002,
+        "width": 70.994,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "2. Combien font 15 x 4 ?",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 118.85499999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Reponse : 60",
+      "bbox": {
+        "x": 360,
+        "y": 96.95000000000005,
+        "width": 64.878,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "3. Combien font 99 + 101 ?",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 132.011,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Reponse : 200",
+      "bbox": {
+        "x": 360,
+        "y": 114.55000000000007,
+        "width": 70.994,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "4. Combien font 7 x 8 ?",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 112.73899999999999,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Reponse : 56",
+      "bbox": {
+        "x": 360,
+        "y": 132.1500000000001,
+        "width": 64.878,
+        "height": 10.45
+      }
+    }
+  ]
+}

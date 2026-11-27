@@ -132,6 +132,50 @@ describe('detectCorrections', () => {
     ])
   })
 
+  it('tableau question / réponse avec en-têtes : un bloc par ligne du tableau', async () => {
+    const rows: FakeLine[] = [
+      { text: 'Question', x: 72, y: topOf(0) },
+      { text: 'Réponse', x: 360, y: topOf(0) },
+    ]
+    const pairs = [
+      ['1. Traduire « maison »', 'house'],
+      ['2. Traduire « voiture »', 'car'],
+      ['3. Traduire « arbre »', 'tree'],
+    ]
+    pairs.forEach(([q, a], n) => {
+      rows.push({ text: q!, x: 72, y: topOf(n + 1) })
+      rows.push({ text: a!, x: 360, y: topOf(n + 1) })
+    })
+    const result = await run(fakePage(0, rows))
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual([
+      'Question 1',
+      'Question 2',
+      'Question 3',
+    ])
+    expect(coverage(result, 0, 4, 365)).toEqual(['c1', 'c1', 'c2', 'c3'])
+    expect(coverage(result, 0, 4, 80)).toEqual([null, null, null, null])
+  })
+
+  it('deux colonnes d’article : une correction en colonne droite n’est pas découpée', async () => {
+    const left: FakeLine[] = [
+      '1. Première question assez longue',
+      'suite de la première question',
+      '2. Deuxième question assez longue',
+      'suite de la deuxième question',
+      '3. Troisième question assez longue',
+    ].map((text, n) => ({ text, x: 50, y: topOf(n) }))
+    const right: FakeLine[] = [
+      'Correction : début du corrigé',
+      'deuxième ligne du corrigé long',
+      'troisième ligne du corrigé long',
+      'quatrième ligne du corrigé long',
+      'cinquième ligne du corrigé long',
+    ].map((text, n) => ({ text, x: 320, y: topOf(n) + 8 }))
+    const result = await run(fakePage(0, [...left, ...right]))
+    expect(result.blocks).toHaveLength(1)
+  })
+
   it('réponse sur la même ligne que la question : seule la fin de ligne est masquée', async () => {
     const result = await run(
       fakePage(0, [
@@ -245,6 +289,53 @@ describe('detectCorrections', () => {
     )
     expect(result.kind).toBe('correction_only')
     expect(coverage(result, 0, 4)).toEqual([null, 'c1', null, 'c2'])
+  })
+
+  it('corrigé seul à titres « Solution N. » sans aucune question : découpé', async () => {
+    const result = await run(
+      fakePage(0, [
+        'Corrigé du TD 5',
+        'Solution 1. On factorise le polynôme.',
+        'Les racines sont 1 et -2.',
+        'Solution 2. La dérivée vaut ln x + 1.',
+      ]),
+    )
+    expect(result.kind).toBe('correction_only')
+    expect(coverage(result, 0, 4)).toEqual([null, 'c1', 'c1', 'c2'])
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual(['Question 1', 'Question 2'])
+  })
+
+  it('corrigé seul sans titre, commençant par une correction : tout est masqué', async () => {
+    const result = await run(fakePage(0, ['Solution 1. On factorise.', 'Solution 2. On dérive.']))
+    expect(result.kind).toBe('correction_only')
+    expect(coverage(result, 0, 2)).toEqual(['c1', 'c2'])
+  })
+
+  it('QCM à cases issues d’une police de symboles (« o » vide, « 4 » cochée)', async () => {
+    const result = await run(
+      fakePage(0, [
+        'Question 1 : Symbole du sodium ?',
+        'o So',
+        '4 Na',
+        'o Sd',
+        'Question 2 : Formule de l’eau ?',
+        '4 H2O',
+        'o HO2',
+        'o H2O2',
+      ]),
+    )
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual(['Question 1', 'Question 2'])
+    // Cases masquées, texte des options visible.
+    expect(coverage(result, 0, 8, 73)).toEqual([null, 'c1', 'c1', 'c1', null, 'c2', 'c2', 'c2'])
+    expect(coverage(result, 0, 8, 72 + 3 * 5.5)).toEqual(Array(8).fill(null))
+  })
+
+  it('liste numérotée « 1 xxx / 2 yyy / 3 zzz » : pas prise pour des cases de QCM', async () => {
+    const result = await run(
+      fakePage(0, ['1. Citer trois auteurs.', '1 Hugo', '2 Zola', '3 Balzac', '2. Conclure.']),
+    )
+    expect(result.blocks).toEqual([])
   })
 
   it('corrigé uniquement sans numérotation : repli proposé', async () => {
@@ -429,6 +520,40 @@ describe('detectCorrections', () => {
       ]),
     )
     expect(coverage(result, 0, 6)).toEqual([null, null, 'c1', null, null, 'c2'])
+  })
+
+  it('toutes les régions sont finies, non vides et dans leur page (exigence de l’interface)', async () => {
+    const page = fakePage(0, [
+      { text: '☐ Lyon', x: 0 },
+      { text: '☑ Paris', x: 0 },
+      '1. Calculer.',
+      'Correction : 4.',
+      { text: 'Réponse : B', x: 590 },
+    ])
+    const result = await run(page)
+    for (const block of result.blocks) {
+      expect(block.regions.length).toBeGreaterThan(0)
+      for (const { bbox } of block.regions) {
+        expect([bbox.x, bbox.y, bbox.width, bbox.height].every(Number.isFinite)).toBe(true)
+        expect(bbox.width).toBeGreaterThan(0)
+        expect(bbox.height).toBeGreaterThan(0)
+        expect(bbox.x).toBeGreaterThanOrEqual(0)
+        expect(bbox.x + bbox.width).toBeLessThanOrEqual(A4.width)
+        expect(bbox.y + bbox.height).toBeLessThanOrEqual(A4.height)
+      }
+    }
+  })
+
+  it('fragment de texte sans position valide : pas de « aucun corrigé », repli', async () => {
+    const page = fakePage(0, ['1. Calculer f(1).', '2. Calculer f(2).'])
+    page.textItems.push({
+      text: '4',
+      bbox: { x: Number.NaN, y: Number.NaN, width: Number.NaN, height: Number.NaN },
+    })
+    const result = await run(page)
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
+    expect(result.warnings).toContain(WARNINGS.unplaced)
   })
 
   it('est déterministe', async () => {

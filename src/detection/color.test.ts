@@ -106,14 +106,16 @@ describe('détection par couleur', () => {
     expect(result.kind).toBe('statement_only')
   })
 
-  it('un échec du rendu raster ne fait pas échouer la détection', async () => {
+  it('un échec du rendu raster : pas de promesse « aucun corrigé », repli', async () => {
     const result = await detectCorrections({
       pages: [page],
       getRaster: async () => {
         throw new Error('rendu impossible')
       },
     })
-    expect(result.kind).toBe('statement_only')
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
+    expect(result.warnings).toContain(WARNINGS.noVisualCheck)
   })
 
   it('les marqueurs textuels restent prioritaires : pas d’analyse de couleur', async () => {
@@ -127,6 +129,8 @@ describe('détection par couleur', () => {
       },
     })
     expect(result.kind).toBe('mixed')
-    expect(calls).toBe(0)
+    expect(result.warnings).not.toContain(WARNINGS.color)
+    // Rendu demandé au plus une fois par page (vérification des graphiques).
+    expect(calls).toBeLessThanOrEqual(1)
   })
 })

@@ -1,0 +1,104 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "TD 2 : geometrie",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 124.88000000000001,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 1. Tracer un triangle rectangle de cotes 3, 4 et 5.",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 281.842,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "[figure]",
+      "bbox": {
+        "x": 65,
+        "y": 92.20000000000005,
+        "width": 452,
+        "height": 113
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Correction",
+      "bbox": {
+        "x": 76,
+        "y": 96.95000000000005,
+        "width": 55.616,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "On verifie que 3² + 4² = 5² : le triangle est rectangle.",
+      "bbox": {
+        "x": 76,
+        "y": 114.55000000000007,
+        "width": 251.23999999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "[figure]",
+      "bbox": {
+        "x": 99,
+        "y": 139.4000000000001,
+        "width": 122,
+        "height": 52
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Le triangle est trace ci-dessus.",
+      "bbox": {
+        "x": 76,
+        "y": 190.1500000000001,
+        "width": 149.06099999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 2. Calculer son aire.",
+      "bbox": {
+        "x": 72,
+        "y": 207.7500000000001,
+        "width": 144.06699999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Correction : aire = 3 x 4 / 2 = 6.",
+      "bbox": {
+        "x": 72,
+        "y": 225.35000000000014,
+        "width": 151.08499999999998,
+        "height": 10.45
+      }
+    }
+  ]
+}

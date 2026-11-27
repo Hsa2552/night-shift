@@ -1,0 +1,126 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "QCM de culture generale",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 188.656,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 1 : Quelle est la capitale de la France ?",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 236.68699999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "A. Lyon",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 36.091,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "B. Paris",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 37.355999999999995,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "C. Marseille",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 57.068,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Reponse : B",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 59.983,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Question 2 : Combien font 2 + 2 ?",
+      "bbox": {
+        "x": 72,
+        "y": 167.35000000000014,
+        "width": 163.911,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "A. 3",
+      "bbox": {
+        "x": 72,
+        "y": 184.95000000000016,
+        "width": 18.909,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "B. 4",
+      "bbox": {
+        "x": 72,
+        "y": 202.55000000000018,
+        "width": 18.689,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "C. 5",
+      "bbox": {
+        "x": 72,
+        "y": 220.1500000000002,
+        "width": 19.183999999999997,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Reponse : B",
+      "bbox": {
+        "x": 72,
+        "y": 237.75000000000023,
+        "width": 59.983,
+        "height": 10.45
+      }
+    }
+  ]
+}

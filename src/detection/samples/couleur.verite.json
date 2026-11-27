@@ -1,0 +1,104 @@
+{
+  "kind": "mixed",
+  "elements": [
+    {
+      "pageIndex": 0,
+      "role": "t",
+      "text": "TD 4 : suites numeriques",
+      "bbox": {
+        "x": 72,
+        "y": 50,
+        "width": 189.472,
+        "height": 15.2
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "Exercice 1",
+      "bbox": {
+        "x": 72,
+        "y": 79.35000000000002,
+        "width": 51.017999999999994,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "1. Montrer que la suite u est croissante.",
+      "bbox": {
+        "x": 72,
+        "y": 96.95000000000005,
+        "width": 191.76299999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "u(n+1) - u(n) = 1/(n+1) > 0 donc u est croissante.",
+      "bbox": {
+        "x": 72,
+        "y": 114.55000000000007,
+        "width": 237.677,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Le resultat est valable pour tout entier n.",
+      "bbox": {
+        "x": 72,
+        "y": 132.1500000000001,
+        "width": 195.778,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "2. Montrer que u est majoree.",
+      "bbox": {
+        "x": 72,
+        "y": 149.7500000000001,
+        "width": 143.462,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "On a u(n) < 2 pour tout n par recurrence.",
+      "bbox": {
+        "x": 72,
+        "y": 167.35000000000014,
+        "width": 198.242,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "q",
+      "text": "3. Conclure sur la convergence.",
+      "bbox": {
+        "x": 72,
+        "y": 184.95000000000016,
+        "width": 153.96699999999998,
+        "height": 10.45
+      }
+    },
+    {
+      "pageIndex": 0,
+      "role": "c",
+      "text": "Suite croissante et majoree : elle converge.",
+      "bbox": {
+        "x": 72,
+        "y": 202.55000000000018,
+        "width": 209.71499999999997,
+        "height": 10.45
+      }
+    }
+  ]
+}

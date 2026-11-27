@@ -58,14 +58,14 @@
 - Maturité : testée (en local, voir `QUALITE.md` V-27-1959-CC). Non testé : vrai navigateur, téléphone, CI sur GitHub
 - Notes : décision D-INIT-3 ; description du socle dans `ARCHITECTURE.md`
 
-### T-HZ-1 · Module de détection des corrigés (H1, H2, H3)
+### T-HZ-2 · Robustesse et généralisation du détecteur (phase 2)
 
-- Statut : en cours · Priorité : P0
-- Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection`
-- Dépend de : contrat commun (proposition §11, copiée dans `src/detection/contract.ts`) ; S2 de Salif pour les tests sur vrais PDF
-- Critères d'acceptation : `detectCorrections` renvoie type, blocs et régions corrects sur les quatre configurations ; tests sur données synthétiques puis sur vrais PDF
-- Maturité : testée (synthétique, puis 8 PDF générés via un banc pdf.js). Non testé : annales réelles, intégration dans l'interface
-- Notes : journal `journal/hazem.md`, entrées du 27/11 22:20 et 22:45
+- Statut : en revue (PR #10) · Priorité : P0
+- Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection-robustesse`
+- Dépend de : contrat C1 (fusionné) ; vraies annales fournies par l'équipe pour l'évaluation locale
+- Critères d'acceptation : corrections visibles et énoncés masqués mesurés séparément (`src/detection/eval/`) et en baisse sur de vraies annales ; tests de régression pour chaque défaut corrigé
+- Maturité : intégrée (main à jour, vérifiée dans Edge avec l'interface et le lecteur ; évaluation V-28-0005-HZ). Non testé : vraies annales, téléphone
+- Notes : journal `journal/hazem.md`, entrées du 27/11 23:35 à 28/11 00:05 ; T-HZ-1 fusionnée par la PR #6 ; dépendance ouverte : Q-27-2330-HZ (Salif)
 
 ## Terminées ou abandonnées
 
