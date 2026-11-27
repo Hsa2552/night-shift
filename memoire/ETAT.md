@@ -15,9 +15,18 @@
 
 ## Tâches actives
 
-### T-WB-1 · Interface et lecture sans spoiler
+### T-WB-2 · Identité Mako et expérience de lecture
 
 - Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/design-mako`
+- Dépend de : C1 et des PR #3, #8, #9 et #10 fusionnées dans `main`.
+- Critères d’acceptation : identité et thèmes Mako, accueil avec import et exemple, lecteur accessible avec navigation, zoom, masques sûrs et compteur, recette navigateur et captures.
+- Maturité : vérifiée sur le build de production dans Edge, y compris le tactile émulé et la reprise hors ligne. Téléphone physique et Safari à vérifier.
+- Notes : PR #12. Neutralisation groupée C1 vérifiée sur les exemples. Validation de bout en bout sur le QCM ENSAI à reprendre avec Hazem. Voir `journal/wael.md` et `QUALITE.md`.
+
+### T-WB-1 · Interface et lecture sans spoiler
+
+- Statut : fusionnée · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/viewer`
 - Dépend de : rendu canvas et repère canonique de Salif (S3), détecteur de Hazem (H1)
 - Critères d'acceptation : masquer les corrigés et les révéler par bloc, proposer une lecture progressive multipage au tactile, gérer les quatre types de document et garder le PDF couvert en cas d'erreur.

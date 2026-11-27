@@ -95,6 +95,15 @@
 - Résultat : avec raster, type correct 14/15, corrections hors blocs 6/109 (les 6 cases de `qcm-cases.pdf`, perdues par Q-27-2330-HZ ; le document est classé `unknown` et reste entièrement couvert dans l'interface), énoncés masqués 1/65. Texte seul : 12/15, 18/109, 0/65. Edge : les 15 documents ont le comportement attendu (blocs, libellés, avertissements, repli)
 - Limites : corpus synthétique créé par l'équipe ; aucune vraie annale ; téléphone et Safari non testés par moi
 
+### V-28-0039-WB · Recette Mako, production et groupes QCM
+
+- Par : Wael (Codex). Build Ubuntu Node.js 24 avec `BASE_PATH=/night-shift/`, puis [recette Playwright](../scripts/verify-mako.cjs) dans Edge sous Windows. Les tests de l’interface sont dans `App.test.tsx` et `viewer/DocumentViewer.test.tsx`.
+- Captures : accueil et lecteur clair/sombre en 1440 × 900, 1280 × 800, 768 × 1024, 390 × 844, 360 × 800 et 844 × 390. Le logo et le favicon ont aussi été examinés à 16, 24 et 32 px. [Captures](captures/mako)
+- Résultat : dépôt, couverture avant analyse, révélation et remasquage individuels, compteur, thème sans perte d’état ni déplacement, navigation neutre, rectangles alignés au zoom, glissement et clavier passent. Sur 80 pages synthétiques, les canvas éloignés sont libérés sans retirer la couverture. Le nouvel import et l’analyse passent hors ligne après activation du service worker, avec la police et l’exemple local.
+- QCM : `qcm-cases.pdf` confirme en navigateur les masques opaques groupés et la commande hors des cases. Un test synthétique de quatre cases confirme l’application du même traitement, la restauration en bloc et le remasquage. Le comportement dépend de la fourniture de toutes les régions par le détecteur.
+- Annale externe : [MIT 18.05, examen final 2022](https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/mit18_05_s22_exam_final.pdf), 23 pages, ouverte puis analysée localement. Le détecteur a renvoyé un bloc. La vérification porte sur le parcours, sans mesure d’exactitude du bloc.
+- Contrastes calculés : 6,75:1 pour le texte secondaire clair, 8,44:1 en sombre, au moins 4,93:1 aux arrêts du bouton dégradé, 9,23:1 pour la commande dans les masques. L’émulation tactile ne valide pas Safari ni un téléphone physique.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
@@ -126,7 +135,7 @@
 
 ## Données de démonstration
 
-_Liste des données fictives ou synthétiques, et où elles sont signalées (code, interface, README)._
+L’exercice de l’accueil est le PDF fictif `src/assets/exemple-synthetique.pdf`, signalé dans l’interface et dans le README. Les autres fichiers de la recette viennent du corpus synthétique du détecteur ou sont générés en mémoire par le script de vérification.
 
 ## Vérifications du lecteur PDF et de son intégration
 

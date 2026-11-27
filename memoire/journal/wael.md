@@ -47,3 +47,9 @@
 
 - Les canvas éloignés de la fenêtre libèrent leur bitmap et le recréent à leur retour dans la zone de préchargement. Le défilement ne change aucune couverture.
 - Vérifié : document graphique synthétique de huit pages dans Edge, `npm run check` (102 tests), build Ubuntu, parcours Edge et Firefox et nouvel import hors ligne dans Edge.
+
+### 28/11 00:39 · SESSION · T-WB-2 (W6 à W10) · Codex
+
+- Branche `feat/design-mako` issue de `main` après la fusion des PR #3, #8, #9 et #10. Logo redessiné d’après `unspoil-logo-reference.png`, déclinaisons vectorielles et PWA, Geist locale, thème clair/sombre. Chemins d’icônes conservés et coordination Salif dans la PR #12.
+- Accueil avec dépôt et exemple PDF synthétique interactif. Lecteur avec navigation neutre, zoom, progression par bloc, chargement couvert et annulation. Revue visuelle sur six tailles dans les deux thèmes et recette Edge sur le build de production, hors ligne et en tactile émulé. Voir `QUALITE.md` V-28-0039-WB.
+- QCM ENSAI : la PR #12 propose à Hazem un bloc C1 contenant toutes les cases d’une question. Régions rendues opaques et neutres, commande unique hors des cases, révélation groupée. Les données synthétiques valident l’interface. Le test sur l’annale ENSAI reste à faire avec le détecteur correspondant.

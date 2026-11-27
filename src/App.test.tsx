@@ -118,6 +118,32 @@ describe('Unspoil', () => {
     expect(screen.getByTestId('page-cover')).toBeTruthy()
   })
 
+  it('ferme le document si son ouverture se termine après une annulation', async () => {
+    const pdf = fakePdf()
+    let finish!: (value: PdfDocument) => void
+    loadPdf.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)))
+    render(<App />)
+    selectFile('a-annuler.pdf')
+    await waitFor(() => expect(loadPdf).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+    await act(async () => finish(pdf))
+    expect(pdf.close).toHaveBeenCalledOnce()
+    expect(screen.queryByTestId('page-cover')).toBeNull()
+    expect(screen.getByLabelText('Importer un PDF')).toBeTruthy()
+  })
+
+  it('explique comment reprendre après le refus d’un PDF chiffré', async () => {
+    const passwordError = new Error('Password required')
+    passwordError.name = 'PasswordException'
+    loadPdf.mockRejectedValueOnce(passwordError)
+    render(<App />)
+    selectFile('chiffre.pdf')
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Importe une copie déverrouillée.',
+    )
+    expect(screen.queryByTestId('page-cover')).toBeNull()
+  })
+
   it('ouvre le PDF couvert avec le mode progressif accessible avant toute extraction de texte', async () => {
     const pdf = fakePdf()
     loadPdf.mockResolvedValue(pdf)

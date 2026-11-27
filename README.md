@@ -71,6 +71,8 @@ La détection dépend de conventions documentaires. Un document atypique ou un s
 
 ## Démo
 
+L’accueil contient « Exemple synthétique », un exercice de probabilités inventé pour essayer la révélation sans importer de fichier. La [recette navigateur et les captures Mako](memoire/DESIGN.md#reproduire-les-vérifications) sont disponibles dans la mémoire du projet.
+
 Le dossier des exemples contient `mixte.pdf`, `corrige-seul.pdf`, `sujet-seul.pdf` et `inconnu.pdf` pour montrer les quatre résultats possibles.
 
 ## Équipe
