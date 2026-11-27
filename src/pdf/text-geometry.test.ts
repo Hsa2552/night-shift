@@ -29,4 +29,15 @@ describe('PDF text geometry', () => {
     const mapped = mapTextItem(item, style, [0, 2, 2, 0, -40, -10])
     expect(mapped.bbox).toEqual({ x: 76, y: 28, width: 20, height: 90 })
   })
+
+  it('falls back to finite bounds for a symbol font with invalid metrics', () => {
+    const symbolFont = { ...style, fontFamily: 'ZapfDingbats' }
+    const viewport = [1, 0, 0, -1, 0, 100]
+    expect(
+      mapTextItem(item, { ...symbolFont, ascent: NaN, descent: -Infinity }, viewport).bbox,
+    ).toEqual({ x: 19, y: 32, width: 45, height: 10 })
+    expect(
+      mapTextItem(item, { ...symbolFont, ascent: NaN, descent: -0.25 }, viewport).bbox,
+    ).toEqual({ x: 18.75, y: 32.5, width: 45, height: 10 })
+  })
 })

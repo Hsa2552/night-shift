@@ -126,6 +126,24 @@ _Liste des données fictives ou synthétiques, et où elles sont signalées (cod
 - Rendu multipage : après le défilement, le nombre de canvas non vides passe de 13 à 3 et la capacité RGBA nominale de 59 078 656 à 13 633 536 octets. La première page se rend à nouveau en revenant dessus. Ces chiffres ne représentent pas la consommation totale du navigateur. L'impact du découpage du texte sur le tas et le temps d'analyse n'a pas été mesuré.
 - Limites : PDF synthétiques, Edge sur Windows et tactile émulé. Déploiement HTTPS et téléphone physique à vérifier par l'équipe.
 
+### V-27-2342-S · Lecteur sur annales universitaires et build HTTPS
+
+Corpus téléchargé depuis les sites des universités pour les essais locaux. Le dépôt et le build ne contiennent aucune copie de ces annales. Les deux dérivés de test proviennent de MIT OpenCourseWare. [Licence et conditions MIT OCW](https://ocw.mit.edu/pages/privacy-and-terms-of-use/)
+
+| Document original | Octets | Pages avec texte / total | Fragments non vides | Ouverture / extraction / rendus (ms) |
+|---|---:|---:|---:|---:|
+| [Liège, MATH0013 août 2025, sujet et corrigé](https://www.mmm.ulg.ac.be/files/MATH0013/examens_alg/ExamenAlg_Se25_pub.pdf) | 73 940 | 8 / 8 | 2 595 | 113 / 115 / 137 |
+| [MIT 18.05, examen final de probabilités et statistiques](https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/mit18_05_s22_exam_final.pdf) | 229 084 | 23 / 23 | 4 602 | 101 / 165 / 102 |
+| [Nantes, recueil L1 mathématiques 2012–2013](https://madoc.univ-nantes.fr/pluginfile.php/444678/mod_folder/content/0/Annales%202012-2013/annales%20licence%201/licence1_mathematiques.pdf?forcedownload=1) | 1 458 824 | 27 / 27 | 2 011 | 206 / 171 / 1 396 |
+| [MIT 16.30, corrigé manuscrit de contrôle aérospatial](https://ocw.mit.edu/courses/16-30-estimation-and-control-of-aerospace-systems-spring-2004/resources/final_solna/) | 2 691 137 | 0 / 17 | 0 | 215 / 32 / 504 |
+
+- Protocole de mesure — Edge sans fenêtre sous Windows (Core i5-1334U, 16 Go), Node 24.18, build de production sous `/night-shift/`, HTTPS local avec certificat de test. Chaque résultat du tableau est la médiane de trois passages hors ligne. Ouverture chronométrée après l'import du module PDF, extraction séquentielle de toutes les pages et rendu canvas à 600 px CSS à ratio 2 suivi d'un raster d'analyse pour la première, celle du milieu et la dernière page. Les extraits de texte ne sont pas consignés.
+- Rendu et géométrie — Au moins une des trois pages échantillonnées de chaque PDF contient de l'encre. Aucun fragment non vide de géométrie non finie. Liège utilise jusqu'à 13 identifiants de police par page. Quatre copies de la première page MIT 18.05 à 0°, 90°, 180° et 270° donnent les dimensions attendues (612 × 792 et 792 × 612 en alternance) et 836 fragments finis.
+- Q-27-2330-HZ — Le fichier synthétique `qcm-cases.pdf` de Hazem reproduit des ascendantes et descendantes `NaN` dans PDF.js brut. Après le correctif, ses 15 fragments non vides ont tous une géométrie finie, y compris six fragments de symboles à boîte positive. La reconnaissance du symbole relève du détecteur.
+- Charge — Une copie locale comprenant dix répétitions du corrigé manuscrit MIT compte 170 pages et 26 782 662 octets. Sur un passage hors ligne, ouverture 293 ms, extraction 198 ms, rendus des trois pages échantillonnées 466 ms. Après GC forcé, le tas JS mesuré via CDP dans le rendu principal vaut 3 645 152 octets avant, 3 783 728 avec document ouvert et 3 661 564 après fermeture. Ces valeurs ne comprennent pas l'ensemble des processus, les allocations du worker, ni les bitmaps GPU. Elles ne mesurent pas un pic mémoire.
+- PWA — Après activation du service worker, rechargement hors ligne puis premier import dans Edge. Les critères d'installabilité du navigateur passent. WebKit 27.2 sous Windows avec profil iPhone émulé passe aussi le rechargement, l'import et le repli progressif sur le scan. Le serveur a refusé les requêtes une fois le réseau simulé coupé. Le build de production et les 111 tests passent.
+- Limites — Contrôle échantillonné du rendu sans comparaison pixel à pixel avec un lecteur de référence. Les fragments des équations restent du texte géométrique. Les documents sans couche texte passent par la révélation progressive. Safari sur matériel Apple et l'installation physique ne sont pas validés par WebKit sous Windows. L'adresse publique standard de Pages répondait 404 lors du contrôle. [Portée de Playwright WebKit](https://playwright.dev/docs/browsers#webkit)
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
