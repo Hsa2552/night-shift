@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Brand, ThemeToggle } from './components/Brand'
 import { FileInput, Home } from './components/Home'
+import { Icon } from './components/Icon'
 import type { PdfDocument } from './pdf'
 import type { PageData, PageDimensions } from './shared/types'
 import { clipCorrectionBlocks } from './viewer/correctionGeometry'
-import { DocumentViewer } from './viewer/DocumentViewer'
 import type { ViewerMode } from './viewer/DocumentViewer'
-import { PdfCanvas } from './viewer/PdfCanvas'
+import { Reader } from './viewer/Reader'
 
 interface OpenDocument {
   id: number
@@ -26,6 +26,7 @@ export default function App() {
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [message, setMessage] = useState('')
   const [warnings, setWarnings] = useState<string[]>([])
+  const [kindLabel, setKindLabel] = useState('')
   const [error, setError] = useState('')
   const currentPdf = useRef<PdfDocument | null>(null)
   const revision = useRef(0)
@@ -49,6 +50,8 @@ export default function App() {
     setMessage('')
     setWarnings([])
     setError('')
+    setKindLabel('')
+    if (typeof HTMLElement.prototype.scrollIntoView === 'function') window.scrollTo(0, 0)
   }
 
   async function importPdf(file: File) {
@@ -60,6 +63,7 @@ export default function App() {
     setMessage('')
     setWarnings([])
     setError('')
+    setKindLabel('')
     setPendingFile(null)
 
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
@@ -115,6 +119,7 @@ export default function App() {
     setError('')
     setMessage('')
     setWarnings([])
+    setKindLabel('')
 
     try {
       const pages: PageData[] = []
@@ -132,6 +137,7 @@ export default function App() {
       setWarnings(result.warnings)
 
       if (result.kind === 'unknown' || result.needsFallback) {
+        setKindLabel('Lecture progressive')
         setMessage('La détection est incertaine. Fais glisser le trait pour découvrir le document.')
         setMode({ kind: 'progressive' })
         return
@@ -145,6 +151,7 @@ export default function App() {
 
       const blocks = clipCorrectionBlocks(result.blocks, document.pages)
       if (!blocks?.length) {
+        setKindLabel('Lecture progressive')
         setMessage(
           'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
         )
@@ -153,6 +160,7 @@ export default function App() {
       }
 
       const count = blocks.length
+      setKindLabel(result.kind === 'correction_only' ? 'Corrigé seul' : 'Sujet et corrections')
       setMessage(count === 1 ? '1 bloc de corrigé détecté.' : `${count} blocs de corrigé détectés.`)
       setMode({ kind: 'automatic', blocks })
     } catch {
@@ -170,7 +178,14 @@ export default function App() {
     setError('')
     setMessage('')
     setWarnings([])
+    setKindLabel('Lecture progressive')
     setMode({ kind: 'progressive' })
+  }
+
+  function cancelAnalysis() {
+    revision.current += 1
+    setBusy(undefined)
+    setMessage('Analyse annulée. Le document reste couvert.')
   }
 
   let status = message
@@ -185,6 +200,7 @@ export default function App() {
   return (
     <div
       className="unspoil"
+      data-workspace={document ? true : undefined}
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes('Files')) event.preventDefault()
       }}
@@ -198,63 +214,40 @@ export default function App() {
       <header className="unspoil-header">
         <div className="site-header-inner">
           <Brand onHome={document ? returnHome : undefined} />
+          {document && (
+            <h1 className="workspace-filename" title={document.name}>
+              <Icon name="file" size={17} />
+              <span>{document.name}</span>
+            </h1>
+          )}
           <div className="site-header-controls">
-            {!document && <a href="#fonctionnement">Comment ça marche</a>}
+            {document ? (
+              <FileInput className="ui-button replace-file" onFile={importPdf}>
+                <Icon name="upload" size={17} />
+                <span>Changer de PDF</span>
+              </FileInput>
+            ) : (
+              <a href="#fonctionnement">Comment ça marche</a>
+            )}
             <ThemeToggle />
           </div>
         </div>
       </header>
       {document ? (
-        <main className="unspoil-main" id="main-content" tabIndex={-1}>
-          <section className="unspoil-toolbar">
-            <h1 className="unspoil-filename">{document.name}</h1>
-            <div className="unspoil-actions">
-              <>
-                <button
-                  className="unspoil-button unspoil-button-primary"
-                  type="button"
-                  disabled={busy === 'detecting' || mode.kind === 'automatic'}
-                  onClick={() => void maskCorrections()}
-                >
-                  Masquer les corrigés
-                </button>
-                <button
-                  className="unspoil-button"
-                  type="button"
-                  aria-pressed={mode.kind === 'progressive'}
-                  aria-disabled={mode.kind === 'progressive'}
-                  onClick={showProgressively}
-                >
-                  Révélation progressive
-                </button>
-              </>
-              <FileInput className="unspoil-button" onFile={importPdf}>
-                Changer de PDF
-              </FileInput>
-            </div>
-            <p role="status" className="unspoil-status">
-              {status}
-            </p>
-            {error && (
-              <p role="alert" className="unspoil-error">
-                {error}
-              </p>
-            )}
-            {warnings.length > 0 && (
-              <ul className="unspoil-warnings">
-                {warnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
-            )}
-          </section>
-          <DocumentViewer
-            key={document.id}
-            pages={document.pages}
-            mode={mode}
-            renderPage={(page) => <PdfCanvas pdf={document.pdf} page={page} />}
-          />
-        </main>
+        <Reader
+          key={document.id}
+          pdf={document.pdf}
+          pages={document.pages}
+          mode={mode}
+          analyzing={busy === 'detecting'}
+          status={status}
+          kindLabel={kindLabel}
+          warnings={warnings}
+          error={error}
+          onAnalyze={() => void maskCorrections()}
+          onProgressive={showProgressively}
+          onCancel={cancelAnalysis}
+        />
       ) : (
         <Home onFile={importPdf} pending={pendingFile} onCancel={returnHome} error={error} />
       )}
