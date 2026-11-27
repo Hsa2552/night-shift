@@ -39,6 +39,28 @@
 - **Décision** : réaliser une PWA de masquage des corrections dans le PDF original, avec détection déterministe et révélation progressive en secours. Les PDF restent sur l'appareil.
 - **Responsables** : Salif pour le lecteur PDF et la PWA, Hazem pour la détection, Wael pour le lecteur côté interface et les interactions.
 
+### D-27-2222-S · Fusion conditionnelle des PR ordinaires · `[PROPOSÉ]`
+
+**Champ.** Une fois les Règles v2 en vigueur, un agent peut fusionner immédiatement une PR dont il est responsable, sur une branche du dépôt, dans son périmètre et ciblant `main`. Les approbations de produit et d'architecture, les fichiers verrouillés, les dépendances nouvelles, les workflows et permissions GitHub, le déploiement et les conflits d'attribution restent soumis à validation et fusion humaines. Tout changement dont le périmètre est incertain suit ce même circuit.
+
+**Synchronisation au premier plan.**
+
+1. Au démarrage et avant chaque jalon ou push, lancer `git status --short --branch` et `git fetch origin`. Comparer `HEAD` avec `origin/main` et la branche distante de travail. Préserver les modifications locales et le travail d'autrui.
+2. Intégrer `origin/main` avec `git merge origin/main` sur une branche de travail propre. Sur un `main` local, avancer uniquement en fast-forward. En cas de conflit appartenant à un autre membre, lui transmettre le détail et poursuivre une tâche indépendante. Après intégration, relire les contrats concernés, exécuter `npm ci` si le verrou a changé, puis les tests et le build.
+3. Publier les jalons testés dans la branche et la PR. Pour une dépendance en attente, vérifier GitHub, travailler sur une tâche indépendante puis, si nécessaire, attendre au premier plan avec vérifications espacées de 30 à 60 secondes et une durée maximale convenue. Les sessions arrêtées ne laissent aucun processus capable de modifier le dépôt.
+
+**Conditions cumulatives de fusion.**
+
+- PR ouverte, sortie du brouillon, diff relu, aucun conflit, aucune demande de changement non résolue et revues requises par GitHub satisfaites. Le compte utilise ses permissions ordinaires et les identifiants de l'environnement.
+- Sur `main`, un humain a rendu obligatoire la CI et l'exigence GitHub de branche à jour avant fusion. La vérification locale du dernier `origin/main` demeure nécessaire. L'exigence serveur protège aussi la fenêtre entre cette vérification et la fusion. Une protection non vérifiable ou une file de fusion obligatoire impose une fusion humaine.
+- Refaire `git fetch origin` et vérifier que le SHA de la PR correspond exactement à la branche locale testée et intègre le dernier `origin/main`. `npm run check` et `npm run build` doivent réussir. Le workflow `CI` du dépôt, événement `pull_request`, et son job `verifier` doivent être terminés avec succès sur le SHA de tête testé. Une exécution ancienne, ignorée, annulée ou encore en cours est insuffisante.
+- Vérifier avant la commande qu'aucun humain n'a annoncé l'arrêt et que l'heure de Paris précède le samedi 28 novembre 2026 à 13 h. Sur un échec d'autorisation, une tête déplacée, une base modifiée ou un état ambigu, interrompre la tentative et rejouer la synchronisation et les vérifications si la fusion reste autorisée.
+- Utiliser la fusion synchrone GitHub `PUT /repos/{owner}/{repo}/pulls/{number}/merge` avec `sha` égal à la tête testée et la méthode de fusion validée par l'équipe. Vérifier la réponse et rafraîchir `origin/main`. Les options d'administration, l'auto-merge GitHub, la file d'attente et les automatisations différées sont exclues de ce protocole. Vérifier l'état de la PR avant tout nouvel essai si l'appel réseau a expiré.
+
+**Mise en vigueur.** Salif, Hazem et Wael valident dans la PR le périmètre, les exceptions, la méthode de fusion et la protection serveur exigée. Le propriétaire vérifie les permissions et applique lui-même les protections convenues. Au dernier relevé, GitHub indique `protected: false` pour `main` et aucune règle active n'est remontée. Ensuite, la branche dédiée porte la mise à jour de `AGENTS.md` en Règles v2 et de la consigne correspondante dans `memoire/INDEX.md`. Un humain fusionne la PR. L'équipe vérifie les protections, annonce l'activation et relance toutes les sessions. Les Règles v1 restent en vigueur jusqu'à cette activation.
+
+**Responsable.** Salif. La PR #5 soumet le protocole à l'équipe.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...
