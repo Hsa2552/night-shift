@@ -1,9 +1,9 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
-import type { PageData, RasterData } from '../shared/types'
+import type { PageData, PageDimensions, RasterData } from '../shared/types'
 import { mapTextItem } from './text-geometry'
 
-export type { PageData, RasterData, Rect, TextItem } from '../shared/types'
+export type { PageData, PageDimensions, RasterData, Rect, TextItem } from '../shared/types'
 
 export interface RenderPageOptions {
   /** Desired width in CSS pixels. Defaults to the page width at scale 1. */
@@ -15,6 +15,7 @@ export interface RenderPageOptions {
 
 export interface PdfDocument {
   readonly pageCount: number
+  getPageDimensions(pageIndex: number): Promise<PageDimensions>
   getPageData(pageIndex: number): Promise<PageData>
   renderPage(
     pageIndex: number,
@@ -103,6 +104,11 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
 
   return {
     pageCount: document.numPages,
+    async getPageDimensions(pageIndex) {
+      const page = await getPage(pageIndex)
+      const { width, height } = page.getViewport({ scale: 1 })
+      return { pageIndex, width, height }
+    },
     async getPageData(pageIndex) {
       const page = await getPage(pageIndex)
       const { width, height, transform } = page.getViewport({ scale: 1 })

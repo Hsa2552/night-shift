@@ -35,17 +35,11 @@
 
 ### T-S-1 · Lecteur PDF et PWA
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Salif · Agent : Codex · Branche : `feat/pdf`
 - Critères d'acceptation : chargement local, extraction, rendu canvas, raster, rotations et ressources PWA.
 - Maturité : testée (S2 et S3 sur PDF synthétique, cache dans Edge).
-- Notes : voir `journal/salif.md`. Hazem suit la détection dans son bloc T-HZ-1 sur `feat/detection`.
-
-### T-W-1 · Interface et masquage
-
-- Statut : à faire · Priorité : P0
-- Responsable : Wael · Agent : Codex
-- Critères d'acceptation : import, masques opaques, révélation indépendante et révélation progressive multipage.
+- Notes : PR #4, voir `journal/salif.md`. Hazem suit T-HZ-1 sur `feat/detection` et Wael suit T-WB-1 sur `feat/viewer`.
 
 ## Terminées ou abandonnées
 

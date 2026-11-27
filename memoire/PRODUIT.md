@@ -27,7 +27,7 @@ Unspoil masque les corrigés dans le PDF original et permet de les révéler au 
 |---|---|---|---|
 | F1 | Import, extraction, rendu du PDF et ressources PWA locales | P0 | T-S-1 |
 | F2 | Détection déterministe, classification et segmentation des corrections | P0 | T-HZ-1 |
-| F3 | Masques blancs opaques, révélation indépendante et révélation progressive multipage | P0 | T-W-1 |
+| F3 | Masques blancs opaques, révélation indépendante et révélation progressive multipage | P0 | T-WB-1 |
 | F4 | Couverture de conventions documentaires supplémentaires | P1 | T-HZ-1 |
 
 Hors périmètre : quiz, notation, comptes, bibliothèque d'annales, comparaison de PDF, reconstruction HTML du document, backend et API d'IA.

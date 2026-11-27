@@ -14,11 +14,14 @@ export interface TextItem {
   hasEOL?: boolean
 }
 
-export interface PageData {
+export interface PageDimensions {
   /** Zero-based index in the PDF. */
   pageIndex: number
   width: number
   height: number
+}
+
+export interface PageData extends PageDimensions {
   textItems: TextItem[]
 }
 

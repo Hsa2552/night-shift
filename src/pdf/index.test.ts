@@ -8,6 +8,11 @@ describe('openPdf with a synthetic PDF', () => {
     const pdf = await openPdf(new Blob([makeTestPdf()]))
     try {
       expect(pdf.pageCount).toBe(2)
+      await expect(pdf.getPageDimensions(1)).resolves.toEqual({
+        pageIndex: 1,
+        width: 160,
+        height: 300,
+      })
       const page = await pdf.getPageData(0)
       expect(page).toMatchObject({ pageIndex: 0, width: 200, height: 100 })
       expect(page.textItems).toHaveLength(1)

@@ -11,3 +11,7 @@
 - Erreurs : l'ouverture, l'extraction et le rendu retournent des promesses rejetées en cas d'échec. Les PDF nécessitant un mot de passe sont rejetés. Les PDF sont traités localement.
 - Vérifié : `npm run check` (4 tests dont 3 du module PDF), build et import hors ligne dans Edge via un point d'entrée temporaire (voir `QUALITE.md`).
 - Suite : valider le contrat dans la mémoire verrouillée et vérifier l'intégration avec H1 et l'interface de Wael.
+
+### 27/11 · SESSION · T-S-1 dimensions seules pour la révélation progressive · Codex
+
+- PR #4. `getPageDimensions(index)` renvoie `{ pageIndex, width, height }` dans le repère canonique, sans extraction du texte. Wael peut construire le lecteur couvert et activer la révélation progressive avant toute analyse.
