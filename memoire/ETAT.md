@@ -24,6 +24,14 @@
 - Maturité : sans objet
 - Notes :
 
+### T-S-1 · Lecteur PDF et PWA
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `feat/pdf`
+- Critères d'acceptation : chargement local, extraction, rendu canvas, raster, rotations et ressources PWA.
+- Maturité : intégrée et vérifiée dans une copie locale des trois branches. Import hors ligne dans Edge et révélation tactile en émulation.
+- Notes : code PR #4, contrat C1 validé et publié dans la PR #7. Voir `journal/salif.md`. Hazem suit T-HZ-1 sur `feat/detection` et Wael suit T-WB-1 sur `feat/viewer`.
+
 ### T01 · Socle technique commun
 
 - Statut : en revue · Priorité : P0

@@ -18,7 +18,7 @@ _Uniquement ce qui fonctionne réellement. Préciser ce qui est simulé ou utili
 
 ## Installation
 
-Prérequis : [Node.js](https://nodejs.org/) 20.19 ou plus récent (22 recommandé).
+Prérequis : [Node.js](https://nodejs.org/) 22.13 ou plus récent (version LTS recommandée).
 
 ```bash
 git clone https://github.com/Hsa2552/night-shift.git
