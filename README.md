@@ -29,6 +29,21 @@ npm run check      # types, lint, formatage et tests
 npm test           # tests seuls
 ```
 
+Pour tester la distribution depuis un clone propre, installer les moteurs puis lancer la recette de production. Les builds de test restent dans `dev-dist/`.
+
+```sh
+npm ci
+npx playwright-core install chromium firefox webkit
+npm run test:distribution
+npm run test:distribution -- update
+```
+
+Pour mesurer séparément l'ouverture, l'extraction, trois rendus et la détection, passer des chemins locaux. Répéter un chemin pour mesurer plusieurs cycles dans la même session. Le rapport Chromium inclut le tas JavaScript et le nombre de workers PDF.js restants après fermeture. Sous Windows, définir `UNSPOIL_NATIVE_MEMORY=1` pour ajouter les octets privés par type de processus. `UNSPOIL_CHROMIUM_PATH` permet d'utiliser Edge à la place du Chromium fourni.
+
+```sh
+npm run test:distribution -- performance src/detection/samples/mixte.pdf src/detection/samples/fin.pdf
+```
+
 ## Déploiement
 
 Publier le contenu de `dist/` sur un hébergement statique HTTPS à partir du commit que l'équipe souhaite tester. Utiliser le chemin de base `/` pour un domaine dédié.
@@ -63,9 +78,9 @@ Ouvrir `http://localhost:4173/night-shift/`, en adaptant le port si Vite en affi
 Partir du même commit intégrant le lecteur, le détecteur et l'interface. Les PDF de [src/detection/samples](src/detection/samples) sont des exemples synthétiques créés pour les tests.
 
 1. **Sur ordinateur**, lancer `npm ci`, `npm run check`, `npm run build`, puis `npm run preview`. Ouvrir l'URL locale indiquée par Vite.
-2. **Sur téléphone**, transférer `couleur.pdf`, `sujet-seul.pdf` et `fin.pdf` sur l'appareil. Ouvrir l'URL HTTPS déployée. Sur Android, utiliser l'installation du site dans Chrome si elle est proposée. Sur iPhone, ouvrir Safari, puis **Partager → Sur l'écran d'accueil → Ouvrir comme app web**. [Installation sur iPhone](https://support.apple.com/fr-ca/guide/iphone/iphea86e5236/ios)
+2. **Sur téléphone**, transférer `couleur.pdf`, `sujet-seul.pdf` et `fin.pdf` sur l'appareil. Ouvrir l'URL HTTPS déployée. Sur Android, ouvrir le menu de Chrome et choisir **Ajouter à l'écran d'accueil → Installer** si l'option est proposée. Sur iPhone, ouvrir Safari, puis **Partager → Sur l'écran d'accueil → Ouvrir comme app web**. [Installation sur iPhone](https://support.apple.com/fr-ca/guide/iphone/iphea86e5236/ios)
 3. **Masques**. Importer `couleur.pdf`. La page s'ouvre couverte. Cliquer sur **Masquer les corrigés**, puis révéler et remasquer un bloc. Redimensionner la fenêtre ou tourner le téléphone et vérifier l'alignement. Avec `sujet-seul.pdf`, vérifier le message « Aucun corrigé n’a été détecté ».
-4. **Multipage**. Importer `fin.pdf`, activer la révélation progressive et déplacer le trait dans les deux sens. Vérifier que la page suivante reste couverte jusqu'au passage du trait. Si disponible, refaire le test avec un PDF autorisé de 50 pages ou plus.
+4. **Multipage**. Importer `fin.pdf`, activer la révélation progressive et déplacer le trait dans les deux sens. Vérifier que la page suivante reste couverte jusqu'au passage du trait. Si disponible, refaire le test avec un PDF autorisé de 50 pages ou plus, revenir au début puis remplacer le document.
 5. **Hors ligne**. Attendre le chargement du site et recharger une fois en ligne. Sur téléphone, ouvrir une fois l'app depuis l'icône installée. Activer le mode avion et couper le Wi-Fi. Fermer complètement l'app, rouvrir depuis l'icône, puis importer un autre PDF déjà enregistré dans **Fichiers**. Vérifier le masquage, le geste tactile et la rotation encore en mode avion.
 6. Reporter le SHA, l'appareil, le navigateur et les résultats dans [memoire/QUALITE.md](memoire/QUALITE.md). Pour un masque décalé, indiquer le PDF, la page et l'orientation.
 

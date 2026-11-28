@@ -68,10 +68,10 @@
 
 ### T-S-4 · Distribution et résilience de la PWA
 
-- Statut : en cours · Priorité : P0
-- Responsable : Salif · Agent : Codex · Branche : `fix/pwa-distribution`
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branches : `fix/pwa-distribution` (PR #11 fusionnée), `fix/recette-distribution` (recette Mako)
 - Critères d'acceptation : une mise à jour du cache préserve la lecture en cours, les essais de confidentialité et de libération sont reproductibles, et le propriétaire dispose de la procédure HTTPS.
-- Maturité : correctif de mise à jour testé localement.
+- Maturité : correctif intégré. Recette de production avec Mako testée sur Edge, Firefox et WebKit. Mesures reproductibles hors ligne.
 - Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
 
 ### T01 · Socle technique commun
@@ -118,6 +118,14 @@
 - Dépend de : moteur de Hazem, lecteur réel et C1. Comparaison indépendante supplémentaire demandée à Salif.
 - Critères d’acceptation : SHA vérifié par le navigateur et après rechargement hors ligne, appel couleur observé dans le build, verdict mesuré sur les annales et transmission des P0 au responsable du moteur.
 - Maturité : recette reproductible et correctif d’interface testés. Lyon 2 validé dans Edge. Les deux annales ENSAI échouent encore au masquage automatique. Voir V-28-0211-WB.
+
+### T-WB-5 · Perception vectorielle des PDF
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/perception-vectorielle`
+- Dépend de : repère C1, lecteur et comparaison brute avec `findBoxes`. Hazem garde la fusion des observations.
+- Maturité : laboratoire Python et prototype PDF.js testés en isolation sur PDF réels et contrôles synthétiques. Approche hybride proposée. Raccordement au moteur et évaluation indépendante à réaliser après revue.
+- Notes : PR #16, `research/pdf-vector/` et V-28-0319-WB. La PR #15 conditionne séparément la synchronisation de la recette de phase 3.
 
 ## Terminées ou abandonnées
 

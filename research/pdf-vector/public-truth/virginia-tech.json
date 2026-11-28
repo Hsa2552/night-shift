@@ -1,0 +1,156 @@
+{
+  "sha256": "bbb9aa48e026b729c5fe678fecca210bb3a8e46cfd510f176d28129d9e383a92",
+  "pages": [14],
+  "elements": [
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 145.25,
+        "y": 195.25,
+        "width": 7.25,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 301.5,
+        "y": 195.25,
+        "width": 7.5,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 457.0,
+        "y": 194.25,
+        "width": 8.75,
+        "height": 8.5
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 81.75,
+        "y": 283.5,
+        "width": 7.5,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 129.75,
+        "y": 282.75,
+        "width": 8.5,
+        "height": 8.25
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 81.75,
+        "y": 354.5,
+        "width": 8.75,
+        "height": 8.5
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 131.5,
+        "y": 355.5,
+        "width": 7.25,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 81.75,
+        "y": 408.75,
+        "width": 8.75,
+        "height": 8.5
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 131.5,
+        "y": 409.75,
+        "width": 7.25,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 81.75,
+        "y": 462.75,
+        "width": 8.75,
+        "height": 8.5
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 131.5,
+        "y": 463.75,
+        "width": 7.25,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 81.75,
+        "y": 517.75,
+        "width": 7.5,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 129.75,
+        "y": 517.0,
+        "width": 8.5,
+        "height": 8.25
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 81.75,
+        "y": 590.0,
+        "width": 7.5,
+        "height": 7.5
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 14,
+      "bbox": {
+        "x": 129.75,
+        "y": 589.25,
+        "width": 8.5,
+        "height": 8.25
+      },
+      "state": "marked"
+    }
+  ]
+}

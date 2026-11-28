@@ -73,3 +73,14 @@
 - Build de recette `ef23fa2f25c3066350534472352fc2a63455cec0`. Base `329d297` et moteur `54e0e7b`. Les chemins du moteur et du lecteur restent ceux des responsables. Le SHA est présent dans le HTML et vérifié après rechargement hors ligne.
 - Le moteur appelle l’analyseur couleur dans le vrai parcours. Lyon 2 L2 donne 17/17 blocs indépendants dans Edge. Deux annales ENSAI comparées à `329d297` affichent encore des réponses visibles et cinq indices par élimination. L’écart Node/Edge a été reproduit sur Savoie. Voir V-28-0211-WB.
 - Le visualiseur conserve la couverture si un résultat « sujet seul » renvoie aussi des blocs. La recette reproductible est dans le README et `scripts/verify-real-pdfs.mjs`. P0 transmis à Hazem. Des annales supplémentaires ont été demandées à Salif pour une recette indépendante.
+
+### 28/11 03:19 · SESSION · T-WB-5 · Perception PDF native
+
+- PR #16 issue de `main` `329d297`. Laboratoire PyMuPDF et prototype PDF.js indépendants. Le lecteur, le moteur et C1 restent intacts. Observations proposées par page et dans le repère C1.
+- Vérifié sur deux annales ENSAI de diagnostic. Les deux extracteurs vectoriels retrouvent 472/472 candidats, contre 391/472 avec les cases raster brutes. Contrôles de familles publiques, notamment glyphes superposés, bleu des questions et scan sans vecteurs. Voir V-28-0319-WB.
+- Approche hybride proposée. Les opérateurs et la couleur sont des indices locaux, à confirmer par le raster quand la visibilité ou l’état est indéterminé. Association aux questions et fusion en revue avec Hazem. Aucun raccordement au lecteur sans coordination avec Salif.
+- Recette précédente. PR #14 fusionnée par l’équipe dans la branche de Hazem au commit `8cebd09`. PR #15 encore ouverte à la dernière vérification de ce jalon.
+
+### 28/11 03:23 · SESSION · T-WB-5 · Contrôle public indépendant
+
+- Mesure géométrique des cases sur une page de Virginia Tech et une de Washington. Enregistrement des seules coordonnées et de l’état observé sur ces deux sources publiques. Les résultats confirment la complémentarité des indices natifs et raster. Voir V-28-0323-WB.

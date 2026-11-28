@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { execFile } from 'node:child_process'
+import { readFile, stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
 import { chromium, firefox, webkit } from 'playwright-core'
 import { build } from 'vite'
 import { makeGraphicsOnlyTestPdf, makeLargeTestPdf, makeTestPdf } from '../src/pdf/test-pdf.ts'
@@ -11,7 +13,10 @@ const repo = resolve(process.cwd())
 const base = '/night-shift/'
 const prefix = 'unspoil-private-fixture'
 const scenario = process.argv[2] ?? 'resilience'
-assert.ok(['resilience', 'update'].includes(scenario), 'Expected resilience or update')
+assert.ok(
+  ['resilience', 'update', 'performance'].includes(scenario),
+  'Expected resilience, update or performance',
+)
 const output = resolve(repo, 'dev-dist', 'distribution', scenario)
 const types = {
   html: 'text/html',
@@ -40,7 +45,7 @@ async function deployable(version) {
         name: 'unspoil-release-fixture',
         enforce: 'pre',
         transformIndexHtml: () => [
-          { tag: 'meta', attrs: { name: 'unspoil-build', content: version } },
+          { tag: 'meta', attrs: { name: 'unspoil-distribution-test-build', content: version } },
         ],
         transform: (code, id) =>
           id.endsWith('/src/pdf/index.ts')
@@ -65,7 +70,12 @@ async function deployable(version) {
   ]) {
     assert.ok(serviceWorker.includes(asset), `Missing precache resource: ${asset}`)
   }
-  return { path, version, pdf: emitted['src/pdf/index.ts'].file }
+  return {
+    path,
+    version,
+    pdf: emitted['src/pdf/index.ts'].file,
+    detection: emitted['src/detection/index.ts'].file,
+  }
 }
 
 const first = await deployable('one')
@@ -115,9 +125,19 @@ function syntheticPdf(name, bytes) {
   return { name: `${prefix}-${name}.pdf`, mimeType: 'application/pdf', buffer: Buffer.from(bytes) }
 }
 
+async function leaveDemoOffscreen(page) {
+  // The homepage opens its own synthetic PDF when the demo becomes visible.
+  await page.addInitScript(() => {
+    const observe = IntersectionObserver.prototype.observe
+    IntersectionObserver.prototype.observe = function (element) {
+      if (!element.matches('.demo-preview')) observe.call(this, element)
+    }
+  })
+}
+
 async function load(page, version) {
   await page.goto(url, { waitUntil: 'domcontentloaded' })
-  const build = page.locator('meta[name="unspoil-build"]')
+  const build = page.locator('meta[name="unspoil-distribution-test-build"]')
   assert.equal(await build.getAttribute('content'), version)
   await page.locator('input[type=file]').waitFor({ state: 'attached' })
   await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 20000 })
@@ -131,11 +151,10 @@ async function importPdf(page, file, name) {
 
 async function analyze(page) {
   await page.getByRole('button', { name: 'Masquer les corrigés' }).click()
-  await page.waitForFunction(() =>
-    /détecté|incertaine|exploitable/i.test(
-      document.querySelector('.unspoil-status')?.textContent ?? '',
-    ),
-  )
+  await page
+    .getByRole('status')
+    .filter({ hasText: /détecté|incertaine|ne peuvent pas être placés/i })
+    .waitFor()
 }
 
 async function storage(page) {
@@ -150,7 +169,8 @@ async function storage(page) {
     }
     return {
       entries,
-      persistentKeys: Object.keys(localStorage),
+      preferences: Object.entries(localStorage),
+      temporaryKeys: Object.keys(sessionStorage),
       databases: indexedDB.databases ? (await indexedDB.databases()).map((db) => db.name) : null,
     }
   })
@@ -165,7 +185,12 @@ async function verifyPrivacy(page, network) {
       (entry) => !entry.mime?.startsWith('application/pdf') && !entry.url.includes(prefix),
     ),
   )
-  assert.equal(retained.persistentKeys.length, 0)
+  assert.ok(
+    retained.preferences.every(
+      ([key, value]) => key === 'unspoil-theme' && ['light', 'dark'].includes(value),
+    ),
+  )
+  assert.equal(retained.temporaryKeys.length, 0)
   assert.ok(!retained.databases || retained.databases.every((name) => name?.startsWith('workbox-')))
   assert.ok(
     network.every(
@@ -205,6 +230,7 @@ async function exerciseReader(page) {
     const pdf = await openPdf(field.files[0])
     field.value = ''
     const canvas = document.createElement('canvas')
+    const thumbnail = document.createElement('canvas')
     try {
       const { width, height, textItems } = await pdf.getPageData(1)
       const cancel = new AbortController()
@@ -224,17 +250,23 @@ async function exerciseReader(page) {
           () => cancel.signal.aborted,
         )
       delete canvas.width
-      await pdf.renderPage(1, canvas, { width: 96, pixelRatio: 1 })
+      await Promise.all([
+        pdf.renderPage(1, canvas, { width: 96, pixelRatio: 1 }),
+        pdf.renderPage(0, thumbnail, { width: 96, pixelRatio: 1 }),
+      ])
       return {
         width,
         height,
         finite: textItems.every((item) => Object.values(item.bbox).every(Number.isFinite)),
         cancelled,
         rerender: [canvas.width, canvas.height],
+        thumbnail: [thumbnail.width, thumbnail.height],
       }
     } finally {
       canvas.width = 0
       canvas.height = 0
+      thumbnail.width = 0
+      thumbnail.height = 0
       await pdf.close()
     }
   }, first.pdf)
@@ -244,6 +276,7 @@ async function exerciseReader(page) {
     finite: true,
     cancelled: true,
     rerender: [96, 180],
+    thumbnail: [96, 48],
   })
 
   await pick(syntheticPdf('large-page', makeLargeTestPdf(4)))
@@ -316,19 +349,27 @@ async function resilience(context, name) {
     await page.getByRole('status').filter({ hasText: '2 blocs de corrigé détectés' }).count(),
     1,
   )
+  const mask = page.getByTestId('correction-mask').first()
+  const canonicalPosition = await mask.getAttribute('style')
+  await page.getByRole('button', { name: 'Zoom avant' }).click()
+  await page.getByText('125 %', { exact: true }).waitFor()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: /Passer au thème/ }).click()
+  assert.equal(await mask.getAttribute('style'), canonicalPosition)
   const privacy = await verifyPrivacy(page, network)
   online = false
-  for (const file of [
-    {
-      name: `${prefix}-invalid.pdf`,
-      mimeType: 'application/pdf',
-      buffer: Buffer.from('invalid fixture'),
-    },
-    encrypted,
+  const invalid = {
+    name: `${prefix}-invalid.pdf`,
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('invalid fixture'),
+  }
+  for (const [file, message] of [
+    [invalid, 'Impossible d’ouvrir ce PDF.'],
+    [encrypted, 'Ce PDF est protégé par un mot de passe.'],
   ]) {
     await page.locator('input[type=file]').setInputFiles(file)
-    await page.getByRole('alert').filter({ hasText: 'Impossible d’ouvrir ce PDF.' }).waitFor()
-    assert.equal(await page.locator('canvas').count(), 0)
+    await page.getByRole('alert').filter({ hasText: message }).waitFor()
+    assert.equal(await page.locator('.reader canvas').count(), 0)
     await importPdf(page, privateFile, privateFile.name)
   }
   await page.reload()
@@ -350,9 +391,14 @@ async function resilience(context, name) {
 }
 
 async function update(context) {
+  online = true
+  deployment = first
+  missing.length = 0
   assert.notEqual(first.pdf, second.pdf)
   const page = await context.newPage()
+  await leaveDemoOffscreen(page)
   await load(page, 'one')
+  assert.equal(await page.evaluate(() => globalThis.__pdfTestBuild), undefined)
   await page.evaluate(() => {
     window.firstController = navigator.serviceWorker.controller
   })
@@ -434,9 +480,132 @@ async function update(context) {
   console.log('New version reopened and loaded offline')
 }
 
+async function performance(context, files) {
+  assert.ok(files.length, 'Pass PDF paths to benchmark, repeating paths for successive cycles')
+  const page = await context.newPage()
+  await leaveDemoOffscreen(page)
+  await load(page, 'one')
+  online = false
+  await page.reload()
+  await page.evaluate(
+    async ({ pdf, detection }) => {
+      window.bench = {
+        ...(await import(new URL(pdf, location.href).href)),
+        ...(await import(new URL(detection, location.href).href)),
+      }
+      const picker = document.createElement('input')
+      picker.id = 'benchmark-file'
+      picker.type = 'file'
+      picker.hidden = true
+      document.body.append(picker)
+    },
+    { pdf: first.pdf, detection: first.detection },
+  )
+  const session = await context.newCDPSession(page)
+  const native =
+    process.platform === 'win32' && process.env.UNSPOIL_NATIVE_MEMORY === '1'
+      ? await context.browser().newBrowserCDPSession()
+      : null
+  const memory = async () => {
+    await session.send('HeapProfiler.collectGarbage')
+    const { usedSize } = await session.send('Runtime.getHeapUsage')
+    return { jsBytes: usedSize, ...(native ? await getNativeMemory(native) : {}) }
+  }
+  const workers = () =>
+    page.workers().filter((worker) => worker.url().includes('/pdf.worker')).length
+  assert.equal(workers(), 0)
+  console.log(
+    JSON.stringify({ initialHeap: await memory(), browser: context.browser()?.version() }),
+  )
+  for (const file of files) {
+    await page.locator('#benchmark-file').setInputFiles(resolve(file))
+    const metrics = await page.evaluate(async () => {
+      const { openPdf, detectCorrections } = window.bench
+      const picker = document.getElementById('benchmark-file')
+      const source = picker.files[0]
+      picker.value = ''
+      let start = globalThis.performance.now()
+      const pdf = await openPdf(source)
+      const openMs = globalThis.performance.now() - start
+      start = globalThis.performance.now()
+      const pages = []
+      for (let index = 0; index < pdf.pageCount; index++) pages.push(await pdf.getPageData(index))
+      const extractMs = globalThis.performance.now() - start
+      const canvas = document.createElement('canvas')
+      start = globalThis.performance.now()
+      for (const index of [0, Math.floor(pdf.pageCount / 2), pdf.pageCount - 1]) {
+        await pdf.renderPage(index, canvas, { width: 780, pixelRatio: 2 })
+      }
+      const renderMs = globalThis.performance.now() - start
+      start = globalThis.performance.now()
+      let rasterPages = 0
+      const { kind } = await detectCorrections({
+        pages,
+        getRaster(index) {
+          rasterPages++
+          return pdf.getRaster(index)
+        },
+      })
+      const detectMs = globalThis.performance.now() - start
+      window.activeBenchmark = { pdf, canvas, pages }
+      return {
+        pages: pages.length,
+        openMs,
+        extractMs,
+        renderMs,
+        detectMs,
+        rasterPages,
+        kind,
+        bitmapBytes: canvas.width * canvas.height * 4,
+      }
+    })
+    const activeHeap = await memory()
+    await page.evaluate(async () => {
+      const { pdf, canvas } = window.activeBenchmark
+      canvas.width = 0
+      canvas.height = 0
+      await pdf.close()
+      delete window.activeBenchmark
+    })
+    const stop = Date.now() + 4000
+    while (workers() && Date.now() < stop) await new Promise((resolve) => setTimeout(resolve, 25))
+    assert.equal(workers(), 0)
+    console.log(
+      JSON.stringify({
+        file,
+        bytes: (await stat(file)).size,
+        ...metrics,
+        activeHeap,
+        closedHeap: await memory(),
+        workersAfterClose: workers(),
+      }),
+    )
+  }
+}
+
+async function getNativeMemory(session) {
+  const { processInfo } = await session.send('SystemInfo.getProcessInfo')
+  const pids = processInfo.map(({ id }) => Number(id)).filter(Number.isSafeInteger)
+  const { stdout } = await promisify(execFile)('powershell.exe', [
+    '-NoProfile',
+    '-NonInteractive',
+    '-Command',
+    `Get-Process -Id ${pids.join(',')} -ErrorAction SilentlyContinue | Select-Object Id,PrivateMemorySize64 | ConvertTo-Json -Compress`,
+  ])
+  const processes = [].concat(JSON.parse(stdout))
+  const byType = {}
+  let privateBytes = 0
+  for (const process of processes) {
+    const type = processInfo.find(({ id }) => Number(id) === process.Id)?.type ?? 'unknown'
+    byType[type] = (byType[type] ?? 0) + process.PrivateMemorySize64
+    privateBytes += process.PrivateMemorySize64
+  }
+  return { privateBytes, byType }
+}
+
 try {
   const engines =
-    scenario === 'update'
+    scenario === 'performance'
       ? [[chromium, 'Chromium', chromiumOptions]]
       : [
           [chromium, 'Chromium', chromiumOptions],
@@ -444,6 +613,15 @@ try {
           [webkit, 'WebKit', {}],
         ]
   for (const [engine, name, options] of engines) {
+    if (scenario === 'performance') {
+      const browser = await engine.launch(options)
+      try {
+        await performance(await browser.newContext(), process.argv.slice(3))
+      } finally {
+        await browser.close()
+      }
+      continue
+    }
     const context = await engine.launchPersistentContext('', options)
     try {
       if (scenario === 'update') await update(context)

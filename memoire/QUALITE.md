@@ -289,6 +289,27 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Après le correctif — Edge garde l'ancien service worker actif pendant l'import de l'onglet existant. La nouvelle version s'active après fermeture du dernier onglet et ouvre le PDF sans réseau. Le cache ne contient plus le module PDF de la première version.
 - Limites — Deux builds locaux. Le déploiement Pages public et la mise à jour depuis une PWA installée sur téléphone demandent une recette après publication.
 
+### V-28-0221-S · Résilience et confidentialité avec l'interface Mako
+
+- Protocole — Build avec le lecteur, Mako et le détecteur visuel de `329d297`, servi sous `/night-shift/` sur la boucle locale. Profils neufs Edge (Chromium), Firefox et WebKit Windows. Le serveur cesse de répondre pendant la session, puis le navigateur recharge l'application et importe un nouveau document.
+- Scénarios — Remplacement d'une ouverture volontairement bloquée, réouverture après PDF invalide ou chiffré, QCM en police de symboles, zoom et thème, rendu annulé pendant son démarrage, rendu multipage sans couche texte et coordonnées finies sur page tournée. Une très grande page conserve sa taille CSS avec un bitmap plafonné.
+- Confidentialité — Les requêtes HTTP observées sont des GET sans corps vers l'origine de l'application. Le nom des fichiers de test n'apparaît dans aucun URL observé, ni dans CacheStorage. Le cache de 208 entrées contient des ressources de l'application, dont le worker PDF.js. Le seul stockage local autorisé par le test correspond au thème, et aucune base IndexedDB de document ni clé de session n'est relevée. L'exemple applicatif est synthétique. La page sans texte utilisée pour l'essai contient un lien externe et sa lecture n'a déclenché aucune requête externe.
+- Audit — `npm audit --omit=dev` ne signale aucun avis pour les dépendances de production au 28/11. L'audit complet signale quatre entrées modérées rattachées à la chaîne de build Workbox. Elles incluent `glob` et `minimatch`. Les fichiers sélectionnés par les étudiants ne passent pas par ces outils de build. [Avis glob](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) · [Avis minimatch](https://github.com/advisories/GHSA-g3hv-75wg-m249)
+- Portée — Inspection des requêtes de l'application et des espaces de stockage web dans les profils testés. Elle ne couvre pas les extensions, les journaux du système ou du navigateur, ni toutes les formes possibles de PDF. Les annonces de compatibilité WebKit concernent Windows. Safari et Chrome sur téléphones physiques restent à tester.
+
+### V-28-0223-S · Huit cycles de lecture, analyse et fermeture
+
+- Protocole — `npm run test:distribution -- performance`, Edge 158.0.4370.45 sous Windows, mode natif activé. L'exemple synthétique de l'accueil reste hors écran pour isoler les fichiers importés. Dans la même session hors ligne, alterner quatre ouvertures du scan de 170 pages avec deux ouvertures du corrigé illustré et deux du document d'algèbre. Pour chaque fichier, extraire toutes les pages, rendre trois pages à 780 px CSS et ratio 2, analyser, mettre le canvas à zéro et attendre la fermeture du worker. Les durées sont des médianes arrondies, et la configuration de la machine figure dans V-27-2342-S.
+
+| Corpus | Cycles | Ouverture (ms) | Extraction (ms) | Trois rendus (ms) | Détection (ms) | Rasters demandés |
+|---|---:|---:|---:|---:|---:|---:|
+| Scan dérivé de MIT 16.30, 170 pages, 26,8 Mo | 4 | 380 | 247 | 403 | <1 | 0 |
+| [MIT 2.007, corrigé illustré](https://ocw.mit.edu/courses/2-007-design-and-manufacturing-i-spring-2009/resources/mit2_007s09_sol_exam01/) | 2 | 295 | 294 | 221 | 566 | 9 |
+| Liège, algèbre avec matrices et équations | 2 | 266 | 301 | 214 | 152 | 3 |
+
+- Fermeture — Aucun worker de document après chacun des huit cycles. Du deuxième au dernier cycle, le tas JS après GC est de 4,15 à 4,40 Mo. Les octets privés d'Edge passent de 354 Mo au départ à 542 Mo après le dernier cycle. Le processus GPU passe de 153 à 323 Mo et le processus de rendu de 98 à 126 Mo. Le GPU porte l'essentiel du résiduel observé. Ces instantanés ne suffisent pas à déterminer s'il s'agit de caches du navigateur, d'allocations conservées par son moteur ou d'une fuite. Ils ne mesurent ni le pic, ni la consommation sur téléphone.
+- Arbitrage — Le corrigé illustré déclenche neuf rasters. Il s'agit du cas le plus coûteux en analyse. Le cache de ces rasters pendant l'analyse est géré côté détection. Dans le lecteur, le rapport entre densité et mémoire bitmap est quadratique avant plafonnement. Le plafond existant préserve le cadre CSS du document, au prix d'une résolution interne réduite sur les très grandes pages. Deux rendus simultanés à 96 px CSS et ratio 1 valident la faisabilité de petits aperçus. La lisibilité des équations à cette échelle et la protection des aperçus relèvent de la recette de l'interface qui les introduira.
+
 ### V-28-0118-WB · Détection colorimétrique indépendante sur quatre documents universitaires
 
 - Protocole : Edge sous Windows, `openPdf`, `getPageData` et `getRaster` sur le serveur Vite local. Déclaration recherchée sur la première page puis analyse isolée par page. Temps du classifieur seul, relevé ponctuel, hors ouverture, extraction et rasterisation. Les PDF n'entrent pas dans le dépôt.
@@ -338,6 +359,20 @@ P0 transmis à Hazem, dans l’ordre :
 3. L’écart Node/Edge exige une vérification navigateur représentative pour conclure sur l’utilisabilité. Un contrôle des entrées du détecteur doit isoler les différences textuelles et raster, puis établir leur contribution.
 
 Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette repose sur Edge sous Windows pour l’affichage. Téléphone physique et Safari restent à vérifier. L’interface rejette désormais un résultat contradictoire `statement_only` contenant des blocs et conserve la couverture progressive. `npm run check` passe avec 171 tests réussis et 2 évaluations optionnelles ignorées. Le build de production réussit.
+
+### V-28-0319-WB · Perception vectorielle et comparaison avec les cases raster
+
+- Par Wael (Codex). Protocole et sources dans `research/pdf-vector/`. Référence raster dans Edge sur `edf4b92`, avec le lecteur réel et `findBoxes`. Prototype Edge PDF.js 6.5.438. L’évaluateur consigne aussi les empreintes des sources mises en service.
+- Deux annales ENSAI de diagnostic, 12 et 4 pages. Référentiel géométrique de 288 et 184 carrés relevés sur les objets natifs, comprenant des cases d’identification. Appariement un à un, IoU minimale 0,60. Le laboratoire Python avec confirmation raster et le prototype PDF.js retrouvent les 472 cibles dans leur état attendu, médiane IoU 1,000. `findBoxes` brut en retrouve 240 et 151, dont les 88 pleines. Il manque 81 vides, avec 602 et 54 candidats non appariés (autres carrés ou décalages). Le protocole avantage la géométrie native et ne mesure pas la segmentation finale.
+- Contrôles publics. Virginia Tech présente 41 glyphes carrés et 20 coches, sans contour carré natif. Washington présente des réponses signalées par un fond vert autour de cases identiques. Sur Lyon 2, les 17 spans natifs bleus éligibles concordent avec le raster et PDF.js relève le même RGB. Liège et Illinois donnent zéro candidat carré, Berkeley un candidat ambigu. Le scan MIT n’a ni texte ni carré natif.
+- Temps cumulés. Référence brute raster et cases de 521 et 154 ms. Opérateurs PDF.js et normalisation en 149 et 66 ms. Chronométrages hors ouverture, à interpréter selon les opérations mesurées.
+- Limites. Les états TypeScript restent à confirmer après composition. Les vrais PDF publics servent aux contrôles ponctuels, sans inventaire annoté exhaustif de leurs objets. Les partitions réservées de Salif, les masques de bout en bout, Safari et les appareils physiques sont hors de ce relevé. Proposition hybride et interface de revue dans la PR #16.
+
+### V-28-0323-WB · Deux pages publiques annotées depuis le rendu
+
+- Protocole. Annotation visuelle indépendante des boîtes et états, appariement à IoU 0,60. Voir `research/pdf-vector/public-truth/` pour les deux pages et les empreintes des PDF.
+- Virginia Tech p. 15. `findBoxes` apparie 11/15 cases et renvoie toutes les cochées comme vides. Les glyphes PyMuPDF apparient les 7 cochées et 3 des 8 vides. À IoU 0,50, les 15 glyphes sont appariés dans leur bon état, avec une médiane IoU 0,608.
+- Washington p. 1. Les 4 cases s’apparient dans les comparaisons PDF.js et raster. Les états raster sont tous « vide » et les états natifs sont ambigus. Les trois marqueurs verts apparaissent dans le relevé PDF.js parmi les rectangles englobants. Le raster fournit 88 candidats en dehors des quatre cibles de la page.
 
 ## Modèles
 

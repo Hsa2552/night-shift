@@ -52,6 +52,13 @@
 - Transport, deux options : (a) champ facultatif `getVectors?(pageIndex)` dans `DetectionInput` : **modification de C1, accord humain nécessaire** ; (b) enregistrement comme l'analyseur colorimétrique (`registerVectorSource`) sans toucher C1, mais état global par document. Recommandation : (a), plus sûre en cas de documents ouverts successivement.
 - Alternative écartée : refaire l'extraction vectorielle dans le moteur (doublon du travail de Wael, consigne contraire).
 
+### D-28-0319-WB · Perception hybride des documents · `[PROPOSÉ]`
+
+- Proposée par Wael (Codex) au premier jalon vectoriel. Voir V-28-0319-WB et PR #16.
+- Exploiter les opérations natives comme observations locales dans le repère C1. Le raster confirme la visibilité, complète les contours et traite les pages numérisées. Le moteur attribue les rôles et regroupe les observations par question et par session.
+- Justification. Les 81 cases vides manquées par `findBoxes` brut dans le diagnostic sont présentes dans les deux relevés natifs. Les cas à glyphes, fond coloré ou scan nécessitent d’autres signaux.
+- Raccordement soumis à revue avec Hazem et Salif. Le prototype n’édite aucune interface commune.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...

@@ -1,0 +1,46 @@
+{
+  "sha256": "aa4620fb04e5f630ebc42cedf53b1aac1f8a65401666c281c8eb61a2f7466161",
+  "pages": [0],
+  "elements": [
+    {
+      "pageIndex": 0,
+      "bbox": {
+        "x": 96.25,
+        "y": 136.25,
+        "width": 10.0,
+        "height": 10.0
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 0,
+      "bbox": {
+        "x": 96.25,
+        "y": 165.25,
+        "width": 10.0,
+        "height": 10.25
+      },
+      "state": "empty"
+    },
+    {
+      "pageIndex": 0,
+      "bbox": {
+        "x": 96.25,
+        "y": 194.25,
+        "width": 10.0,
+        "height": 10.25
+      },
+      "state": "marked"
+    },
+    {
+      "pageIndex": 0,
+      "bbox": {
+        "x": 96.25,
+        "y": 223.25,
+        "width": 10.0,
+        "height": 10.25
+      },
+      "state": "marked"
+    }
+  ]
+}
