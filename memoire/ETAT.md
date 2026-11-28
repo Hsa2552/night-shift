@@ -181,6 +181,13 @@
 - Maturité : parcours QCM démontré dans le build de convergence sous Edge, dont l’import hors ligne. Aucun changement de masque sur les six PDF ENSAI-dev dans la comparaison de raccordement. Raccordement graphique natif conservateur, périmètres sans preuve et balayage raster optionnel laissés hors du parcours automatique.
 - Notes : PR #27, recette V-28-0608-WB et procédure dans `LIVRAISON.md`. La fusion et le contrôle de Pages sur le nouveau `main` restent à l’équipe.
 
+### T-UX-51 · Ergonomie du lecteur et expérience d'entraînement
+
+- Statut : jalon P0 testé · Priorité : P0
+- Responsable : équipe · Agent : Codex · Branche : feat/final-reader-ux
+- Critères : clic et remasquage dans le PDF, commandes latérales hors du document, état par CorrectionBlock, suivi permanent.
+- Maturité : parcours Edge après redimensionnement, zoom et rechargement hors ligne. Comparaison exacte des blocs et régions affichés sur six PDF du développement ou de démonstration. Fichiers ENSAI-dev indisponibles sur ce poste.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._

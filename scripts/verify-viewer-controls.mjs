@@ -14,6 +14,7 @@ const page = await context.newPage()
 page.setDefaultTimeout(20000)
 const reader = page.locator('.reader')
 const maskButton = reader.getByRole('button', { name: 'Masquer les corrigés', exact: true })
+const remask = reader.getByRole('button', { name: 'Tout remasquer', exact: true })
 const progressive = reader.getByRole('button', { name: 'Révélation progressive', exact: true })
 const masks = reader.getByTestId('correction-mask')
 const actions = reader.locator('[data-block-action]')
@@ -43,7 +44,7 @@ async function actionLocations() {
     buttons
       .map((button) => ({
         id: button.dataset.blockAction,
-        mount: button.closest('.pdf-viewer-actions') ? 'footer' : 'inline',
+        mount: button.closest('.pdf-viewer-actions') ? 'rail' : 'inline',
         visible:
           button.getClientRects().length > 0 && getComputedStyle(button).visibility === 'visible',
       }))
@@ -52,7 +53,7 @@ async function actionLocations() {
 }
 
 async function assertToolbar() {
-  for (const button of [maskButton, progressive]) {
+  for (const button of [maskButton.or(remask), progressive]) {
     const rect = await button.boundingBox()
     assert.ok(
       rect && rect.y >= 0 && rect.y + rect.height <= page.viewportSize().height,
@@ -120,20 +121,25 @@ try {
     await individual.and(reader.locator('[data-revealed]')).waitFor()
     const exposed = total - (await masks.count())
     assert.ok(exposed > 0)
-    const globalRemask = await maskButton.isEnabled()
+    const globalRemask = await remask.isEnabled()
     if (scenario === 'assert') {
+      const direct = reader.locator('[data-block-region=' + JSON.stringify(id) + ']').first()
+      await direct.click()
+      assert.equal(await masks.count(), total)
+      await direct.click()
+      assert.equal(await masks.count(), total - exposed)
       assert.deepEqual(mobile, desktop)
       assert.deepEqual(zoom, desktop)
       assert.equal(replacedNodes, 0)
       assert.ok(desktop.every(({ visible }) => visible))
       assert.ok(globalRemask, 'La commande globale doit être actionnable après une révélation')
-      await maskButton.click()
+      await remask.click()
       await page.waitForFunction(
         (count) =>
           document.querySelectorAll('.reader [data-testid=correction-mask]').length === count,
         total,
       )
-      assert.equal(await maskButton.isEnabled(), false)
+      assert.equal(await remask.isEnabled(), false)
     } else {
       await individual.click()
     }

@@ -94,6 +94,89 @@ describe('lecteur', () => {
     expect(screen.getAllByTestId('correction-mask')).toHaveLength(4)
   })
 
+  it('synchronise la zone cliquée et la commande sans déplacer ni démonter les cibles', () => {
+    const { rerender } = render(
+      <DocumentViewer
+        pages={pages}
+        mode={{ kind: 'automatic', blocks }}
+        workspace
+        renderPage={renderPage}
+      />,
+    )
+    const q1 = screen.getByRole('button', { name: 'Afficher le corrigé — Question 1' })
+    const masks = screen.getAllByTestId('correction-mask')
+    const target = masks[1]
+    const otherPage = masks[2]
+    const before = target.getAttribute('style')
+    fireEvent.click(target)
+    expect(q1.getAttribute('data-revealed')).toBe('true')
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(1)
+    expect(target.isConnected).toBe(true)
+    expect(otherPage.isConnected).toBe(true)
+    expect(target.getAttribute('style')).toBe(before)
+    rerender(
+      <DocumentViewer
+        pages={pages}
+        mode={{ kind: 'automatic', blocks }}
+        workspace
+        zoom={150}
+        renderPage={renderPage}
+      />,
+    )
+    fireEvent.click(otherPage)
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(4)
+    expect(screen.getAllByTestId('correction-mask')[1]).toBe(target)
+    expect(screen.getByRole('button', { name: 'Afficher le corrigé — Question 1' })).toBe(q1)
+    act(() => q1.focus())
+    expect(target.getAttribute('data-highlighted')).toBe('true')
+    expect(otherPage.getAttribute('data-highlighted')).toBe('true')
+  })
+
+  it('affiche toutes les cases du même bloc après un clic sur une petite région', () => {
+    const qcm = {
+      id: 'qcm',
+      regions: [30, 54, 78].map((y) => ({
+        pageIndex: 0,
+        bbox: { x: 20, y, width: 14, height: 14 },
+      })),
+    }
+    render(
+      <DocumentViewer
+        pages={pages}
+        mode={{ kind: 'automatic', blocks: [qcm] }}
+        renderPage={renderPage}
+      />,
+    )
+    const target = screen.getAllByTestId('correction-mask')[2]
+    fireEvent.click(target)
+    expect(screen.queryAllByTestId('correction-mask')).toHaveLength(0)
+    expect(screen.getByRole('button', { name: 'Remasquer le corrigé — Bloc 1' })).toBeTruthy()
+    fireEvent.click(target)
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(3)
+  })
+
+  it('laisse un glissement sur un masque sans révélation et réinitialise au changement de mode', () => {
+    const { rerender } = render(
+      <DocumentViewer pages={pages} mode={{ kind: 'automatic', blocks }} renderPage={renderPage} />,
+    )
+    const target = screen.getAllByTestId('correction-mask')[0]
+    fireEvent.pointerDown(target, { clientX: 90, clientY: 155 })
+    fireEvent.pointerMove(target, { clientX: 90, clientY: 175 })
+    fireEvent.click(target, { detail: 1 })
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(4)
+    fireEvent.click(target)
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(1)
+    rerender(
+      <DocumentViewer pages={pages} mode={{ kind: 'progressive' }} renderPage={renderPage} />,
+    )
+    expect(screen.getAllByTestId('progressive-mask')).toHaveLength(2)
+    expect(document.querySelector('[data-block-region]')).toBeNull()
+    rerender(
+      <DocumentViewer pages={pages} mode={{ kind: 'automatic', blocks }} renderPage={renderPage} />,
+    )
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(4)
+  })
+
   it('exprime les régions en pourcentages des dimensions canoniques de chaque page', () => {
     render(
       <DocumentViewer pages={pages} mode={{ kind: 'automatic', blocks }} renderPage={renderPage} />,

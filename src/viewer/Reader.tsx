@@ -47,6 +47,7 @@ export function Reader({
   const viewer = useRef<DocumentViewerHandle>(null)
   const pendingPage = useRef<number | null>(null)
   const total = mode.kind === 'automatic' ? mode.blocks.length : 0
+  const training = mode.kind === 'automatic' && total > 0
 
   useLayoutEffect(() => {
     if (typeof HTMLElement.prototype.scrollIntoView === 'function') window.scrollTo(0, 0)
@@ -136,8 +137,12 @@ export function Reader({
               aria-pressed={mode.kind === 'automatic'}
               disabled={analyzing || (mode.kind === 'automatic' && revealed === 0)}
               onClick={mode.kind === 'automatic' ? () => viewer.current?.remaskAll() : onAnalyze}
+              title={
+                training && revealed === 0 ? 'Toutes les corrections sont masquées' : undefined
+              }
             >
-              <Icon name="eye-off" size={17} /> <span>Masquer les corrigés</span>
+              <Icon name="eye-off" size={17} />
+              <span>{training ? 'Tout remasquer' : 'Masquer les corrigés'}</span>
             </button>
             <button
               type="button"
@@ -230,8 +235,13 @@ export function Reader({
             <div className="reader-status-copy">
               {analyzing && <span className="loading-ring" aria-hidden="true" />}
               <div>
-                {kindLabel && <p className="reader-mode-label">{kindLabel}</p>}
+                {(training || kindLabel) && (
+                  <p className="reader-mode-label">{training ? 'Mode entraînement' : kindLabel}</p>
+                )}
                 <p role="status">{status}</p>
+                {training && (
+                  <p>Clique sur une zone masquée ou utilise les boutons pour la révéler.</p>
+                )}
               </div>
               {analyzing && (
                 <button type="button" className="ui-button" onClick={onCancel}>
@@ -239,15 +249,6 @@ export function Reader({
                 </button>
               )}
             </div>
-            {total > 0 && (
-              <div className="reader-progress">
-                <span aria-live="polite">
-                  {Math.min(revealed, total)} / {total}{' '}
-                  {total === 1 ? 'correction révélée' : 'corrections révélées'}
-                </span>
-                <progress aria-label="Corrections révélées" value={revealed} max={total} />
-              </div>
-            )}
             {error && (
               <p className="ui-error" role="alert">
                 <Icon name="alert" size={17} /> {error}
@@ -261,20 +262,14 @@ export function Reader({
               </ul>
             )}
           </section>
-          <div
-            ref={scrollArea}
-            className="reader-scroll"
-            tabIndex={zoom > 100 ? 0 : undefined}
-            aria-label="Document zoomable"
-          >
-            <div
-              className="reader-document"
-              style={{ width: zoom + '%', maxWidth: (56 * zoom) / 100 + 'rem' }}
-            >
+          <div ref={scrollArea} className="reader-scroll">
+            <div className="reader-document">
               <DocumentViewer
                 ref={viewer}
                 pages={pages}
                 mode={mode}
+                workspace
+                zoom={zoom}
                 onRevealedCount={setRevealed}
                 renderPage={(page) => <PdfCanvas pdf={pdf} page={page} />}
               />
@@ -282,6 +277,30 @@ export function Reader({
           </div>
         </div>
       </div>
+      <footer className="reader-progress" aria-label="Progression de lecture">
+        <span className="reader-page-count">
+          Page {activePage + 1} / {pages.length}
+        </span>
+        {training ? (
+          <>
+            <span aria-live="polite">
+              {Math.min(revealed, total)} / {total}{' '}
+              {total === 1 ? 'correction révélée' : 'corrections révélées'}
+            </span>
+            <progress aria-label="Corrections révélées" value={revealed} max={total} />
+          </>
+        ) : (
+          <span>
+            {analyzing
+              ? 'Analyse en cours'
+              : mode.kind === 'progressive'
+                ? 'Lecture progressive'
+                : mode.kind === 'automatic'
+                  ? 'Sujet sans correction détectée'
+                  : 'Document couvert'}
+          </span>
+        )}
+      </footer>
     </main>
   )
 }
