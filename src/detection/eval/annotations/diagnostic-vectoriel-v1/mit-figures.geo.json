@@ -1,0 +1,61 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "humaine (Wael et/ou Salif selon la section). Page 2 lue visuellement par Salif. Le schéma initial appartient à l’énoncé et les deux dessins annotés correspondent aux calculs du corrigé. Échantillon visuel délimité sans prédiction du détecteur.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [67, 161, 420, 18]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "figure",
+      "bbox": [106, 197, 342, 124]
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [67, 344, 345, 18],
+      "group": "M-1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "figure",
+      "bbox": [150, 371, 207, 91],
+      "group": "M-1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "formula",
+      "bbox": [69, 485, 346, 24],
+      "group": "M-1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [65, 517, 471, 59],
+      "group": "M-1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "formula",
+      "bbox": [68, 615, 350, 19],
+      "group": "M-1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "figure",
+      "bbox": [406, 611, 129, 102],
+      "group": "M-1"
+    }
+  ]
+}
