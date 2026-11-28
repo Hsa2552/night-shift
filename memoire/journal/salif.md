@@ -74,3 +74,8 @@
 - Vérité réservée gelée avant toute prédiction, avec empreintes locales et engagement dans `QUALITE.md`. Les seules mesures publiées sont agrégées. Le test des indices de forme dans les groupes QCM est distinct de la couverture historique.
 - Contrôle Savoie dans Edge : les cinq rasters témoin sont identiques à ceux de production, même sans polices système. Basculer `disableFontFace` reproduit exactement la sortie Node du détecteur. Mesure par le navigateur de production conservée pour les résultats produit.
 - Les deux rapports sur `9615001` concordent avec l'empreinte du build et rendent la perte de parité mesurable. La recette Edge hors ligne passe. Pages et la validation physique restent dépendantes de l'activation par le propriétaire. Voir V-28-0322-S.
+
+### 28/11 · SESSION · T-S-6 raccordement vectoriel · Codex
+
+- Accord collectif confirmé par Salif. Le contrat C1 v1.1 est dans la PR #19. Le transport utilise le type de Wael et transmet la méthode du document à App, au chargeur Node et au benchmark Edge.
+- Le fournisseur mutualise uniquement les appels simultanés d'une page. Après fermeture, les demandes en vol ne produisent plus d'observation utilisable. Les tests ciblés de chargement, repli, fermeture et remplacement passent.

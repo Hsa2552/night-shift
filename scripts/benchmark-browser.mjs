@@ -211,6 +211,7 @@ try {
         raster: true,
         durationMs,
         oracleMatches,
+        vectorRequests: probe.vectorRequests,
         ink,
         presentation,
         abstained: actual.kind === 'progressive',

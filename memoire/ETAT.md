@@ -84,6 +84,14 @@
 - Notes : PR #17 vers la branche de Hazem qui contient le benchmark.
 - Blocage externe : PR #15 en attente de revue humaine et Pages à activer par le propriétaire. La recette physique dépend de l'URL et de l'accès à des appareils.
 
+### T-S-6 · Transport et validation des observations vectorielles
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `feat/transport-vectoriel`
+- Dépend de : validation collective C1 v1.1, PR #19. Base de contrôle commune : `87b6aef` (PR #17 intégrée à la branche de Hazem).
+- Critères d'acceptation : lecture vectorielle à la demande et par document, dégradation vers le raster, essais Node et Edge sur les mêmes PDF et absence de changement de verdict au transport seul.
+- Maturité : transport raccordé au lecteur, à App et aux recettes de benchmark. La validation du moteur hybride suivra le premier commit qui appelle ce fournisseur.
+
 ### T01 · Socle technique commun
 
 - Statut : en revue · Priorité : P0
