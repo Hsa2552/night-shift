@@ -1,0 +1,485 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "humaine assistée (Salif/Codex) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 2 Q1–Q2 avec les quatre propositions; p. 5 Q7a–b et les deux réponses encadrées.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [57.6, 74.612, 482.413, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [57.6, 89.058, 482.493, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [57.6, 103.504, 87.476, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [71.907, 130.901, 339.313, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [170.899, 174.488, 7.475, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [180.366, 161.33, 16.187, 17.437]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [187.008, 188.292, 10.818, 8.073]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [200.319, 169.552, 34.024, 16.891]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [353.896, 174.488, 12.023, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [367.911, 161.227, 20.427, 17.54]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [374.553, 188.395, 4.232, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [394.387, 166.4, 26.931, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [392.021, 174.488, 47.575, 20.156]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [170.899, 226.781, 16.571, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [189.462, 213.623, 16.188, 17.437]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [196.104, 240.688, 4.232, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [211.463, 226.781, 58.515, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [359.643, 226.781, 16.251, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [377.886, 213.623, 16.187, 17.437]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [384.527, 240.688, 4.232, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [415.312, 218.694, 5.858, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [397.761, 226.781, 58.202, 20.156]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 282.916, 84.345, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 302.343, 88.293, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 321.77, 67.308, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 341.198, 97.815, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [389.725, 368.595, 64.116, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [494.286, 368.595, 9.72, 11.955],
+      "group": "q1"
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [71.908, 393.003, 283.494, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.099, 426.59, 123.381, 14.802]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [251.008, 428.515, 148.384, 14.91]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [409.037, 416.582, 8.472, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [404.637, 425.753, 17.263, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [405.292, 445.377, 15.953, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [423.898, 428.515, 66.869, 13.748]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.099, 467.015, 75.223, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [220.973, 455.082, 8.472, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [216.573, 464.254, 17.263, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [217.228, 483.878, 15.953, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [235.834, 467.015, 112.784, 13.748]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [329.449, 467.015, 60.7, 18.258]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.099, 505.515, 79.771, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [224.263, 493.582, 8.472, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [219.863, 502.754, 17.263, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [220.518, 522.378, 15.953, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [239.124, 503.59, 192.25, 15.673]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [422.902, 505.515, 64.647, 14.911]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.099, 544.015, 79.45, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [225.2, 532.082, 8.472, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [220.8, 541.254, 17.263, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [221.455, 560.878, 15.953, 7.97]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [240.061, 544.015, 105.305, 13.749]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [326.198, 544.015, 60.7, 18.258]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 580.877, 84.345, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 600.304, 97.068, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 619.731, 62.765, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 639.159, 67.592, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [385.823, 663.567, 64.116, 11.955]
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [490.384, 663.567, 9.72, 11.955],
+      "group": "q2"
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [71.908, 74.612, 257.168, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 99.021, 229.689, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [281.86, 122.599, 8.472, 7.97]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [277.459, 131.771, 17.263, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [278.114, 151.395, 15.954, 7.97]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [334.674, 126.444, 5.858, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [301.237, 142.733, 72.737, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [112.618, 170.73, 301.056, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [86.865, 472.851, 224.765, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [295.106, 482.03, 8.472, 7.97]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [290.706, 491.201, 17.263, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [291.361, 510.825, 15.953, 7.97]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [313.288, 493.963, 5.858, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [321.133, 485.702, 8.799, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [329.933, 485.875, 16.352, 19.888]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [340.427, 502.163, 5.858, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [347.476, 482.897, 13.941, 14.76]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [112.618, 530.16, 301.056, 11.955]
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [160.741, 200.741, 330.37, 36.296],
+      "group": "q7a"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [171.111, 557.037, 310.37, 36.296],
+      "group": "q7b"
+    }
+  ]
+}

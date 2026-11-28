@@ -1,0 +1,173 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "humaine assistée (Salif/Codex) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 3, problèmes 1–3. Les six chiffres du tableau et les deux réponses rouges sont les corrections.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.024, 72.368, 56.036, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [468.1, 72.368, 72.96, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.024, 89.528, 452.508, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.024, 103.328, 314.326, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [219.89, 144.128, 166.58, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [219.89, 172.808, 208.82, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [219.89, 197.768, 160.7, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [219.89, 222.848, 136.7, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [219.89, 251.558, 95.28, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [219.89, 276.638, 152.06, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.024, 336.278, 56.036, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [468.1, 336.278, 74.28, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.024, 349.838, 400.996, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.024, 484.498, 56.036, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [468.1, 484.498, 74.28, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.024, 501.658, 366.286, 13.284]
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "table",
+      "bbox": [195.631, 143.156, 6.0, 12.0],
+      "group": "p1"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "table",
+      "bbox": [195.697, 172.335, 6.0, 12.0],
+      "group": "p1"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "table",
+      "bbox": [194.752, 199.44, 6.0, 12.0],
+      "group": "p1"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "table",
+      "bbox": [194.752, 224.943, 6.0, 12.0],
+      "group": "p1"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "table",
+      "bbox": [194.752, 252.206, 6.0, 12.0],
+      "group": "p1"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "table",
+      "bbox": [195.511, 277.709, 6.0, 12.0],
+      "group": "p1"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "text",
+      "bbox": [73.39, 377.085, 410.491, 12.0],
+      "group": "p2"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "text",
+      "bbox": [73.39, 391.085, 159.61, 12.0],
+      "group": "p2"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "text",
+      "bbox": [74.27, 528.745, 405.511, 12.0],
+      "group": "p3"
+    },
+    {
+      "page": 2,
+      "role": "c",
+      "category": "text",
+      "bbox": [74.27, 542.745, 82.99, 12.0],
+      "group": "p3"
+    }
+  ]
+}
