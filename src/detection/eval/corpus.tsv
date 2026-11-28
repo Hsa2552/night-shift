@@ -1,23 +1,36 @@
-split	nom	url	sha256
-dev	liege-math0013	https://www.mmm.ulg.ac.be/files/MATH0013/examens_alg/ExamenAlg_Se25_pub.pdf	50cf7137879f02bf5d3496d2d297e586f616099eaf8be4fc70ca7d982fd2dc3b
-dev	bordeaux-ayger-annales	https://www.math.u-bordeaux.fr/~ayger/annales06-07.pdf	e6ce988350c545488f574d2ea2da1892cae19e1bbbed625a538d855e54611134
-dev	utc-mt02-ch7	https://moodle.utc.fr/pluginfile.php/25712/mod_resource/content/1/Cours/MT02-ch7_corrige.pdf	5c460d5c24114d04728f6d187efa98b46b0189a3258d40109a51c2e1338f1393
-dev	ens-glafon-ds7	https://www.normalesup.org/~glafon/kaju22/DS7_22cor.pdf	f3447b9cea61901766961de52fed7955990675fbaa04ab27461476213fe6ccb3
-dev	lyon2-stat-ccc1	https://perso.univ-lyon2.fr/~rabdesse/Documents/UFR-SEG/LICENCE/L3/CCC1-2024-2025.pdf	003dcf0cfe70a5c69702abaf6a87df6d77d35c49385ecfdc45882c0a990965cd
-dev	tlse-l1pc-2009-corrige	https://fsi-alepadellec.univ-tlse3.fr/L1%20PC%20Terminal%201%202009%20Corrige.pdf	69d47121a7f004e64578ce5ee08fb6092df916420796818e0f9c8a4b00d01230
-dev	tlse-l1pc-2009-sujet	https://fsi-alepadellec.univ-tlse3.fr/L1%20PC%20Terminal%201%202009.pdf	e2b4d3b834e1703bf7bd5fb6c980672038a9d98b0c36f5e5e5b8ee3a2d319bf8
-dev	labri-algo-ds	https://dept-info.labri.fr/~maylis/AlgoSem2/EXAMEN/2006/DEV/ds-cor.pdf	b617b7741439e84457077805397be79031f03d082fc8726ed99fa571ce455dcc
-dev	ens-sleurent-stats	https://www.normalesup.org/~sleurent/stats_ps1/Exercices_corriges.pdf	6d39857b575792ab24e9d83b93b8fb368b8b99e8fad2eeaa07a429e48e121c6c
-dev	exo7-fic00047	http://exo7.emath.fr/ficpdf/fic00047.pdf	6e4f4e182393ffb51bbcc727aeea7afd80af0dadebb70180ffe0477d92f475dd
-test	mit-1805-final	https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/mit18_05_s22_exam_final.pdf	ea81c5cec816c91dec509c00ca56b62616bcc210a563900e38e6a468b7ae9a38
-test	uclouvain-epl1201	https://perso.uclouvain.be/vincent.legat/documents/epl1201/epl1201-examen-janv26-soluce.pdf	4eeff74de308c9263ca80f352bf973b7a010e821f5f5a3a5cafc1afc0cc232fa
-test	uclouvain-iepr1011	https://perso.uclouvain.be/vincent.legat/documents/iepr1011/iepr1011-examen-janv18-soluce.pdf	0138024f7cb66088534f45dd1e1c4e747247283e40fb59476618ecbc43f96e03
-test	savoie-info201	https://pierre-hyvernat.apps.math.cnrs.fr/data/Enseignement/1718/info201/examen-correction.pdf	c6b2a6745d6f307b691271bb0638774853842283cc4566083d367a9077fce23f
-test	lyon2-algo-m1hn	https://eric.univ-lyon2.fr/jdarmont/docs/old/m1hn-algo-prog-exam2324.pdf	7bfb55c28376cd67d798508d4064ea3205323e2e51d2610bdb7344781cda8a01
-test	dauphine-maple2014	https://www.lamsade.dauphine.fr/~cornaz/Enseignement/L2_ScDigit--VBA/OLD/Maple/MAPLE2014-CORRECTION.pdf	2bdffc4790f982ce89e501ff19ec5f1345208a639565e98d47aaf91f8f7e3943
-test	picardie-stat-2016	https://www.lamfa.u-picardie.fr/ducay/Statistiques/Examen%202%202016-2017.pdf	078833e8eb942a95dd22f233c9b67f3558a7d429df4a042500353892c3d45062
-test	nantes-l1-recueil	https://madoc.univ-nantes.fr/pluginfile.php/444678/mod_folder/content/0/Annales%202012-2013/annales%20licence%201/licence1_mathematiques.pdf?forcedownload=1	18819047bee5fe24bcc75a90a3881ba13a930c260e8cefca7320cb42ae53ba3a
-test	dauphine-micro-annales	https://static3.dauphine.psl.eu/fileadmin/mediatheque/formations/licences/licence-economie-appliquee/l3-grandes-ecoles/annales.pdf	e5d9672985ae334808da187e200a2ab6025090d3203253496170ab9625560ffc
-test	mit-6006-quiz1-sol	https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/14dca83afa6ba2239ff765bbcf0642a3_MIT6_006F11_quiz1_sol.pdf	be05b432549f68ff7b4c2c8fc5abcd8db88becfbdb5f6dc752bca9db40eba3a5
-test	mit-6006-final-sol	https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/6a81686dc8431dbc9e27dbe42eb683d7_MIT6_006F11_final_sol.pdf	cedf4fea8bb1a92809ec2424102d9070d4f05f9a37c17c1cafca86b9167f8be2
-test	mit-18100c-solutions	https://ocw.mit.edu/courses/18-100c-real-analysis-fall-2012/4cc3cbbe88488796d2bb767ea0fa9cbe_MIT18_100CF12_Solutions.pdf	d91c236924320c6503b0e36a85c2432d68d83ca0a75f64b26b6d71b468633dab
+partition	nom	famille	url	sha256
+dev	liege-math0013	corrige-en-fin	https://www.mmm.ulg.ac.be/files/MATH0013/examens_alg/ExamenAlg_Se25_pub.pdf	50cf7137879f02bf5d3496d2d297e586f616099eaf8be4fc70ca7d982fd2dc3b
+dev	bordeaux-ayger-annales	corrige-en-fin	https://www.math.u-bordeaux.fr/~ayger/annales06-07.pdf	e6ce988350c545488f574d2ea2da1892cae19e1bbbed625a538d855e54611134
+dev	utc-mt02-ch7	marqueurs	https://moodle.utc.fr/pluginfile.php/25712/mod_resource/content/1/Cours/MT02-ch7_corrige.pdf	5c460d5c24114d04728f6d187efa98b46b0189a3258d40109a51c2e1338f1393
+dev	ens-glafon-ds7	corrige-seul	https://www.normalesup.org/~glafon/kaju22/DS7_22cor.pdf	f3447b9cea61901766961de52fed7955990675fbaa04ab27461476213fe6ccb3
+dev	lyon2-stat-ccc1	couleur-questions	https://perso.univ-lyon2.fr/~rabdesse/Documents/UFR-SEG/LICENCE/L3/CCC1-2024-2025.pdf	003dcf0cfe70a5c69702abaf6a87df6d77d35c49385ecfdc45882c0a990965cd
+dev	tlse-l1pc-2009-corrige	marqueurs	https://fsi-alepadellec.univ-tlse3.fr/L1%20PC%20Terminal%201%202009%20Corrige.pdf	69d47121a7f004e64578ce5ee08fb6092df916420796818e0f9c8a4b00d01230
+dev	tlse-l1pc-2009-sujet	sujet-seul	https://fsi-alepadellec.univ-tlse3.fr/L1%20PC%20Terminal%201%202009.pdf	e2b4d3b834e1703bf7bd5fb6c980672038a9d98b0c36f5e5e5b8ee3a2d319bf8
+dev	labri-algo-ds	sans-marqueur	https://dept-info.labri.fr/~maylis/AlgoSem2/EXAMEN/2006/DEV/ds-cor.pdf	b617b7741439e84457077805397be79031f03d082fc8726ed99fa571ce455dcc
+dev	ens-sleurent-stats	sans-marqueur	https://www.normalesup.org/~sleurent/stats_ps1/Exercices_corriges.pdf	6d39857b575792ab24e9d83b93b8fb368b8b99e8fad2eeaa07a429e48e121c6c
+dev	exo7-fic00047	corrige-en-fin	http://exo7.emath.fr/ficpdf/fic00047.pdf	6e4f4e182393ffb51bbcc727aeea7afd80af0dadebb70180ffe0477d92f475dd
+test	mit-1805-final	sujet-seul	https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/mit18_05_s22_exam_final.pdf	ea81c5cec816c91dec509c00ca56b62616bcc210a563900e38e6a468b7ae9a38
+test	uclouvain-epl1201	sans-marqueur	https://perso.uclouvain.be/vincent.legat/documents/epl1201/epl1201-examen-janv26-soluce.pdf	4eeff74de308c9263ca80f352bf973b7a010e821f5f5a3a5cafc1afc0cc232fa
+test	uclouvain-iepr1011	sans-marqueur	https://perso.uclouvain.be/vincent.legat/documents/iepr1011/iepr1011-examen-janv18-soluce.pdf	0138024f7cb66088534f45dd1e1c4e747247283e40fb59476618ecbc43f96e03
+test	savoie-info201	marqueurs	https://pierre-hyvernat.apps.math.cnrs.fr/data/Enseignement/1718/info201/examen-correction.pdf	c6b2a6745d6f307b691271bb0638774853842283cc4566083d367a9077fce23f
+test	lyon2-algo-m1hn	corrige-en-fin	https://eric.univ-lyon2.fr/jdarmont/docs/old/m1hn-algo-prog-exam2324.pdf	7bfb55c28376cd67d798508d4064ea3205323e2e51d2610bdb7344781cda8a01
+test	dauphine-maple2014	corrige-seul	https://www.lamsade.dauphine.fr/~cornaz/Enseignement/L2_ScDigit--VBA/OLD/Maple/MAPLE2014-CORRECTION.pdf	2bdffc4790f982ce89e501ff19ec5f1345208a639565e98d47aaf91f8f7e3943
+test	picardie-stat-2016	sujet-seul	https://www.lamfa.u-picardie.fr/ducay/Statistiques/Examen%202%202016-2017.pdf	078833e8eb942a95dd22f233c9b67f3558a7d429df4a042500353892c3d45062
+test	nantes-l1-recueil	sujet-seul	https://madoc.univ-nantes.fr/pluginfile.php/444678/mod_folder/content/0/Annales%202012-2013/annales%20licence%201/licence1_mathematiques.pdf?forcedownload=1	18819047bee5fe24bcc75a90a3881ba13a930c260e8cefca7320cb42ae53ba3a
+test	dauphine-micro-annales	corrige-en-fin	https://static3.dauphine.psl.eu/fileadmin/mediatheque/formations/licences/licence-economie-appliquee/l3-grandes-ecoles/annales.pdf	e5d9672985ae334808da187e200a2ab6025090d3203253496170ab9625560ffc
+test	mit-6006-quiz1-sol	marqueurs	https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/14dca83afa6ba2239ff765bbcf0642a3_MIT6_006F11_quiz1_sol.pdf	be05b432549f68ff7b4c2c8fc5abcd8db88becfbdb5f6dc752bca9db40eba3a5
+test	mit-6006-final-sol	marqueurs	https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/6a81686dc8431dbc9e27dbe42eb683d7_MIT6_006F11_final_sol.pdf	cedf4fea8bb1a92809ec2424102d9070d4f05f9a37c17c1cafca86b9167f8be2
+test	mit-18100c-solutions	corrige-seul	https://ocw.mit.edu/courses/18-100c-real-analysis-fall-2012/4cc3cbbe88488796d2bb767ea0fa9cbe_MIT18_100CF12_Solutions.pdf	d91c236924320c6503b0e36a85c2432d68d83ca0a75f64b26b6d71b468633dab
+dev	lyon2-l2-ccc1	couleur-questions	https://perso.univ-lyon2.fr/~rabdesse/Documents/UFR-SEG/LICENCE/L2/CCC1-2024-2025.pdf	e9086f3b7d59ee072a39fca0c75348563ca0b6c9447ea8a7fdef4ddda1d1d091
+ensai-dev	ensai-09e01e2ab125	qcm-cases	local	09e01e2ab12577cc832d63025895de643b50b28f460da2586a289896ab080294
+ensai-dev	ensai-210af91d4856	qcm-cases	local	210af91d4856ddd1273d556dfe37e140aa3d02a516fcbf7be078a06add5f0ad2
+ensai-dev	ensai-561ca33970dd	qcm-cases	local	561ca33970dd6524add4afb6181058a15e3b4036528c38462b1b05c31cec5906
+ensai-dev	ensai-7ee2f78e3b39	qcm-cases	local	7ee2f78e3b39c0b97e2623caa9517460073da8cb178a32179e48b98b905f30ca
+ensai-dev	ensai-dad6fa6cb001	qcm-cases	local	dad6fa6cb001835a56c750d66666d9854c64a6b7d477c8195a718e66a92dd08c
+ensai-dev	ensai-dd0202471173	qcm-cases	local	dd0202471173c0722dc96653ecda13fee938f8456a7d8c2b304db4f601f8d490
+ensai-test	ensai-0321fa3433dc	qcm-cases	local	0321fa3433dc5bc665ec27e3f436870047766cdcdc90d145193167fd92017288
+ensai-test	ensai-31c6185a6521	qcm-cases	local	31c6185a65210d80d00aa0f0482cfc62d47bf40c7a076cd745a17e7a8ec46db9
+ensai-test	ensai-65d34baaec80	qcm-cases	local	65d34baaec8099b1a8f187187883d8ff38f616c9b23890a0bf2f16508d39fff2
+ensai-test	ensai-955ced46b728	qcm-cases	local	955ced46b72837e1e93db5abeca7bd9c93e1d7be9eeced3db74d4056bf69c165
+ensai-test	ensai-b0c096624cfb	qcm-cases	local	b0c096624cfb68f241550c0e14cb400f01c24c36c465023cabddcecfee74f490
+ensai-test	ensai-dccbfb6e958f	qcm-cases	local	dccbfb6e958faf10b1e0c509b546e9487bafe705f389921fbc39305a866cb1b3

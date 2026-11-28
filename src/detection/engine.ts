@@ -42,6 +42,8 @@ export const WARNINGS = {
   color: 'Corrigés repérés uniquement par leur couleur : vérifiez le résultat.',
   questionInk: 'Corrigés repérés par la couleur des questions : vérifiez le résultat.',
   externalColor: 'Corrigés colorés ajoutés par le détecteur visuel : vérifiez le résultat.',
+  correctionHint:
+    'Le document semble contenir des corrigés qui n’ont pas pu être localisés : détection incertaine.',
   unplaced: "Une partie du texte n'a pas pu être localisée : des corrigés peuvent rester visibles.",
   noVisualCheck:
     "Aucun marqueur de corrigé, mais l'analyse visuelle de la page a échoué : détection incertaine.",
@@ -447,13 +449,21 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     qCount >= 2 &&
     continuityEvents >= 1 &&
     !suspiciousFont(flow, parsed) &&
-    !visualCheckFailed
+    !visualCheckFailed &&
+    !correctionHint(layouts, flow, parsed)
   ) {
     kind = 'statement_only'
   } else if (qCount >= 2 && continuityEvents >= 1) {
-    // Sans vérification visuelle (corrigés en couleur), on n'affirme pas « aucun corrigé ».
+    // Indices de corrigés non localisés (police, titre, tournures de réponse) ou pas de
+    // vérification visuelle : on n'affirme pas « aucun corrigé », on s'abstient.
     kind = 'unknown'
-    warnings.push(visualCheckFailed ? WARNINGS.noVisualCheck : WARNINGS.suspicious)
+    warnings.push(
+      visualCheckFailed
+        ? WARNINGS.noVisualCheck
+        : correctionHint(layouts, flow, parsed)
+          ? WARNINGS.correctionHint
+          : WARNINGS.suspicious,
+    )
     needsFallback = true
   } else {
     kind = 'unknown'
@@ -1341,4 +1351,40 @@ function questionInkDrafts(
     k = i
   }
   return drafts.length >= 2 ? { drafts, hue: best.hue } : { drafts: [], hue: null }
+}
+
+// --- Indices de corrigés non localisés ----------------------------------------------------
+
+/** Tournures qui ouvrent typiquement une réponse rédigée (français et anglais). */
+const ANSWER_CUE =
+  /^(?:on a\b|donc\b|d['’]où\b|ainsi\b|par conséquent\b|la réponse\b|réponse\b|il suffit\b|c['’]est\b|therefore\b|hence\b|thus\b|we have\b|we get\b|the answer\b)/iu
+
+/**
+ * Vrai si le document annonce un corrigé (titre, en-tête ou pied de page, y compris les
+ * lignes répétées retirées du flux) ou si des tournures de réponse suivent au moins deux
+ * questions différentes (trois lignes au moins). Sert à refuser « sujet seul ».
+ */
+function correctionHint(layouts: PageLayout[], flow: Line[], parsed: Parsed[]): boolean {
+  // Titre (avant la première question de la première page), en-tête ou pied de page.
+  const firstQuestion = flow.findIndex((_, i) => parsed[i]!.q !== null)
+  const titleZone = flow.slice(0, firstQuestion < 0 ? 5 : firstQuestion)
+  const bands = layouts.flatMap((p) =>
+    p.lines.filter((l) => l.bbox.y < 0.08 * p.height || l.bbox.y > 0.9 * p.height),
+  )
+  const announces = [...titleZone, ...bands].some((l) => isCorrectionTitle(l.text))
+  if (announces) return true
+  let span = -1
+  let cues = 0
+  const spans = new Set<number>()
+  flow.forEach((line, i) => {
+    if (parsed[i]!.q) {
+      span = i
+      return
+    }
+    if (span >= 0 && ANSWER_CUE.test(line.text.trim())) {
+      cues++
+      spans.add(span)
+    }
+  })
+  return cues >= 3 && spans.size >= 2
 }

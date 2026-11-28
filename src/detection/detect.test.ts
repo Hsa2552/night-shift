@@ -396,6 +396,33 @@ describe('detectCorrections', () => {
     expect(result.kind).toBe('statement_only')
   })
 
+  it('réponses rédigées sans marqueur après les questions : abstention, pas « sujet seul »', async () => {
+    const result = await run(
+      fakePage(0, [
+        '1. Calculer la dérivée de f.',
+        'On a f′(x) = 2x pour tout réel x.',
+        'Donc f est croissante sur les positifs.',
+        '2. Calculer la limite de f en l’infini.',
+        'Ainsi la limite vaut plus l’infini.',
+      ]),
+    )
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
+    expect(result.warnings).toContain(WARNINGS.correctionHint)
+  })
+
+  it('pied de page « Corrigé » sans correction localisée : abstention', async () => {
+    const page = (i: number) =>
+      fakePage(i, [
+        `${2 * i + 1}. Énoncer le théorème numéro ${2 * i + 1}.`,
+        `${2 * i + 2}. Énoncer le théorème numéro ${2 * i + 2}.`,
+        { text: 'Corrigé du partiel de mathématiques', y: 800 },
+      ])
+    const result = await run(page(0), page(1))
+    expect(result.kind).toBe('unknown')
+    expect(result.warnings).toContain(WARNINGS.correctionHint)
+  })
+
   it('question contenant le mot « solution » : pas un marqueur', async () => {
     const result = await run(
       fakePage(0, [
