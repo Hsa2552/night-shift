@@ -15,9 +15,18 @@
 
 ## Tâches actives
 
-### T-WB-1 · Interface et lecture sans spoiler
+### T-WB-2 · Identité Mako et expérience de lecture
 
 - Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/design-mako`
+- Dépend de : C1 et des PR #3, #8, #9 et #10 fusionnées dans `main`.
+- Critères d’acceptation : identité et thèmes Mako, accueil avec import et exemple, lecteur accessible avec navigation, zoom, masques sûrs et compteur, recette navigateur et captures.
+- Maturité : vérifiée sur le build de production dans Edge, y compris le tactile émulé et la reprise hors ligne. Téléphone physique et Safari à vérifier.
+- Notes : PR #12. Neutralisation groupée C1 vérifiée sur les exemples. Validation de bout en bout sur le QCM ENSAI à reprendre avec Hazem. Voir `journal/wael.md` et `QUALITE.md`.
+
+### T-WB-1 · Interface et lecture sans spoiler
+
+- Statut : fusionnée · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/viewer`
 - Dépend de : rendu canvas et repère canonique de Salif (S3), détecteur de Hazem (H1)
 - Critères d'acceptation : masquer les corrigés et les révéler par bloc, proposer une lecture progressive multipage au tactile, gérer les quatre types de document et garder le PDF couvert en cas d'erreur.
@@ -51,11 +60,19 @@
 
 ### T-S-3 · Validation du lecteur pour la distribution
 
-- Statut : en revue · Priorité : P0
+- Statut : fusionnée · Priorité : P0
 - Responsable : Salif · Agent : Codex · Branche : `fix/pdf-distribution`
 - Critères d'acceptation : métriques de symboles finies, essais sur annales publiques, mesure multipage, vérification hors ligne et recette HTTPS pour téléphone.
 - Maturité : testée sur Edge et WebKit de Windows. Installation sur téléphone physique et déploiement public à vérifier par l'équipe après activation de Pages.
 - Notes : PR #9. Mesures dans `QUALITE.md` V-27-2342-S et V-27-2348-S.
+
+### T-S-4 · Distribution et résilience de la PWA
+
+- Statut : en cours · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/pwa-distribution`
+- Critères d'acceptation : une mise à jour du cache préserve la lecture en cours, les essais de confidentialité et de libération sont reproductibles, et le propriétaire dispose de la procédure HTTPS.
+- Maturité : correctif de mise à jour testé localement.
+- Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
 
 ### T01 · Socle technique commun
 
@@ -83,6 +100,15 @@
 - Critères d'acceptation : mesures avant/après sur corpus réels dev et test séparés ; QCM ENSAI DOC-corrige sans indice visuel
 - Maturité : testée (138 tests, corpus réels) ; QCM ENSAI vérifié dans Edge. Non testé : téléphone, Safari
 - Notes : journal entrée du 28/11 01:25 ; `QUALITE.md` V-28-0115-HZ à V-28-0125-HZ
+
+### T-WB-3 · Détecteurs visuels déterministes
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/visual-detection`
+- Dépend de : raster et géométrie C1. Hazem compose les résultats dans le moteur.
+- Critères d'acceptation : relevé d'encre indépendant du rôle, candidat de correction colorée quand les indices le permettent, bilan sur de vraies annales et tests de régression.
+- Maturité : testée en isolation avec le lecteur PDF dans Edge et par tests unitaires, dont le cas des questions bleues et données/corrections noires. Intégration structurelle par Hazem.
+- Notes : PR #13. Vérifications V-28-0118-WB et V-28-0128-WB. Détecteur QCM développé par Hazem, relu en isolation par Wael (V-28-0129-WB).
 
 ## Terminées ou abandonnées
 

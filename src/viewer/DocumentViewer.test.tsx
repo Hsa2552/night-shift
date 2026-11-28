@@ -40,6 +40,38 @@ async function nextFrame() {
 }
 
 describe('lecteur', () => {
+  it('masque toutes les cases d’un QCM de la même façon et les restaure ensemble', () => {
+    const options = {
+      id: 'qcm',
+      questionLabel: 'Question à choix multiples',
+      regions: [80, 116, 152, 188].map((y) => ({
+        pageIndex: 0,
+        bbox: { x: 24, y, width: 15, height: 15 },
+      })),
+    }
+    render(
+      <DocumentViewer
+        pages={pages}
+        mode={{ kind: 'automatic', blocks: [options] }}
+        renderPage={renderPage}
+      />,
+    )
+    const masks = screen.getAllByTestId('correction-mask')
+    expect(masks).toHaveLength(4)
+    for (const box of masks) {
+      expect(box.hasAttribute('data-neutral-marker')).toBe(true)
+      expect(box.hasAttribute('data-grouped-mask')).toBe(true)
+      expect(within(box).queryByRole('button')).toBeNull()
+    }
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Afficher le corrigé — Question à choix multiples' }),
+    )
+    expect(screen.queryAllByTestId('correction-mask')).toHaveLength(0)
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Remasquer le corrigé — Question à choix multiples' }),
+    )
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(4)
+  })
   it('couvre chaque page avant la sélection du mode de lecture', () => {
     render(<DocumentViewer pages={pages} mode={{ kind: 'covered' }} renderPage={renderPage} />)
     expect(screen.getAllByTestId('page-cover')).toHaveLength(2)

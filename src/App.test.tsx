@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { detectCorrections } from './detection'
@@ -49,9 +49,101 @@ function startAnalysis() {
 beforeEach(() => {
   vi.resetAllMocks()
   loadPdf.mockResolvedValue(fakePdf())
+  window.localStorage.removeItem('unspoil-theme')
 })
 
 describe('Unspoil', () => {
+  it('importe un PDF glissé sur la zone prévue et garde ses pages couvertes', async () => {
+    render(<App />)
+    const zone = screen.getByLabelText('Importer un PDF').closest('.file-drop')!
+    const file = new File(['synthétique'], 'depose.pdf', { type: 'application/pdf' })
+    const dataTransfer = { types: ['Files'], files: [file], dropEffect: 'none' }
+    fireEvent.dragOver(zone, { dataTransfer })
+    expect(screen.getByText('Dépose ton PDF ici')).toBeTruthy()
+    fireEvent.drop(zone, { dataTransfer })
+    await screen.findByRole('heading', { name: 'depose.pdf' })
+    expect(loadPdf).toHaveBeenCalledWith(file)
+    expect(screen.getByTestId('page-cover')).toBeTruthy()
+  })
+
+  it('conserve la révélation et le PDF lors d’un changement de thème', async () => {
+    detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
+    await importDocument()
+    startAnalysis()
+    const reveal = await screen.findByRole('button', { name: /Afficher le corrigé/ })
+    fireEvent.click(reveal)
+    expect(screen.getByText('1 / 1 correction révélée')).toBeTruthy()
+    const previous = document.documentElement.dataset.theme
+    fireEvent.click(screen.getByRole('button', { name: /Passer au thème/ }))
+    const next = document.documentElement.dataset.theme
+    expect(next).not.toBe(previous)
+    expect(window.localStorage.getItem('unspoil-theme')).toBe(next)
+    expect(loadPdf).toHaveBeenCalledOnce()
+    expect(screen.getByText('1 / 1 correction révélée')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Remasquer le corrigé/ }))
+    expect(screen.getByText('0 / 1 correction révélée')).toBeTruthy()
+    expect(screen.getByTestId('correction-mask')).toBeTruthy()
+  })
+
+  it('navigue sans miniature rendue et garde le document couvert au zoom', async () => {
+    const pdf = fakePdf()
+    pdf.pageCount = 2
+    pdf.getPageDimensions.mockImplementation(async (pageIndex) => ({ ...page, pageIndex }))
+    loadPdf.mockResolvedValue(pdf)
+    await importDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Navigation par page' }))
+    const nav = screen.getByRole('navigation', { name: 'Pages du PDF' })
+    expect(nav.querySelector('canvas, img')).toBeNull()
+    fireEvent.click(within(nav).getByRole('button', { name: 'Aller à la page 2' }))
+    expect(screen.queryByRole('navigation', { name: 'Pages du PDF' })).toBeNull()
+    expect(screen.getByLabelText('Page 2 sur 2')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom avant' }))
+    expect(screen.getByText('125 %')).toBeTruthy()
+    expect(screen.getAllByTestId('page-cover')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Ajuster à la largeur' }))
+    expect(screen.getByText('100 %')).toBeTruthy()
+  })
+
+  it('ne découvre rien après l’annulation explicite d’une analyse en cours', async () => {
+    let finish!: (result: DetectionResult) => void
+    detect.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)))
+    await importDocument()
+    startAnalysis()
+    await waitFor(() => expect(detect).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler l’analyse' }))
+    await act(async () =>
+      finish({ kind: 'statement_only', blocks: [], warnings: [], needsFallback: false }),
+    )
+    expect(screen.getByText('Analyse annulée. Le document reste couvert.')).toBeTruthy()
+    expect(screen.getByTestId('page-cover')).toBeTruthy()
+  })
+
+  it('ferme le document si son ouverture se termine après une annulation', async () => {
+    const pdf = fakePdf()
+    let finish!: (value: PdfDocument) => void
+    loadPdf.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)))
+    render(<App />)
+    selectFile('a-annuler.pdf')
+    await waitFor(() => expect(loadPdf).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+    await act(async () => finish(pdf))
+    expect(pdf.close).toHaveBeenCalledOnce()
+    expect(screen.queryByTestId('page-cover')).toBeNull()
+    expect(screen.getByLabelText('Importer un PDF')).toBeTruthy()
+  })
+
+  it('explique comment reprendre après le refus d’un PDF chiffré', async () => {
+    const passwordError = new Error('Password required')
+    passwordError.name = 'PasswordException'
+    loadPdf.mockRejectedValueOnce(passwordError)
+    render(<App />)
+    selectFile('chiffre.pdf')
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Importe une copie déverrouillée.',
+    )
+    expect(screen.queryByTestId('page-cover')).toBeNull()
+  })
+
   it('ouvre le PDF couvert avec le mode progressif accessible avant toute extraction de texte', async () => {
     const pdf = fakePdf()
     loadPdf.mockResolvedValue(pdf)

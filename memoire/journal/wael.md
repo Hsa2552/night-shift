@@ -47,3 +47,23 @@
 
 - Les canvas éloignés de la fenêtre libèrent leur bitmap et le recréent à leur retour dans la zone de préchargement. Le défilement ne change aucune couverture.
 - Vérifié : document graphique synthétique de huit pages dans Edge, `npm run check` (102 tests), build Ubuntu, parcours Edge et Firefox et nouvel import hors ligne dans Edge.
+
+### 28/11 00:39 · SESSION · T-WB-2 (W6 à W10) · Codex
+
+- Branche `feat/design-mako` issue de `main` après la fusion des PR #3, #8, #9 et #10. Logo redessiné d’après `unspoil-logo-reference.png`, déclinaisons vectorielles et PWA, Geist locale, thème clair/sombre. Chemins d’icônes conservés et coordination Salif dans la PR #12.
+- Accueil avec dépôt et exemple PDF synthétique interactif. Lecteur avec navigation neutre, zoom, progression par bloc, chargement couvert et annulation. Revue visuelle sur six tailles dans les deux thèmes et recette Edge sur le build de production, hors ligne et en tactile émulé. Voir `QUALITE.md` V-28-0039-WB.
+- QCM ENSAI : la PR #12 propose à Hazem un bloc C1 contenant toutes les cases d’une question. Régions rendues opaques et neutres, commande unique hors des cases, révélation groupée. Les données synthétiques valident l’interface. Le test sur l’annale ENSAI reste à faire avec le détecteur correspondant.
+
+### 28/11 01:18 · SESSION · T-WB-3 · Détection colorimétrique
+
+- Interfaces publiées dans la PR #13 depuis `main` `3ed5e93` pour permettre l'intégration par Hazem. Les nouveaux détecteurs restent dans `src/detection/visual/`.
+- Détecteur couleur disponible. Il combine les pixels chromatiques et les positions du texte, avec un paramètre facultatif pour une convention annoncée sur une autre page. C1 inchangé.
+- Vérifié : sept tests ciblés, mesure dans Edge sur quatre documents universitaires, dont une annale contenant des réponses rouges et un scan manuscrit sans couche texte. Sur Berkeley, la couleur seule laisse visibles un arbre de la correction et deux sélections jaunes. Voir V-28-0118-WB.
+- Suite : analyser les groupes de cases et la grille sur un QCM local, sans publier le document. Intégration du moteur à la charge de Hazem.
+
+### 28/11 01:29 · SESSION · T-WB-3 · Observation d'encre indépendante
+
+- Priorité ajustée par Wael : Hazem développe les QCM AMC. L’analyse couleur fournit désormais le relevé brut par fragment et composante chromatique, y compris les mesures neutres par fragment. Les masques restent une sortie distincte. Les exports et les observations ont été transmis dans la PR #13.
+- Vérifié dans Edge : Lyon 2, quatre pages, 23/23 fragments bleus et 7/7 échantillons noirs observés, aucun masque couleur sur les questions. Berkeley conserve les résultats du premier jalon. Voir V-28-0128-WB.
+- Audit QCM de la branche de Hazem sur le recueil ENSAI local : toutes les cases noircies couvertes, huit cases vides résiduelles susceptibles de donner un indice. Voir V-28-0129-WB. Les fichiers du moteur et les PDF restent hors de la PR.
+- Maturité : relevé testé en isolation, intégration structurelle confiée à Hazem.

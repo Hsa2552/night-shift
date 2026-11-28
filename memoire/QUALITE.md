@@ -115,6 +115,15 @@
 - Résultats (corrections visibles / énoncés masqués) : dev 968/2002 et 281/1266 au départ, puis 398/2002 et 661/1266 ; test 691/3348 et 621/2004 au départ, puis 685/3348 et 629/2004, type correct 8/12 puis 10/12.
 - Point ouvert : sur le test, documents avec au moins une correction visible 4/9 au départ, 7/9 maintenant ; le détail du test n'est pas consulté pour régler le détecteur, analyse à mener sur le dev. Familles identifiées sur le dev : corrigés sans marqueur (questions puis réponses, retraits), numérotations « A.1. », « VII.1 », « C.I.1. », extraction dégradée (lettres perdues), recueils en deux colonnes.
 
+### V-28-0039-WB · Recette Mako, production et groupes QCM
+
+- Par : Wael (Codex). Build Ubuntu Node.js 24 avec `BASE_PATH=/night-shift/`, puis [recette Playwright](../scripts/verify-mako.cjs) dans Edge sous Windows. Les tests de l’interface sont dans `App.test.tsx` et `viewer/DocumentViewer.test.tsx`.
+- Captures : accueil et lecteur clair/sombre en 1440 × 900, 1280 × 800, 768 × 1024, 390 × 844, 360 × 800 et 844 × 390. Le logo et le favicon ont aussi été examinés à 16, 24 et 32 px. [Captures](captures/mako)
+- Résultat : dépôt, couverture avant analyse, révélation et remasquage individuels, compteur, thème sans perte d’état ni déplacement, navigation neutre, rectangles alignés au zoom, glissement et clavier passent. Sur 80 pages synthétiques, les canvas éloignés sont libérés sans retirer la couverture. Le nouvel import et l’analyse passent hors ligne après activation du service worker, avec la police et l’exemple local.
+- QCM : `qcm-cases.pdf` confirme en navigateur les masques opaques groupés et la commande hors des cases. Un test synthétique de quatre cases confirme l’application du même traitement, la restauration en bloc et le remasquage. Le comportement dépend de la fourniture de toutes les régions par le détecteur.
+- Annale externe : [MIT 18.05, examen final 2022](https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/mit18_05_s22_exam_final.pdf), 23 pages, ouverte puis analysée localement. Le détecteur a renvoyé un bloc. La vérification porte sur le parcours, sans mesure d’exactitude du bloc.
+- Contrastes calculés : 6,75:1 pour le texte secondaire clair, 8,44:1 en sombre, au moins 4,93:1 aux arrêts du bouton dégradé, 9,23:1 pour la commande dans les masques. L’émulation tactile ne valide pas Safari ni un téléphone physique.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
@@ -146,7 +155,7 @@
 
 ## Données de démonstration
 
-_Liste des données fictives ou synthétiques, et où elles sont signalées (code, interface, README)._
+L’exercice de l’accueil est le PDF fictif `src/assets/exemple-synthetique.pdf`, signalé dans l’interface et dans le README. Les autres fichiers de la recette viennent du corpus synthétique du détecteur ou sont générés en mémoire par le script de vérification.
 
 ## Vérifications du lecteur PDF et de son intégration
 
@@ -213,6 +222,35 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Mémoire — Total des octets privés d'Edge, en Mo décimaux arrondis. Avant ouverture 312 Mo. Avec le PDF ouvert 534, 556 puis 569 Mo. Après chaque fermeture 462, 486 puis 488 Mo. Le total inclut les autres processus du moteur, dont le GPU et le service réseau, et une partie reste allouée après fermeture. Ces relevés ponctuels ne mesurent pas le pic. Trois cycles ne permettent pas de conclure à une fuite ni à une limite de capacité mobile.
 - PDF atypique — Un PDF synthétique chiffré a été refusé sans afficher de canvas. L'ouverture suivante d'une annale de Liège hors ligne a réussi dans le même onglet.
 - Intégration — Dans une copie du build avec le détecteur `e784dc1` de Hazem, Edge classe le `qcm-cases.pdf` synthétique en `mixed`, avec deux blocs et aucun avertissement. L'interface affiche six régions masquées et annonce deux blocs hors ligne. La suite d'intégration réussit 127 tests. Le test d'évaluation facultatif passe séparément avec `UNSPOIL_EVAL_DIR` pointant sur les exemples du détecteur.
+
+### V-28-0012-S · Mise à jour du service worker sous deux versions
+
+- Protocole — Générer deux builds sous `/night-shift/` avec des marqueurs distincts et des hashes différents pour le lecteur PDF. Même origine locale, puis remplacer les fichiers servis pendant qu'un onglet de la première version reste ouvert. Installer le nouveau service worker et importer un premier PDF dans cet onglet.
+- Avant le correctif — Edge demandait le module PDF de la première version. Le nouveau service worker avait déjà nettoyé ce fichier et le serveur répondait 404. L'application rejetait alors un PDF valide.
+- Après le correctif — Edge garde l'ancien service worker actif pendant l'import de l'onglet existant. La nouvelle version s'active après fermeture du dernier onglet et ouvre le PDF sans réseau. Le cache ne contient plus le module PDF de la première version.
+- Limites — Deux builds locaux. Le déploiement Pages public et la mise à jour depuis une PWA installée sur téléphone demandent une recette après publication.
+
+### V-28-0118-WB · Détection colorimétrique indépendante sur quatre documents universitaires
+
+- Protocole : Edge sous Windows, `openPdf`, `getPageData` et `getRaster` sur le serveur Vite local. Déclaration recherchée sur la première page puis analyse isolée par page. Temps du classifieur seul, relevé ponctuel, hors ouverture, extraction et rasterisation. Les PDF n'entrent pas dans le dépôt.
+- [Berkeley CS186, examen final 2010](https://hkn.eecs.berkeley.edu/examfiles/cs186_sp10_f_sol.pdf), p. 2 à 4. Annotation visuelle par sous-question, tableau de la p. 3 compté comme une sous-question. Sur 8 réponses, 5 entièrement couvertes, 1 partielle (commentaire rouge couvert, arbre de la réponse visible), 2 visibles (sélections surlignées en jaune). Les 9 zones d'encre rouge annotées sont couvertes sur tous les pixels à dominante rouge (`R - max(G, B) > 18`, `min(G, B) < 230`). Aucun pixel sombre couvert dans les 10 zones d'énoncé échantillonnées. L'arbre et les surlignages restent des indices de réponse. Le classifieur demande le repli p. 4, mais ne signale pas le dessin noir p. 2. Temps des trois pages : 15,5 à 32,1 ms.
+- [UCLouvain IEPR1011, janvier 2018](https://perso.uclouvain.be/vincent.legat/documents/iepr1011/iepr1011-examen-janv18-soluce.pdf), p. 2 à 4. Les passages rouges sont des annotations au sein de corrigés également écrits en noir. Aucun masque retourné, corrections laissées visibles par ce détecteur isolé, repli demandé sur les trois pages. Pas de comptage par réponse. Temps : 13,2 à 20,0 ms.
+- [Liège MATH0013, août 2025](https://www.mmm.ulg.ac.be/files/MATH0013/examens_alg/ExamenAlg_Se25_pub.pdf), p. 1 à 2. Les pages d'énoncé restent visibles. Sept candidats décoratifs p. 1, aucun masque et aucun repli couleur sur ces pages. Temps : 7,2 à 32,9 ms.
+- [MIT 16.30, corrigé manuscrit numérisé](https://ocw.mit.edu/courses/16-30-estimation-and-control-of-aerospace-systems-spring-2004/resources/final_solna/), p. 1 à 3. Aucun fragment textuel, aucun indice couleur ni masque. Les trois pages restent visibles dans le résultat isolé. Le moteur doit conserver son repli pour les pages sans texte. Temps : 4,8 à 5,6 ms.
+- Limites : échantillon de pages annotées par un seul lecteur. Les documents du diagnostic initial sont sur la machine de Salif. Aucune mesure de couverture des trois originaux, du moteur intégré ou sur téléphone.
+
+### V-28-0128-WB · Questions bleues et encre noire à Lyon 2
+
+- Protocole : `src/detection/visual/evaluate.mjs` dans Edge avec le lecteur PDF et Vite local. Les quatre pages de [Lyon 2, contrôle de statistique et probabilités 2024–2025](https://perso.univ-lyon2.fr/~rabdesse/Documents/UFR-SEG/LICENCE/L2/CCC1-2024-2025.pdf) sont mesurées à 612 × 792 pixels. Vérité couleur indépendante issue de la couleur PDF `#0012FF` (23 fragments, 9/5/5/4 par page) et de 7 rectangles neutres échantillonnés visuellement dans les données et les réponses. Le mode d’évaluation est décrit dans `src/detection/visual/README.md`.
+- Résultat brut : 23/23 fragments bleus appuyés par une observation à 235° et 7/7 zones neutres avec de l’encre neutre signalée. Les composantes des logos restent dans le relevé chromatique indépendamment de leur rôle.
+- Résultat du passage de masquage isolé : 0 masque sur les quatre pages (contre un bloc p. 1 dans le jalon précédent). Les énoncés et données initiales restent visibles. Les corrections noires restent visibles dans ce résultat isolé, sans comptage de toutes les corrections. Le repli est signalé p. 1 et 4. L’intégration doit utiliser les transitions chromatiques et la structure des exercices.
+- Temps : 15,8 à 38,4 ms par page sur un passage de l’évaluateur, analyse seule. Berkeley p. 2 à 4 revérifié après le changement : mêmes 5 réponses entièrement couvertes, 1 partielle, 2 visibles, 0 des 10 zones d’énoncé touchée. Aucune mesure sur téléphone, ni du moteur intégré avec le nouveau relevé.
+
+### V-28-0129-WB · Audit complémentaire des cases QCM
+
+- Protocole : branche de Hazem `7aa6daf` en copie temporaire, Edge local, recueil ENSAI de 28 pages disponible chez Wael. Vérité géométrique indépendante extraite des rectangles vectoriels noirs et blancs de 10,7 points de côté. Comparaison avec les régions de masquage retournées. Le PDF et ses annotations sont conservés localement. Cette évaluation porte sur le module de Hazem.
+- Résultat : 226/226 cases noircies entièrement couvertes, 0 partielle, 0 visible. Huit cases non noircies de propositions à masquer restent partiellement couvertes (2) ou visibles (6). Elles ne correspondent pas à une boîte reconnue dans le raster à ces positions. Ces différences donnent un indice indirect par élimination. Aucun comptage vérifié des énoncés masqués à tort sur ce document. Temps du moteur sur 28 pages : 2 041 ms lors du passage sans instrumentation supplémentaire, dont 913 ms pour les rasters.
+- Signalé à Hazem dans la PR #13. Aucun deuxième détecteur géométrique de QCM développé sur cette branche.
 
 ## Modèles
 

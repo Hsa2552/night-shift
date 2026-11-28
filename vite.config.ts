@@ -35,10 +35,8 @@ export default defineConfig({
       },
     },
     VitePWA({
-      // Service worker généré automatiquement et mis à jour sans intervention.
-      // Si le sujet exige un service worker sur mesure (notifications push, cache
-      // particulier), passer à strategies: 'injectManifest' (voir memoire/ARCHITECTURE.md).
-      registerType: 'autoUpdate',
+      // Keep the old chunks available while an open tab can still import the PDF reader.
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Unspoil',
@@ -55,6 +53,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        clientsClaim: true,
         globPatterns: [
           '**/*.{js,mjs,css,html,svg,png,ico,woff2,webmanifest,bcmap,pfb,ttf,wasm,icc}',
         ],
