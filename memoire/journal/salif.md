@@ -83,3 +83,8 @@
 ### 28/11 · SESSION · T-S-7 commandes de révélation · Codex
 
 - Diagnostic et correctif sur `fix/commandes-revelation`. La commande individuelle reste dans le même pied de page. Le bouton global remasque les régions révélées sans relancer le détecteur. Voir V-28-0359-S pour les essais réels et la validation de Pages.
+
+### 28/11 · SESSION · T-S-6 validation du premier moteur hybride · Codex
+
+- PR #23 : transport enrichi à partir de la couche native de Wael, paquet PDF.js dédupliqué et mesure Node–Edge. Transport seul à résultats identiques. Le moteur case vectorielle + raster a demandé des observations dans le build réel.
+- Les résultats publics v2 et les agrégats réservés figurent dans V-28-0422-S et V-28-0430-S. La PR #22 et son déploiement HTTPS ont été vérifiés dans Edge. Les PDF privés ENSAI et les téléphones physiques restent à vérifier.
