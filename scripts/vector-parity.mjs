@@ -17,7 +17,9 @@ const { loadPdf, nativeSquares } = await nodeProbe(checkout, {
   './src/detection/visual/vector/cases.ts': 'nativeSquares',
 })
 const manifest = JSON.parse(await readFile(resolve(checkout, 'dist/.vite/manifest.json'), 'utf8'))
-const vectorEntry = manifest['src/detection/visual/vector/index.ts']?.file
+const vectorEntry =
+  manifest['src/detection/visual/vector/native-page.ts']?.file ??
+  manifest['src/detection/visual/vector/index.ts']?.file
 const { GEO_METRICS_VERSION } = await import('../src/detection/eval/geo.ts')
 const build = await openBuild(checkout)
 function countDifferentFields(left, right) {
@@ -35,7 +37,16 @@ function countDifferentFields(left, right) {
 
 function signature(obs) {
   if (!obs) return null
-  const { rectangles, textPaint, ...pageData } = obs
+  const {
+    rectangles,
+    textPaint,
+    textColors,
+    glyphSymbols,
+    markRelations,
+    backgroundRelations,
+    graphics,
+    ...pageData
+  } = obs
   const paint = textPaint.map(({ font, ...item }) => ({
     ...item,
     font: font?.replace(/^g_d\d+_/, ''),
@@ -49,10 +60,15 @@ function signature(obs) {
     rectsWithoutOrder: digest(rectangles.map(({ operatorIndex: _operatorIndex, ...item }) => item)),
     paintsWithoutOrder: digest(paint.map(({ operatorIndex: _operatorIndex, ...item }) => item)),
     candidates: digest(cases),
+    native: digest({ textColors, glyphSymbols, markRelations, backgroundRelations, graphics }),
     counts: {
       rectangles: rectangles.length,
       paints: paint.length,
       images: obs.images,
+      textColors: textColors?.length,
+      glyphSymbols: glyphSymbols?.length,
+      markRelations: markRelations?.length,
+      backgroundRelations: backgroundRelations?.length,
       filled: cases.filter(({ nativeState }) => nativeState === 'filled').length,
       empty: cases.filter(({ nativeState }) => nativeState === 'empty').length,
       ambiguous: cases.filter(({ nativeState }) => nativeState === 'ambiguous').length,
@@ -182,6 +198,15 @@ try {
       true,
       'Le paquet vectoriel doit être chargé à la demande',
     )
+  await page.locator('#vector-fixture').setInputFiles(resolve(files[0]))
+  const closeDuringObservation = await page.evaluate(async () => {
+    const file = document.querySelector('#vector-fixture').files[0]
+    const documentBeforeReplacement = await window.vectorOpen(file)
+    const pending = documentBeforeReplacement.getVectors(0)
+    await documentBeforeReplacement.close()
+    return (await pending) === undefined
+  })
+  assert.ok(closeDuringObservation)
   await writeFile(
     reportPath,
     JSON.stringify(
@@ -193,6 +218,7 @@ try {
         node: process.version,
         heapBefore: before,
         vectorEntry,
+        closeDuringObservation,
         documents: docs,
       },
       null,
