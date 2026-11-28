@@ -240,6 +240,25 @@
 - Non-régression : Edge sur `e545e68`, identique au jalon `6f7c4e4` : dev 8/10 (3 strictes), 2 072/2 072, 311/1 304 ; ensai-dev 4/6, 602/602, 20/476 ; dev-v2-sujets 3/3 strictes ; diagnostic 34/48, 3/24.
 - Limites : les propositions d'un groupe dont une est entourée sont masquées en entier (le texte des propositions n'est visible qu'à la révélation) : un cercle serré autour du texte ne peut pas être caché par des rectangles sans en cacher une partie, et un fragment d'arc désignerait la réponse ; une écriture qui chevauche l'énoncé masque aussi cette partie de l'énoncé (question 10 page 2, annotations sur l'énoncé page 3) ; les deux documents ne sont pas dans le benchmark (pas de vérité annotée, documents non publiables).
 
+### V-28-0950-HZ · P0 « résultats non reproductibles » : parcours réel, comparaison factorielle, cause
+
+- Par : Hazem (Claude Code). PDF originaux de l'équipe, non modifiés, hors dépôt : `QCM_2025_corrigé.pdf` SHA-256 `c6c65835435772e19752d8943c91861f7d9addb2d7905fa2eecb4b581e4aacae` ; `exam1sol.pdf` SHA-256 `ea856fa11154a018f2a60e77a63051848a14e464abaf0d989e967a64a845e908`.
+- Correction de mes résultats précédents (V-28-1115-HZ) : la mesure « Edge » annoncée appelait le moteur du bundle de production (`openBrowserProbe`), pas le parcours de l'interface. Elle est maintenant refaite par le parcours réel ; les chiffres annoncés sont confirmés.
+- Protocole : builds de production (`npm run build -- --manifest`) dans des copies de travail Git séparées ; Edge 158 ; contexte neuf pour chaque document ; import du PDF original, « Masquer les corrigés », lecture des masques du DOM (`data-testid=correction-mask`, opacité), captures avant et après par page, révélation puis remasquage de chaque bloc (`scripts/browser-masks.mjs`). Marqueur `unspoil-build` contrôlé. Captures et rapports hors dépôt (scratchpad de la session).
+
+| Version | QCM : kind / repli / blocs / régions (empreinte DOM) | exam1sol |
+|---|---|---|
+| A `e545e68` | mixed / non / 10 / 20 (`12b4927b5370`) | mixed / non / 13 / 207 (`9b74e16d499b`) |
+| B `9811c8a` (main, build local) | identique | identique |
+| C `9811c8a` sans fusion graphique (diagnostic local, non publié) | identique | identique |
+| D GitHub Pages (sert `9811c8a`) | identique | identique |
+| O `c89fa5c` (main juste avant la PR #32) | mixed / non / 11 / 39 : en-tête AMC masqué, 5 questions à un seul masque | correction_only / repli / révélation progressive |
+
+- Sortie brute du moteur dans chaque build = masques du DOM (mêmes empreintes) : aucune perte entre moteur, décision (`decideDetection`), découpe (`clipCorrectionBlocks`) et affichage. La fusion graphique n'ajoute rien sur ces deux documents (pages déjà couvertes par des blocs de cases ou d'annotation). Révélation et remasquage indépendants vérifiés pour les 10 et 13 blocs. Aucune erreur JavaScript. Résultat identique à 1, 1,25, 1,5 et 2 de densité de pixels, dans Chrome 158, et quel que soit l'ordre d'ouverture des deux PDF dans le même onglet.
+- Cause identifiée de la divergence : la version servie par le service worker. Démonstration sur une même origine avec profil persistant : après déploiement de `9811c8a` à la place de `c89fa5c`, l'onglet rechargé puis une nouvelle navigation exécutent toujours `c89fa5c` (11 blocs, 39 masques), sans aucune invite ; seule la fermeture de tous les onglets charge `9811c8a` (10 blocs, 20 masques). Mode `registerType: 'prompt'` sans gestion de l'événement de mise à jour : comportement voulu par V-28-0012-S, documenté au README, mais invisible pour l'utilisateur.
+- Non vérifié : l'environnement exact de l'équipe (navigateur, onglet ouvert avant 09:06, SHA des fichiers utilisés). Vérification demandée : empreinte des PDF et marqueur `unspoil-build` de l'onglet utilisé.
+- Aucun correctif du moteur : aucun défaut de détection identifié.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
@@ -268,6 +287,14 @@
 - Contournement : dans l'outil d'évaluation seulement (métriques NaN remplacées par les valeurs par défaut). Correctif proposé : `Number.isFinite(style?.ascent) ? style.ascent : ...`, idem pour `descent`
 - État au 28/11 00:05 : toujours présent après la PR #8 (`text-geometry.ts` utilise encore `??`). Effet constaté dans Edge sur `qcm-cases.pdf` : le détecteur signale le texte non localisé et l'interface garde le document entièrement couvert (révélation progressive) ; aucune case n'est visible, mais le masquage automatique n'est pas proposé.
 - Responsable ou tâche : Salif (module PDF)
+
+### Q-28-0950-HZ · Ancienne version servie sans avertissement après un déploiement · ouvert
+
+- Gravité : gênant (résultats non reproductibles, démonstration faussée si un onglet était ouvert avant la publication).
+- Constat et reproduction : V-28-0950-HZ. Le service worker (`registerType: 'prompt'`) attend la fermeture de tous les onglets ; aucune interface n'écoute l'arrivée d'une nouvelle version. Un rechargement exécute toujours l'ancienne version.
+- Contournement : fermer tous les onglets et fenêtres Unspoil (PWA installée comprise), puis rouvrir ; vérifier le marqueur `unspoil-build` (console : `document.querySelector('meta[name=unspoil-build]').content`).
+- Piste proposée, à valider par Salif (module PWA) : afficher une invite « Nouvelle version disponible » sur l'événement de mise à jour de `vite-plugin-pwa`, avec rechargement volontaire (pas d'activation forcée pendant une lecture, cause de V-28-0012-S).
+- Responsable ou tâche : Salif (distribution PWA).
 
 ## Données de démonstration
 

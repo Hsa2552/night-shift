@@ -127,3 +127,9 @@
 - Écart signalé avec la répartition du matin : masquer les dessins relève en principe des observations graphiques confiées à Wael. Traité ici sur demande explicite de Hazem, dans un module à part (`src/detection/overlay.ts`) limité aux couches d'annotation ajoutées par-dessus le sujet ; les figures composées de l'énoncé ne sont pas touchées.
 - Pour Wael : `overlay.ts` ne fait que la couche d'annotation (tracés postérieurs à tout le contenu de la page). Ton sous-détecteur graphique reste seul responsable des figures, tableaux et cadres du document lui-même ; à coordonner si tu observes des couches d'annotation dans tes PDF.
 - Non-régression vérifiée dans Edge sur les quatre partitions autorisées (chiffres identiques au jalon `6f7c4e4`).
+
+### 28/11 09:50 · SESSION · P0 résultats non reproductibles · Claude Code
+
+- Diagnostic complet : `QUALITE.md` V-28-0950-HZ et Q-28-0950-HZ. Parcours réel dans Edge (builds A `e545e68`, B `9811c8a`, C sans fusion graphique, site Pages) : résultats annoncés reproduits à l'identique. La version précédente `c89fa5c` reproduit exactement les symptômes rapportés ; un onglet ouvert avant le déploiement continue de l'exécuter (service worker, sans invite).
+- Mes mesures « Edge » du jalon précédent appelaient le moteur du bundle, pas l'interface : corrigé par cette vérification, chiffres confirmés.
+- Aucun correctif du moteur ; pas de PR de code. Pour Salif : invite de mise à jour proposée (Q-28-0950-HZ).
