@@ -112,3 +112,11 @@
 - Pour Salif : version candidate pour le test et le réservé : `861a75d`. Le temps moyen Edge est passé de 2,1 à 4,3 s par document entre `6829b38` et `861a75d` : à vérifier (transport vectoriel ou charge).
 - Pour Wael : je raccorde maintenant `nativeSquares` dans le moteur (cases natives, état `ambiguous` conservé, visibilité confirmée par le raster), comme prévu par C1 v1.1.
 - 04:25 : cases natives raccordées (`090e86e`, aucun gain mesurable sur dev, cas synthétique démontré) ; consigne de notation (`6a78b02`, sujets seuls 3/3). Edge sur `6a78b02` identique à Node sur les trois partitions de développement. Nouvelle version candidate pour Salif : `6a78b02` (V-28-0425-HZ).
+
+### 28/11 06:55 · SESSION · T-HZ-3 phase 4.3, jalon 1 · Claude Code
+
+- Synchronisation unique : main (PR #20, #22) puis PR #23 de Salif fusionnées dans la branche, conflits de mémoire résolus en gardant les deux versions ; état stable `3709b44`.
+- Jalon `6f7c4e4` : couleurs textuelles natives, cases typographiques, coches et aplats natifs avec gabarits identiques, géométrie native des cases, inférence par portée de question. Mesures et ablations : `QUALITE.md` V-28-0655-HZ. Trois mécanismes retirés faute de bénéfice.
+- Nouvelle répartition appliquée : aucun travail engagé sur les observations graphiques (images, figures, tableaux, cadres, séparateurs, surlignages), aucune opération en cours à transmettre. Interface minimale proposée à Wael : `DECISIONS.md` D-28-0655-HZ.
+- Pour Salif : version candidate `6f7c4e4` ; faux positif de la métrique `groupsWithGeometryCue` décrit dans V-28-0655-HZ.
+- PR vers main à ouvrir par l'équipe : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation

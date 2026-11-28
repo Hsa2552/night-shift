@@ -210,6 +210,26 @@
 - Edge, `6a78b02`, produit réel : dev 8/10 (3 strictes), 2 072/2 072, 311/1 304 énoncés masqués, 0 document avec fuite ; ensai-dev 602/602, 62/476 ; dev-v2-sujets 3/3 strictes, 0/292 énoncé masqué. Aucun écart oracle/masques. Temps moyen Edge 2,4 s (dev) : les 4,3 s de `861a75d` relevaient de la charge de la machine.
 - Non vérifié : test et réservé (Salif, version candidate `6a78b02`).
 
+### V-28-0655-HZ · Phase 4.3, jalon 1 : couleurs, glyphes et marques natives
+
+- Par : Hazem (Claude Code). Base stable `3709b44` (main avec PR #20, #22 et PR #23 intégrées une fois). Jalon `6f7c4e4`. Partitions : dev, ensai-dev, dev-v2-sujets et diagnostic public `diagnostic-vectoriel-v1` (désigné comme tel par Salif) ; partitions réservées non consultées.
+- Protocole : Edge (référence produit), `scripts/benchmark-browser.mjs`, métriques v2 ; ablations par mécanisme désactivé un à un (Node pour les partitions de développement, où Node = Edge, Edge pour le diagnostic).
+
+| Edge | Avant `3709b44` | Jalon `6f7c4e4` |
+|---|---|---|
+| dev : réussites (strictes), corrections, énoncés masqués | 8/10 (3), 2 072/2 072, 311/1 304 | identique |
+| ensai-dev | 1/6, 602/602, 62/476 | **4/6**, 602/602, **20/476** |
+| dev-v2-sujets | 3/3 strictes, 0/292 | identique |
+| diagnostic : corrections couvertes, énoncés masqués, abstentions | 29/48, 11/24, 0 | **34/48**, **3/24**, 2 |
+| Temps moyen Edge | 2,0 à 4,8 s | 1,0 à 2,0 s |
+
+- Ablations (mécanisme retiré → effet) : couleurs natives des lignes → MIT repasse en automatique avec de faux blocs colorés (étiquettes noires sur aplats de figure) et 6/6 corrections visibles ; marques natives (coches, aplats) et gabarits → diagnostic 34 → 13/48 ; cases typographiques → diagnostic 34 → 31/48 ; géométrie native des cases → ensai-dev 20 → 62/476 énoncés masqués, 4 → 1 réussite ; contradiction couleur native / raster dans la fusion → aucun effet mesuré (gardée : complément de la couleur native, test unitaire) ; inférence par portée de question → aucun effet mesuré sur ces corpus (gardée : remplace la règle « page à cases expliquée », test hybride).
+- Régression trouvée et corrigée avant commit : les légendes de consigne ENSAI (« Exemple de case bien noircie : ■ », « … mal noircies : □ □ ✓ ⊠ ») devenaient des cases (ensai-dev 20 → 23 énoncés masqués, une réussite perdue) ; écartées (symbole précédé d'un texte terminé par « : »).
+- Retirés après ablation, faute de bénéfice : neutralisation des tables des matières, convention de couleur prioritaire sur un titre de corrigé (Virginia Tech s'abstient sans gain de couverture), masquage de l'encre de la teinte des réponses dans la fusion.
+- Abstentions du diagnostic : MIT (corrections manuscrites non localisables, abstention correcte) ; Virginia Tech (encre verte sans texte, p. 11, dans une figure : association figure ↔ bloc confiée à Wael).
+- Limites : Washington, réponses de tableau en texte noir (3 unités) sans indice physique ; couleur verte de l'aplat visible entre les lettres de la proposition marquée (masque hors lignes de texte seulement) ; Virginia Tech, une case vide fine (1 px au rendu d'échelle 1) non retrouvée dans Edge ; réponses bleues couvertes à 0,88-0,94 de rectangles d'annotation plus hauts que la ligne.
+- Pour Salif (métrique, sans modification de ma part) : `groupsWithGeometryCue` compare les masques aux rectangles annotés ; les cases cochées y sont annotées coche comprise (9 pt) et les vides sans (8 pt). Des masques identiques au centième de point par rapport aux vraies cases (vérifié sur Virginia Tech dans Edge) y paraissent distinguables : faux positif d'indice indirect (6 groupes).
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
