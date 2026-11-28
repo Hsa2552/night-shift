@@ -79,3 +79,7 @@
 
 - Accord collectif confirmé par Salif. Le contrat C1 v1.1 est dans la PR #19. Le transport utilise le type de Wael et transmet la méthode du document à App, au chargeur Node et au benchmark Edge.
 - Le fournisseur mutualise uniquement les appels simultanés d'une page. Après fermeture, les demandes en vol ne produisent plus d'observation utilisable. Les tests ciblés de chargement, repli, fermeture et remplacement passent.
+
+### 28/11 · SESSION · T-S-7 commandes de révélation · Codex
+
+- Diagnostic et correctif sur `fix/commandes-revelation`. La commande individuelle reste dans le même pied de page. Le bouton global remasque les régions révélées sans relancer le détecteur. Voir V-28-0359-S pour les essais réels et la validation de Pages.

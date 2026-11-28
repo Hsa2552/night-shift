@@ -72,17 +72,24 @@
 - Responsable : Salif · Agent : Codex · Branches : `fix/pwa-distribution` (PR #11 fusionnée), `fix/recette-distribution` (recette Mako)
 - Critères d'acceptation : une mise à jour du cache préserve la lecture en cours, les essais de confidentialité et de libération sont reproductibles, et le propriétaire dispose de la procédure HTTPS.
 - Maturité : correctif intégré. Recette de production avec Mako testée sur Edge, Firefox et WebKit. Mesures reproductibles hors ligne.
-- Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
+- Blocage externe : Pages est actif. La recette sur téléphone physique reste à faire.
 
 ### T-S-5 · Parité Node–navigateur et validation scientifique
 
-- Statut : en revue · Priorité : P0
+- Statut : fusionnée (PR #17, puis #18) · Priorité : P0
 - Responsable : Salif · Agent : Codex · Branche : `fix/benchmark-parity`
 - Dépend de : benchmark et marqueur de build intégrés par la PR #14 à `feat/detection-generalisation`. C1 reste applicable.
 - Critères d'acceptation : mêmes décisions d'affichage dans le produit et le score, référence Node/Edge avec empreintes, exclusions documentées, corpus réservé avant évaluation et vérification HTTPS après activation humaine.
 - Maturité : oracle partagé, score strict et recette réelle testés. Savoie isolé au raster. Trois sujets seuls supplémentaires mesurés, et corpus réservé gelé puis mesuré dans Edge. Voir `QUALITE.md` V-28-0301-S et V-28-0310-S.
 - Notes : PR #17 vers la branche de Hazem qui contient le benchmark.
-- Blocage externe : PR #15 en attente de revue humaine et Pages à activer par le propriétaire. La recette physique dépend de l'URL et de l'accès à des appareils.
+- Blocage externe : Pages est actif. La recette physique dépend de l'accès aux appareils.
+
+### T-S-7 · Stabilité des commandes de révélation
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/commandes-revelation`. Travail signalé à Wael dans la PR #18.
+- Critères d'acceptation : une commande stable par bloc, indépendant du zoom et du rendu ; remasquage global synchronisé ; remplacement et lecture progressive sûrs.
+- Maturité : reproduite sur le build de `main` `da87ece`, corrigée et testée sur de vraies annales et un QCM synthétique dans Edge. Recette et limites dans `QUALITE.md` V-28-0359-S.
 
 ### T-S-6 · Transport et validation des observations vectorielles
 

@@ -3,7 +3,7 @@ import { Icon } from '../components/Icon'
 import type { PdfDocument } from '../pdf'
 import type { PageDimensions } from '../shared/types'
 import { DocumentViewer } from './DocumentViewer'
-import type { ViewerMode } from './DocumentViewer'
+import type { DocumentViewerHandle, ViewerMode } from './DocumentViewer'
 import { PdfCanvas } from './PdfCanvas'
 
 interface ReaderProps {
@@ -44,6 +44,7 @@ export function Reader({
   const main = useRef<HTMLElement>(null)
   const toolbar = useRef<HTMLElement>(null)
   const scrollArea = useRef<HTMLDivElement>(null)
+  const viewer = useRef<DocumentViewerHandle>(null)
   const pendingPage = useRef<number | null>(null)
   const total = mode.kind === 'automatic' ? mode.blocks.length : 0
 
@@ -133,8 +134,8 @@ export function Reader({
               type="button"
               className={'ui-button' + (mode.kind === 'covered' ? ' ui-primary' : '')}
               aria-pressed={mode.kind === 'automatic'}
-              disabled={analyzing || mode.kind === 'automatic'}
-              onClick={onAnalyze}
+              disabled={analyzing || (mode.kind === 'automatic' && revealed === 0)}
+              onClick={mode.kind === 'automatic' ? () => viewer.current?.remaskAll() : onAnalyze}
             >
               <Icon name="eye-off" size={17} /> <span>Masquer les corrigés</span>
             </button>
@@ -271,6 +272,7 @@ export function Reader({
               style={{ width: zoom + '%', maxWidth: (56 * zoom) / 100 + 'rem' }}
             >
               <DocumentViewer
+                ref={viewer}
                 pages={pages}
                 mode={mode}
                 onRevealedCount={setRevealed}
