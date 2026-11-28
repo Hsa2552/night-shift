@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import type { PdfDocument } from '../pdf'
+import type { KeyboardEvent } from 'react'
 import type { PageDimensions } from '../shared/types'
 import { DocumentViewer } from './DocumentViewer'
 import type { DocumentViewerHandle, ViewerMode } from './DocumentViewer'
@@ -40,13 +41,19 @@ export function Reader({
   const [activePage, setActivePage] = useState(0)
   const [zoom, setZoom] = useState(100)
   const [revealed, setRevealed] = useState(0)
-  const showNavigation = navigation ?? wide
+  const [concentration, setConcentration] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
+  const showNavigation = !concentration && (navigation ?? wide)
   const main = useRef<HTMLElement>(null)
   const toolbar = useRef<HTMLElement>(null)
+  const navigationPanel = useRef<HTMLElement>(null)
+  const footer = useRef<HTMLElement>(null)
+  const menu = useRef<HTMLDetailsElement>(null)
   const scrollArea = useRef<HTMLDivElement>(null)
   const viewer = useRef<DocumentViewerHandle>(null)
   const pendingPage = useRef<number | null>(null)
   const total = mode.kind === 'automatic' ? mode.blocks.length : 0
+  const training = mode.kind === 'automatic' && total > 0
 
   useLayoutEffect(() => {
     if (typeof HTMLElement.prototype.scrollIntoView === 'function') window.scrollTo(0, 0)
@@ -59,6 +66,22 @@ export function Reader({
     media?.addEventListener('change', resize)
     return () => media?.removeEventListener('change', resize)
   }, [])
+
+  useEffect(() => {
+    const update = () => setFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', update)
+    return () => document.removeEventListener('fullscreenchange', update)
+  }, [])
+
+  useEffect(() => {
+    const panel = navigationPanel.current
+    const active = panel?.querySelector('[aria-current="page"]')
+    if (!panel || !active || !wide) return
+    const outer = panel.getBoundingClientRect()
+    const inner = active.getBoundingClientRect()
+    panel.scrollTop +=
+      inner.top < outer.top ? inner.top - outer.top : Math.max(0, inner.bottom - outer.bottom)
+  }, [activePage, showNavigation, wide])
 
   useLayoutEffect(() => {
     if (pendingPage.current === null) return
@@ -84,7 +107,10 @@ export function Reader({
         if (sheets[middle].getBoundingClientRect().top <= anchor) start = middle + 1
         else end = middle
       }
-      setActivePage(Math.max(0, start - 1))
+      const atEnd =
+        window.scrollY > 0 &&
+        window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2
+      setActivePage(atEnd ? Math.max(0, sheets.length - 1) : Math.max(0, start - 1))
     }
     const queue = () => {
       frame ??= requestAnimationFrame(update)
@@ -99,34 +125,107 @@ export function Reader({
   }, [pages])
 
   function navigate(page: number) {
-    if (page === activePage && wide) {
+    if (!wide && showNavigation) {
+      pendingPage.current = page
+      setNavigation(false)
+    } else {
       scrollArea.current
         ?.querySelector<HTMLElement>('[data-reader-page="' + page + '"]')
-        ?.scrollIntoView?.({ block: 'start' })
-      return
+        ?.scrollIntoView?.({ block: 'start', inline: 'nearest' })
     }
-    pendingPage.current = page
-    if (!wide) setNavigation(false)
     setActivePage(page)
   }
 
-  function adjustZoom(value: number) {
-    const focused = scrollArea.current?.querySelector<HTMLElement>(
-      '[data-reader-page="' + activePage + '"]',
+  function currentSheet() {
+    return scrollArea.current?.querySelector<HTMLElement>(
+      '[data-reader-page="' + activePage + '"] .pdf-viewer-page',
     )
-    const oldTop = focused?.getBoundingClientRect().top
+  }
+
+  function adjustZoom(value: number) {
+    const focused = currentSheet()
+    const before = focused?.getBoundingClientRect()
+    const scroller = focused?.parentElement
+    const frame = scroller?.getBoundingClientRect()
+    const viewTop = toolbar.current?.getBoundingClientRect().bottom ?? 0
+    const viewBottom = footer.current?.getBoundingClientRect().top ?? window.innerHeight
+    const centerY = (viewTop + viewBottom) / 2
+    const centerX = frame ? frame.left + frame.width / 2 : 0
     setZoom(value)
-    if (oldTop !== undefined) {
-      requestAnimationFrame(() => {
-        if (!focused?.isConnected) return
-        const delta = focused.getBoundingClientRect().top - oldTop
-        if (delta !== 0) window.scrollBy(0, delta)
-      })
+    if (!focused || !before?.height || !scroller) return
+
+    const fractionY = Math.min(1, Math.max(0, (centerY - before.top) / before.height))
+    const fractionX = Math.min(1, Math.max(0, (centerX - before.left) / before.width))
+    requestAnimationFrame(() => {
+      if (!focused.isConnected) return
+      const after = focused.getBoundingClientRect()
+      const deltaY = after.top - before.top + fractionY * (after.height - before.height)
+      const deltaX = after.left - before.left + fractionX * (after.width - before.width)
+      if (deltaY) window.scrollBy(0, deltaY)
+      if (deltaX) scroller.scrollLeft += deltaX
+    })
+  }
+
+  function fitHeight() {
+    const height = currentSheet()?.getBoundingClientRect().height
+    if (!height) return
+    const top = toolbar.current?.getBoundingClientRect().bottom ?? 0
+    const bottom = footer.current?.getBoundingClientRect().top ?? window.innerHeight
+    const value = Math.round((zoom * Math.max(1, bottom - top - 20)) / height)
+    adjustZoom(Math.max(25, Math.min(200, value)))
+  }
+
+  function toggleConcentration() {
+    setConcentration((current) => !current)
+  }
+
+  function toggleFullscreen() {
+    const action = document.fullscreenElement
+      ? document.exitFullscreen?.()
+      : document.documentElement.requestFullscreen?.()
+    void action?.catch(() => undefined)
+  }
+
+  function runTool(action: () => void) {
+    if (menu.current) menu.current.open = false
+    action()
+  }
+
+  function handleShortcut(event: KeyboardEvent<HTMLElement>) {
+    if (
+      event.defaultPrevented ||
+      !event.altKey ||
+      !event.shiftKey ||
+      event.metaKey ||
+      event.ctrlKey ||
+      (event.target instanceof HTMLElement &&
+        event.target.closest('input, textarea, select, [contenteditable]'))
+    )
+      return
+
+    const actions: Record<string, () => void> = {
+      pageup: () => navigate(Math.max(0, activePage - 1)),
+      pagedown: () => navigate(Math.min(pages.length - 1, activePage + 1)),
+      arrowup: () => viewer.current?.navigateCorrection('previous'),
+      arrowdown: () => viewer.current?.navigateCorrection('next'),
+      r: () => viewer.current?.remaskAll(),
+      f: toggleConcentration,
     }
+    const action = actions[event.key.toLowerCase()]
+    if (!action) return
+    event.preventDefault()
+    action()
   }
 
   return (
-    <main ref={main} id="main-content" className="reader" tabIndex={-1}>
+    <main
+      ref={main}
+      id="main-content"
+      className="reader"
+      data-concentration={concentration || undefined}
+      tabIndex={-1}
+      onKeyDown={handleShortcut}
+    >
       <section className="reader-toolbar" ref={toolbar} aria-label="Outils de lecture">
         <div className="reader-toolbar-inner">
           <div className="reader-modes">
@@ -136,8 +235,12 @@ export function Reader({
               aria-pressed={mode.kind === 'automatic'}
               disabled={analyzing || (mode.kind === 'automatic' && revealed === 0)}
               onClick={mode.kind === 'automatic' ? () => viewer.current?.remaskAll() : onAnalyze}
+              title={
+                training && revealed === 0 ? 'Toutes les corrections sont masquées' : undefined
+              }
             >
-              <Icon name="eye-off" size={17} /> <span>Masquer les corrigés</span>
+              <Icon name="eye-off" size={17} />
+              <span>{training ? 'Tout remasquer' : 'Masquer les corrigés'}</span>
             </button>
             <button
               type="button"
@@ -156,24 +259,19 @@ export function Reader({
               aria-label="Navigation par page"
               aria-controls={showNavigation ? 'reader-navigation' : undefined}
               aria-expanded={showNavigation}
+              disabled={concentration}
               onClick={() => setNavigation(!showNavigation)}
             >
               <Icon name="pages" />
             </button>
-            <span
-              className="reader-page-count"
-              aria-label={'Page ' + (activePage + 1) + ' sur ' + pages.length}
-            >
-              {activePage + 1} / {pages.length}
-            </span>
             <div className="reader-zoom" role="group" aria-label="Zoom du PDF">
               <button
                 type="button"
                 className="icon-button"
                 title="Zoom arrière"
                 aria-label="Zoom arrière"
-                disabled={zoom <= 75}
-                onClick={() => adjustZoom(zoom - 25)}
+                disabled={zoom <= 25}
+                onClick={() => adjustZoom(Math.max(25, zoom - 25))}
               >
                 <Icon name="minus" size={17} />
               </button>
@@ -184,7 +282,7 @@ export function Reader({
                 title="Zoom avant"
                 aria-label="Zoom avant"
                 disabled={zoom >= 200}
-                onClick={() => adjustZoom(zoom + 25)}
+                onClick={() => adjustZoom(Math.min(200, zoom + 25))}
               >
                 <Icon name="plus" size={17} />
               </button>
@@ -198,16 +296,112 @@ export function Reader({
                 <Icon name="fit" size={17} />
               </button>
             </div>
+            <button
+              type="button"
+              className="icon-button"
+              title="Mode concentration"
+              aria-label="Mode concentration"
+              aria-pressed={concentration}
+              onClick={toggleConcentration}
+            >
+              <Icon name="focus" />
+            </button>
+            <details className="reader-menu" ref={menu}>
+              <summary
+                className="icon-button"
+                aria-label="Outils et raccourcis"
+                title="Outils et raccourcis"
+              >
+                <Icon name="more" />
+              </summary>
+              <div className="reader-menu-panel">
+                {training && (
+                  <div
+                    className="reader-menu-actions"
+                    role="group"
+                    aria-label="Navigation entre les corrections"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => runTool(() => viewer.current?.navigateCorrection('previous'))}
+                    >
+                      Correction précédente
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => runTool(() => viewer.current?.navigateCorrection('next'))}
+                    >
+                      Correction suivante
+                    </button>
+                    <button
+                      type="button"
+                      disabled={revealed === total}
+                      onClick={() =>
+                        runTool(() => viewer.current?.navigateCorrection('unrevealed'))
+                      }
+                    >
+                      Prochain corrigé à découvrir
+                    </button>
+                  </div>
+                )}
+                <div className="reader-menu-actions">
+                  <button type="button" onClick={() => runTool(fitHeight)}>
+                    Ajuster à la hauteur
+                  </button>
+                  {document.fullscreenEnabled && (
+                    <button type="button" onClick={() => runTool(toggleFullscreen)}>
+                      {fullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+                    </button>
+                  )}
+                </div>
+                <div className="reader-shortcuts">
+                  <p>Raccourcis dans le lecteur</p>
+                  <span>Alt + Maj + Page haut / bas — pages</span>
+                  <span>Alt + Maj + ↑ / ↓ — corrections</span>
+                  <span>Alt + Maj + R — tout remasquer</span>
+                  <span>Alt + Maj + F — concentration</span>
+                  <span>Entrée ou Espace — activer le bouton ciblé</span>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </section>
 
       <div className="reader-layout" data-navigation={showNavigation || undefined}>
         {showNavigation && (
-          <nav id="reader-navigation" className="reader-navigation" aria-label="Pages du PDF">
+          <nav
+            ref={navigationPanel}
+            id="reader-navigation"
+            className="reader-navigation"
+            aria-label="Pages du PDF"
+          >
             <h2>Pages</h2>
+            {pages.length > 8 && (
+              <form
+                className="reader-page-jump"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  const value = Number(new FormData(event.currentTarget).get('page'))
+                  if (Number.isInteger(value) && value >= 1 && value <= pages.length)
+                    navigate(value - 1)
+                }}
+              >
+                <input
+                  type="number"
+                  name="page"
+                  min={1}
+                  max={pages.length}
+                  step={1}
+                  required
+                  placeholder="Page"
+                  aria-label="Numéro de page"
+                />
+                <button type="submit">Aller</button>
+              </form>
+            )}
             <ol>
-              {pages.map(({ pageIndex }) => (
+              {pages.map(({ pageIndex, width, height }) => (
                 <li key={pageIndex}>
                   <button
                     type="button"
@@ -215,9 +409,11 @@ export function Reader({
                     aria-current={activePage === pageIndex ? 'page' : undefined}
                     onClick={() => navigate(pageIndex)}
                   >
-                    <span className="page-tile" aria-hidden="true">
-                      <Icon name="file" size={20} />
-                    </span>
+                    <span
+                      className="page-tile"
+                      aria-hidden="true"
+                      style={{ aspectRatio: width / height }}
+                    />
                     <span>{pageIndex + 1}</span>
                   </button>
                 </li>
@@ -230,8 +426,14 @@ export function Reader({
             <div className="reader-status-copy">
               {analyzing && <span className="loading-ring" aria-hidden="true" />}
               <div>
-                {kindLabel && <p className="reader-mode-label">{kindLabel}</p>}
+                {(training || kindLabel) && (
+                  <p className="reader-mode-label">{training ? 'Mode entraînement' : kindLabel}</p>
+                )}
+                {training && kindLabel === 'Corrigé seul' && <p>{kindLabel}</p>}
                 <p role="status">{status}</p>
+                {training && (
+                  <p>Clique sur une zone masquée ou utilise les boutons pour la révéler.</p>
+                )}
               </div>
               {analyzing && (
                 <button type="button" className="ui-button" onClick={onCancel}>
@@ -239,15 +441,6 @@ export function Reader({
                 </button>
               )}
             </div>
-            {total > 0 && (
-              <div className="reader-progress">
-                <span aria-live="polite">
-                  {Math.min(revealed, total)} / {total}{' '}
-                  {total === 1 ? 'correction révélée' : 'corrections révélées'}
-                </span>
-                <progress aria-label="Corrections révélées" value={revealed} max={total} />
-              </div>
-            )}
             {error && (
               <p className="ui-error" role="alert">
                 <Icon name="alert" size={17} /> {error}
@@ -261,20 +454,14 @@ export function Reader({
               </ul>
             )}
           </section>
-          <div
-            ref={scrollArea}
-            className="reader-scroll"
-            tabIndex={zoom > 100 ? 0 : undefined}
-            aria-label="Document zoomable"
-          >
-            <div
-              className="reader-document"
-              style={{ width: zoom + '%', maxWidth: (56 * zoom) / 100 + 'rem' }}
-            >
+          <div ref={scrollArea} className="reader-scroll">
+            <div className="reader-document">
               <DocumentViewer
                 ref={viewer}
                 pages={pages}
                 mode={mode}
+                workspace
+                zoom={zoom}
                 onRevealedCount={setRevealed}
                 renderPage={(page) => <PdfCanvas pdf={pdf} page={page} />}
               />
@@ -282,6 +469,33 @@ export function Reader({
           </div>
         </div>
       </div>
+      <footer ref={footer} className="reader-progress" aria-label="Progression de lecture">
+        <span
+          className="reader-page-count"
+          aria-label={'Page ' + (activePage + 1) + ' sur ' + pages.length}
+        >
+          Page {activePage + 1} / {pages.length}
+        </span>
+        {training ? (
+          <>
+            <span aria-live="polite">
+              {Math.min(revealed, total)} / {total}{' '}
+              {total === 1 ? 'correction révélée' : 'corrections révélées'}
+            </span>
+            <progress aria-label="Corrections révélées" value={revealed} max={total} />
+          </>
+        ) : (
+          <span>
+            {analyzing
+              ? 'Analyse en cours'
+              : mode.kind === 'progressive'
+                ? 'Lecture progressive'
+                : mode.kind === 'automatic'
+                  ? 'Sujet sans correction détectée'
+                  : 'Document couvert'}
+          </span>
+        )}
+      </footer>
     </main>
   )
 }

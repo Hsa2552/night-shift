@@ -202,11 +202,11 @@ async function desktop(browser) {
   await readyHome(page)
   const demo = page.locator('.demo-preview')
   const demoMasks = await demo.getByTestId('correction-mask').count()
-  await demo.getByRole('button', { name: /Révéler la correction.*Lancer un dé/ }).click()
+  await demo.getByRole('button', { name: /Afficher le corrigé.*Lancer un dé/ }).click()
   await demo.getByRole('button', { name: /Remasquer.*Lancer un dé/ }).waitFor()
   assert.equal(await demo.getByTestId('correction-mask').count(), demoMasks - 1)
   await demo.getByRole('button', { name: /Remasquer.*Lancer un dé/ }).click()
-  await demo.getByRole('button', { name: /Révéler la correction.*Lancer un dé/ }).waitFor()
+  await demo.getByRole('button', { name: /Afficher le corrigé.*Lancer un dé/ }).waitFor()
   assert.equal(await demo.getByTestId('correction-mask').count(), demoMasks)
 
   const transfer = await page.evaluateHandle(
