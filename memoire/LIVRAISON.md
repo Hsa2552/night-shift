@@ -3,6 +3,8 @@
 > Le planning et l'heure d'arrêt sont gérés par l'équipe.
 > Contrainte officielle : plus aucune modification du dépôt après **samedi 28 novembre 2026, 13h00, heure de Paris**. Toute la checklist doit donc être terminée avant.
 
+Les procédures détaillées de test navigateur, de déploiement et d’installation sont dans le [guide de recette](RECETTE.md).
+
 ## Convergence finale
 
 Le candidat est identifié par le SHA de tête de la [PR #27](https://github.com/Hsa2552/night-shift/pull/27), branche `feat/convergence-phase-5`. L'équipe relit cette PR et la fusionne manuellement après avoir vérifié le résultat de la CI sur ce SHA. La PR #26 est reprise dans son historique. La PR #5 reste hors livraison. Les corrections facultatives de la validation indépendante restent sur leurs branches.

@@ -181,6 +181,12 @@
 - Maturité : parcours QCM démontré dans le build de convergence sous Edge, dont l’import hors ligne. Aucun changement de masque sur les six PDF ENSAI-dev dans la comparaison de raccordement. Raccordement graphique natif conservateur, périmètres sans preuve et balayage raster optionnel laissés hors du parcours automatique.
 - Notes : PR #27, recette V-28-0608-WB et procédure dans `LIVRAISON.md`. La fusion et le contrôle de Pages sur le nouveau `main` restent à l’équipe.
 
+### T-WB-11 · README final pour le jury
+
+- Statut : en revue · Priorité : P1
+- Responsable : Wael · Agent : Codex · Branche : `docs/readme-final`
+- Maturité : captures de la recette ergonomique `b7ef36e` réalisées dans Edge sur un QCM synthétique. Résultats attribués au candidat `ca93897` et à la validation de Salif. Procédures techniques déplacées dans `RECETTE.md`.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._
