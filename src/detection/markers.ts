@@ -236,10 +236,44 @@ export function isPageFurniture(text: string): boolean {
 /** Titre de document annonçant un corrigé (et non un sujet accompagné de son corrigé). */
 export function isCorrectionTitle(text: string): boolean {
   const folded = fold(text)
-  if (!/\b(?:corriges?|corrections?|solutions?|elements\s+de\s+correction)\b/.test(folded)) {
-    return false
-  }
+  const exact = /\b(?:corriges?|corrections?|solutions?|elements\s+de\s+correction)\b/.test(folded)
+  if (!exact && !hasDegradedCorrectionWord(folded)) return false
   return !/\b(?:sujets?|enonces?)\b|\bavec\b|\+/.test(folded)
+}
+
+const CORRECTION_WORDS = [
+  'corrige',
+  'corriges',
+  'correction',
+  'corrections',
+  'solution',
+  'solutions',
+]
+
+/**
+ * Extraction dégradée (police dont une lettre n'a pas de correspondance Unicode : « orrigé »,
+ * « Exer i e ») : un mot de 6 lettres au moins à une lettre près d'un mot de corrigé.
+ */
+export function hasDegradedCorrectionWord(folded: string): boolean {
+  return folded
+    .split(/[^a-z]+/)
+    .filter((w) => w.length >= 6)
+    .some((w) => CORRECTION_WORDS.some((c) => editDistance(w, c) <= 1))
+}
+
+/** Distance de Levenshtein (mots courts). */
+export function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    let prev = d[0]!
+    d[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = d[j]!
+      d[j] = Math.min(d[j]! + 1, d[j - 1]! + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1))
+      prev = tmp
+    }
+  }
+  return d[b.length]!
 }
 
 /**
