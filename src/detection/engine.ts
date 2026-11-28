@@ -10,10 +10,17 @@ import type {
   PageRegion,
   RasterData,
   Rect,
+  PageData,
 } from './contract.ts'
 import { hueDistance, inkOf, type Ink } from './color.ts'
 import { answerBoxes, findBoxes, locateSquare, type Box } from './boxes.ts'
-import { fuseExternalColor, registeredColorAnalyzer, type ExternalColorResult } from './fusion.ts'
+import {
+  fuseExternalColor,
+  registeredColorAnalyzer,
+  type ExternalColorAnalyzer,
+  type ExternalColorResult,
+} from './fusion.ts'
+import { analyzeColorPage, readColorConvention } from './visual/index.ts'
 import { buildPageInk, graphicBottom, graphicTop, type PageInk } from './graphics.ts'
 import { layoutPage, type Line, type PageLayout } from './layout.ts'
 import {
@@ -519,7 +526,8 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     }))
 
   // Détecteur colorimétrique externe (s'il est enregistré) : fusion sans union aveugle.
-  const analyzer = registeredColorAnalyzer()
+  const registered = registeredColorAnalyzer()
+  const analyzer = registered === 'default' ? defaultColorAnalyzer(input.pages) : registered
   if (analyzer && input.getRaster) {
     const results: ExternalColorResult[] = []
     for (const page of input.pages) {
@@ -1387,4 +1395,10 @@ function correctionHint(layouts: PageLayout[], flow: Line[], parsed: Parsed[]): 
     }
   })
   return cues >= 3 && spans.size >= 2
+}
+
+/** Détecteur colorimétrique de Wael, avec la convention de couleur annoncée dans le document. */
+function defaultColorAnalyzer(pages: PageData[]): ExternalColorAnalyzer {
+  const convention = readColorConvention(pages)
+  return (page, raster) => analyzeColorPage(page, raster, convention)
 }

@@ -6,7 +6,7 @@ import { fakePage, fakeRaster, type RGB } from './fixtures.ts'
 import { registerColorAnalyzer, type ExternalColorResult } from './fusion.ts'
 import { detectCorrections, WARNINGS } from './index.ts'
 
-afterEach(() => registerColorAnalyzer(null))
+afterEach(() => registerColorAnalyzer('default'))
 
 const top = (n: number) => 72 + n * 16.5
 const lineRect = (n: number): Rect => ({ x: 72, y: top(n), width: 300, height: 11 })

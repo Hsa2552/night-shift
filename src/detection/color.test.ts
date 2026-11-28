@@ -101,9 +101,13 @@ describe('détection par couleur', () => {
     expect(result.blocks).toEqual([])
   })
 
-  it('une seule ligne colorée ne suffit pas', async () => {
+  it('une seule ligne colorée hors question : pas de masque, mais abstention', async () => {
+    // Une ligne seule ne suffit pas à masquer ; le détecteur visuel la signale comme correction
+    // plausible non localisée : on n'affirme pas « aucun corrigé » (document couvert).
     const result = await withRaster(page, paint(BLUE, 'On a'))
-    expect(result.kind).toBe('statement_only')
+    expect(result.blocks).toEqual([])
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
   })
 
   it('un échec du rendu raster : pas de promesse « aucun corrigé », repli', async () => {

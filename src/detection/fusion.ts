@@ -19,14 +19,17 @@ export interface ExternalColorResult {
 
 export type ExternalColorAnalyzer = (page: PageData, raster: RasterData) => ExternalColorResult
 
-let colorAnalyzer: ExternalColorAnalyzer | null = null
+let colorAnalyzer: ExternalColorAnalyzer | null | 'default' = 'default'
 
-/** Enregistre (ou retire avec null) un analyseur colorimétrique externe. */
-export function registerColorAnalyzer(analyzer: ExternalColorAnalyzer | null) {
+/**
+ * Analyseur colorimétrique externe : 'default' (détecteur visuel de Wael, src/detection/visual),
+ * null (aucun), ou une fonction de même forme (tests, autre détecteur).
+ */
+export function registerColorAnalyzer(analyzer: ExternalColorAnalyzer | null | 'default') {
   colorAnalyzer = analyzer
 }
 
-export function registeredColorAnalyzer(): ExternalColorAnalyzer | null {
+export function registeredColorAnalyzer(): ExternalColorAnalyzer | null | 'default' {
   return colorAnalyzer
 }
 
@@ -104,5 +107,16 @@ export function fuseExternalColor(
       }
     }
   }
-  return { added, rejected, externalFallback: results.some((r) => r.needsFallback) }
+  // Signal de repli externe retenu seulement s'il porte sur une encre que la structure
+  // n'explique pas (ni question, ni teinte des questions), ou si le raster était inexploitable.
+  const explained = (c: ExternalColorCandidate) =>
+    (ctx.questionHue !== null && hueDistance(c.hue, ctx.questionHue) <= 20) ||
+    ctx.protectedLines.some(
+      (l) => l.pageIndex === c.region.pageIndex && overlapRatio(c.region.bbox, l.bbox) > 0.3,
+    )
+  const externalFallback = results.some(
+    (r) =>
+      r.needsFallback && (r.candidates.length === 0 || r.candidates.some((c) => !explained(c))),
+  )
+  return { added, rejected, externalFallback }
 }

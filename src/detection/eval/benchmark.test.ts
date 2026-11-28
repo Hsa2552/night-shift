@@ -175,9 +175,9 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
     const regressions: string[] = []
     const resolved: string[] = []
     if (previous) {
-      for (const d of docs.filter((x) => x.status === 'évalué')) {
+      for (const d of docs.filter((x) => x.status === 'évalué' && x.measurable !== false)) {
         const p = previous.documents.find((x) => x.name === d.name && x.status === 'évalué')
-        if (!p) continue
+        if (!p || p.measurable === false) continue
         const leaks = (x: DocReport) => (x.corrections?.total ?? 0) - (x.corrections?.full ?? 0)
         if (p.success && !d.success) regressions.push(`${d.name} : réussite perdue`)
         else if (leaks(d) > leaks(p))
