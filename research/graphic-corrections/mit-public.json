@@ -1,0 +1,55 @@
+{
+  "label": "MIT 2.007 diagnostic public",
+  "sha256": "63bd3e3b0031b3d770b4d09310debde1a6135a66e60aa420e4bbe7bed2bcd243",
+  "pages": [
+    {
+      "pageIndex": 1,
+      "anchors": [
+        {
+          "id": "question",
+          "role": "question",
+          "reliability": "confirmed",
+          "region": [67, 159, 420, 22],
+          "scope": [60, 145, 495, 190]
+        },
+        {
+          "id": "solution",
+          "role": "correction",
+          "reliability": "confirmed",
+          "region": [65, 343, 350, 18],
+          "scope": [58, 339, 502, 400],
+          "blockId": "M-1"
+        }
+      ],
+      "targets": [
+        { "kind": "figure", "role": "statement", "box": [106, 197, 342, 124] },
+        { "kind": "figure", "role": "correction", "box": [150, 371, 207, 91], "blockId": "M-1" },
+        { "kind": "figure", "role": "correction", "box": [406, 611, 129, 102], "blockId": "M-1" }
+      ]
+    },
+    {
+      "pageIndex": 3,
+      "anchors": [
+        {
+          "id": "question",
+          "role": "question",
+          "reliability": "confirmed",
+          "region": [80, 83, 453, 63],
+          "scope": [64, 74, 531, 381]
+        },
+        {
+          "id": "solution",
+          "role": "correction",
+          "reliability": "confirmed",
+          "region": [65, 621, 300, 25],
+          "scope": [64, 456, 534, 213],
+          "blockId": "M-4"
+        }
+      ],
+      "targets": [
+        { "kind": "figure", "role": "statement", "box": [67, 192, 516, 259] },
+        { "kind": "figure", "role": "correction", "box": [95, 461, 273, 148], "blockId": "M-4" }
+      ]
+    }
+  ]
+}

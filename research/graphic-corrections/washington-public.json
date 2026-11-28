@@ -1,0 +1,42 @@
+{
+  "label": "Washington CSE122 diagnostic public",
+  "sha256": "aa4620fb04e5f630ebc42cedf53b1aac1f8a65401666c281c8eb61a2f7466161",
+  "pages": [
+    {
+      "pageIndex": 0,
+      "mixed": [
+        { "region": [90, 126, 335, 115], "blockId": "W-1A", "correctionRgb": [217, 234, 211] }
+      ],
+      "protected": [
+        [109, 137, 243, 10],
+        [109, 166, 325, 10],
+        [109, 195, 243, 10],
+        [109, 224, 307, 10]
+      ],
+      "targets": [
+        {
+          "kind": "fill",
+          "role": "correction",
+          "box": [94, 133, 258, 3],
+          "blockId": "W-1A",
+          "rgb": [217, 234, 211]
+        },
+        {
+          "kind": "fill",
+          "role": "correction",
+          "box": [94, 191, 258, 3],
+          "blockId": "W-1A",
+          "rgb": [217, 234, 211]
+        },
+        {
+          "kind": "fill",
+          "role": "correction",
+          "box": [94, 220, 322, 3],
+          "blockId": "W-1A",
+          "rgb": [217, 234, 211]
+        },
+        { "kind": "table", "role": "statement", "box": [32, 627, 544, 24] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "label": "Berkeley CS186 diagnostic public",
+  "sha256": "fefa788107446be0300f27d68fd860dfe81d1752054e1830ff4873e35c79d4c7",
+  "pages": [
+    {
+      "pageIndex": 2,
+      "anchors": [
+        {
+          "id": "table-results",
+          "role": "correction",
+          "reliability": "confirmed",
+          "region": [222, 169, 153, 32],
+          "scope": [217, 165, 324, 324],
+          "blockId": "B-3"
+        }
+      ],
+      "protected": [
+        [55, 148, 161, 338],
+        [216, 148, 325, 16]
+      ],
+      "targets": [
+        { "kind": "table", "role": "statement", "box": [56, 148, 159, 338] },
+        {
+          "kind": "table",
+          "role": "correction",
+          "box": [218, 166, 321, 318],
+          "blockId": "B-3",
+          "rgb": [255, 0, 0]
+        }
+      ]
+    }
+  ]
+}
