@@ -45,44 +45,57 @@ def score(reference, observed, threshold=0.60):
     }
 
 
-def observations(report, confirmed_only=False):
+def observations(report, field="cases"):
     return [
         {**case, "pageIndex": page["pageIndex"]}
-        for page in report["pages"] for case in page["cases"]
-        if not confirmed_only or case["state"] != "ambiguous"
+        for page in report["pages"] for case in page.get(field, ())
     ]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("truth", type=Path, help="Prior annotation with elements carrying filled and bbox.")
+    parser.add_argument("truth", type=Path, help="External annotation with elements carrying filled or state and bbox.")
     parser.add_argument("vector", type=Path)
     parser.add_argument("--raster", type=Path, help="Output of compare-browser.mjs.")
     parser.add_argument("--pdfjs", type=Path, help="Output of compare-browser.mjs --vector.")
+    parser.add_argument("--symbols", action="store_true", help="Also score the glyph-based PyMuPDF observations.")
     parser.add_argument("--iou", type=float, default=0.60)
     args = parser.parse_args()
     vector = load(args.vector)
-    candidates = load(args.truth)["elements"]
+    truth = load(args.truth)
+    if truth.get("sha256", vector["sha256"]) != vector["sha256"]:
+        raise ValueError("The reference was annotated on a different PDF")
+    pages = set(truth["pages"]) if "pages" in truth else None
+
+    def scored(report, field="cases"):
+        selected = {**report, "pages": [
+            p for p in report["pages"] if pages is None or p["pageIndex"] in pages
+        ]}
+        return observations(selected, field)
+
     reference = [
         {
             "pageIndex": a["pageIndex"], "bbox": [a["bbox"][k] for k in ("x", "y", "width", "height")],
-            "state": "filled" if a["filled"] else "empty",
+            "state": a["state"] if "state" in a else ("filled" if a["filled"] else "empty"),
         }
-        for a in candidates if "filled" in a
+        for a in truth["elements"] if "filled" in a or "state" in a
     ]
+    vector_cases = scored(vector)
     result = {
-        "vector": score(reference, observations(vector, confirmed_only=True), args.iou),
-        "ambiguous_vector": sum(case["state"] == "ambiguous" for case in observations(vector)),
+        "vector": score(reference, [case for case in vector_cases if case["state"] != "ambiguous"], args.iou),
+        "ambiguous_vector": sum(case["state"] == "ambiguous" for case in vector_cases),
         "vector_ms_sum": round(sum(p["ms"] for p in vector["pages"]), 2),
     }
+    if args.symbols:
+        result["vector_symbols"] = score(reference, scored(vector, "symbol_cases"), args.iou)
     if args.raster:
         raster = next(d for d in load(args.raster)["documents"] if d["sha256"] == vector["sha256"])
-        result["raster"] = score(reference, observations(raster), args.iou)
+        result["raster"] = score(reference, scored(raster), args.iou)
         result["raster_box_ms_sum"] = round(sum(p["ms"] for p in raster["pages"]), 2)
         result["raster_render_ms_sum"] = round(sum(p["rasterMs"] for p in raster["pages"]), 2)
     if args.pdfjs:
         native = next(d for d in load(args.pdfjs)["documents"] if d["sha256"] == vector["sha256"])
-        result["pdfjs"] = score(reference, observations(native), args.iou)
+        result["pdfjs"] = score(reference, scored(native), args.iou)
         result["pdfjs_ms_sum"] = round(sum(p["ms"] for p in native["pages"]), 2)
     print(json.dumps(result, indent=2))
 

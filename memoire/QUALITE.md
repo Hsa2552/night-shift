@@ -240,6 +240,12 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Temps cumulés. Référence brute raster et cases de 521 et 154 ms. Opérateurs PDF.js et normalisation en 149 et 66 ms. Chronométrages hors ouverture, à interpréter selon les opérations mesurées.
 - Limites. Les états TypeScript restent à confirmer après composition. Les vrais PDF publics servent aux contrôles ponctuels, sans inventaire annoté exhaustif de leurs objets. Les partitions réservées de Salif, les masques de bout en bout, Safari et les appareils physiques sont hors de ce relevé. Proposition hybride et interface de revue dans la PR #16.
 
+### V-28-0323-WB · Deux pages publiques annotées depuis le rendu
+
+- Protocole. Annotation visuelle indépendante des boîtes et états, appariement à IoU 0,60. Voir `research/pdf-vector/public-truth/` pour les deux pages et les empreintes des PDF.
+- Virginia Tech p. 15. `findBoxes` apparie 11/15 cases et renvoie toutes les cochées comme vides. Les glyphes PyMuPDF apparient les 7 cochées et 3 des 8 vides. À IoU 0,50, les 15 glyphes sont appariés dans leur bon état, avec une médiane IoU 0,608.
+- Washington p. 1. Les 4 cases s’apparient dans les comparaisons PDF.js et raster. Les états raster sont tous « vide » et les états natifs sont ambigus. Les trois marqueurs verts apparaissent dans le relevé PDF.js parmi les rectangles englobants. Le raster fournit 88 candidats en dehors des quatre cibles de la page.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
