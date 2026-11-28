@@ -85,6 +85,38 @@ describe('Unspoil', () => {
     expect(screen.getByTestId('correction-mask')).toBeTruthy()
   })
 
+  it('exposes vector readers bound to the active document during detection', async () => {
+    const first = {
+      ...fakePdf(),
+      getVectors: vi.fn().mockResolvedValue({ pageIndex: 0, width: 400 }),
+    }
+    const second = {
+      ...fakePdf(),
+      getVectors: vi.fn().mockResolvedValue({ pageIndex: 0, width: 200 }),
+    }
+    loadPdf.mockResolvedValueOnce(first).mockResolvedValueOnce(second)
+    detect.mockResolvedValue({
+      kind: 'statement_only',
+      blocks: [],
+      needsFallback: false,
+      warnings: [],
+    })
+    await importDocument()
+    expect(first.getVectors).not.toHaveBeenCalled()
+    startAnalysis()
+    await waitFor(() => expect(detect).toHaveBeenCalledTimes(1))
+    const firstInput = detect.mock.calls[0]![0]
+    await expect(firstInput.getVectors?.(0)).resolves.toMatchObject({ width: 400 })
+    selectFile('nouveau.pdf')
+    await screen.findByRole('heading', { name: 'nouveau.pdf' })
+    expect(first.close).toHaveBeenCalledOnce()
+    startAnalysis()
+    await waitFor(() => expect(detect).toHaveBeenCalledTimes(2))
+    await expect(detect.mock.calls[1]![0].getVectors?.(0)).resolves.toMatchObject({ width: 200 })
+    expect(first.getVectors).toHaveBeenCalledOnce()
+    expect(second.getVectors).toHaveBeenCalledOnce()
+  })
+
   it('navigue sans miniature rendue et garde le document couvert au zoom', async () => {
     const pdf = fakePdf()
     pdf.pageCount = 2

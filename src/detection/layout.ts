@@ -24,6 +24,8 @@ export interface Line {
   /** Abscisse (repère canonique) de chaque unité UTF-16 de `text`. */
   charX: number[]
   area: Area
+  /** Fragments d'origine de la ligne (mêmes objets que `PageData.textItems`). */
+  sources?: TextItem[]
 }
 
 export interface PageLayout {
@@ -145,6 +147,7 @@ function buildSegment(items: TextItem[], pageIndex: number): Segment {
     bbox: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 },
     fontSize: fontSizeSum / items.length,
     fontNames: [...fontNames],
+    sources: items,
   }
 }
 

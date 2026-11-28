@@ -3,6 +3,7 @@
 // de leur taille exacte, de la police et de la mise en page. Le texte extrait ne les voit pas.
 
 import type { PageData, RasterData, Rect } from './contract.ts'
+import type { NativeSquare } from './visual/vector/cases.ts'
 
 export interface Box {
   pageIndex: number
@@ -16,11 +17,64 @@ export interface Box {
   /** La forme est le dessin d'un glyphe du texte (lettre d'un mot, puce, guillemet…) et non
    * une case : décidé sur le texte extrait, identique d'un moteur de rendu à l'autre. */
   glyph?: boolean
+  /** Case tirée des opérateurs du PDF (C1 v1.1) : état natif conservé, y compris « ambiguous ». */
+  native?: NativeSquare['nativeState']
+  /** Marque native qui désigne cette case (coche, croix superposée, aplat derrière la case). */
+  cue?: Rect
+}
+
+/** Relations natives utiles (sous-ensemble de l'observation de Wael, C1 v1.1). */
+export interface NativeMarks {
+  glyphSymbols?: { region: { pageIndex: number; bbox: Rect } }[]
+  markRelations?: {
+    frame: { region: { pageIndex: number; bbox: Rect } }
+    markIndex: number
+    kind: 'overlap' | 'nearby'
+  }[]
+  backgroundRelations?: {
+    frame: { region: { pageIndex: number; bbox: Rect } }
+    region: { pageIndex: number; bbox: Rect }
+  }[]
+}
+
+const centerIn = (a: Rect, b: Rect) => {
+  const cx = a.x + a.width / 2
+  const cy = a.y + a.height / 2
+  return cx >= b.x && cx <= b.x + b.width && cy >= b.y && cy <= b.y + b.height
+}
+
+/**
+ * Cases désignées par une marque native : coche ou croix superposée (`markRelations`, relation
+ * « overlap »), aplat coloré derrière la case (`backgroundRelations`). Une telle case est la
+ * réponse marquée (pleine) ; la région de la marque est gardée dans `cue` pour que toutes les
+ * cases de la page reçoivent le même masque (aucun indice par la forme du masque).
+ */
+export function markBoxes(boxes: Box[], marks: NativeMarks | undefined, pageIndex: number): Box[] {
+  if (!marks) return boxes
+  const cues: { frame: Rect; cue: Rect }[] = []
+  for (const r of marks.markRelations ?? []) {
+    if (r.kind !== 'overlap' || r.frame.region.pageIndex !== pageIndex) continue
+    const mark = marks.glyphSymbols?.[r.markIndex]
+    if (mark) cues.push({ frame: r.frame.region.bbox, cue: mark.region.bbox })
+  }
+  for (const r of marks.backgroundRelations ?? []) {
+    if (r.frame.region.pageIndex === pageIndex)
+      cues.push({ frame: r.frame.region.bbox, cue: r.region.bbox })
+  }
+  if (cues.length === 0) return boxes
+  return boxes.map((b) => {
+    if (b.pageIndex !== pageIndex) return b
+    const hit = cues.find((c) => centerIn(c.frame, b.bbox) || centerIn(b.bbox, c.frame))
+    if (!hit) return b
+    return { ...b, filled: true, density: Math.max(b.density, 0.85), cue: hit.cue }
+  })
 }
 
 /** Encre : seuil large, pour suivre les contours fins anticrénelés. Noir : remplissage. */
 const INK = 215
 const BLACK = 140
+/** Pixel non blanc : confirme qu'une case native est effectivement peinte. */
+const VISIBLE = 245
 
 /**
  * Cases candidates d'une page : carrés pleins (densité forte) et contours carrés à centre clair.
@@ -42,6 +96,131 @@ export function findBoxes(raster: RasterData, page: PageData): Box[] {
   return merged
 }
 
+/**
+ * Cases natives (opérateurs du PDF, via `nativeSquares`) ajoutées aux cases du raster. Les
+ * opérateurs ne dépendent pas du moteur de rendu ; le raster confirme la visibilité (encre sur
+ * le contour ou dans la case), comme l'exige C1 v1.1. Une case native déjà vue par le raster
+ * n'est pas dupliquée (son état natif est noté). L'état « ambiguous » est conservé et l'état
+ * plein / vide retenu est alors celui du raster.
+ */
+export function withNativeBoxes(
+  rasterBoxes: Box[],
+  squares: readonly NativeSquare[],
+  raster: RasterData,
+  page: PageData,
+): Box[] {
+  const out = [...rasterBoxes]
+  const { width: W, height: H, rgba } = raster
+  const sx = W / page.width
+  const sy = H / page.height
+  const lum = (x: number, y: number) => {
+    const px = Math.min(W - 1, Math.max(0, Math.round(x * sx)))
+    const py = Math.min(H - 1, Math.max(0, Math.round(y * sy)))
+    const i = (py * W + px) * 4
+    return 0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!
+  }
+  // Glyphes typographiques (sans tracé) : la cellule de police est plus haute que le carré
+  // dessiné. Le carré est cherché dans le raster (côté = largeur de la cellule) ; à défaut, sa
+  // position dans la cellule est apprise des autres glyphes de même taille de la page.
+  const cellKey = (r: Rect) => `${r.width.toFixed(1)}x${r.height.toFixed(1)}`
+  const located = new Map<NativeSquare, { cx: number; cy: number }>()
+  const offsets = new Map<string, { dx: number; dy: number }[]>()
+  for (const square of squares) {
+    if (square.region.pageIndex !== page.pageIndex || square.paint.length > 0) continue
+    const c = square.region.bbox
+    const side = Math.min(c.width, c.height)
+    const at = locateSquare(raster, page, c.x + c.width / 2, c.y + c.height / 2, side)
+    if (!at) continue
+    located.set(square, at)
+    const list = offsets.get(cellKey(c)) ?? []
+    list.push({ dx: at.cx - (c.x + c.width / 2), dy: at.cy - (c.y + c.height / 2) })
+    offsets.set(cellKey(c), list)
+  }
+  const median = (values: number[]) => [...values].sort((a, b) => a - b)[values.length >> 1]!
+  for (const square of squares) {
+    if (square.region.pageIndex !== page.pageIndex) continue
+    let b = square.region.bbox
+    if (square.paint.length === 0) {
+      const side = Math.min(b.width, b.height)
+      let at = located.get(square)
+      const learned = offsets.get(cellKey(b))
+      if (!at && learned) {
+        at = {
+          cx: b.x + b.width / 2 + median(learned.map((o) => o.dx)),
+          cy: b.y + b.height / 2 + median(learned.map((o) => o.dy)),
+        }
+      }
+      if (!at) continue
+      b = { x: at.cx - side / 2, y: at.cy - side / 2, width: side, height: side }
+    }
+    const cx = b.x + b.width / 2
+    const cy = b.y + b.height / 2
+    const twin = out.find(
+      (o) =>
+        Math.abs(o.bbox.x + o.bbox.width / 2 - cx) < b.width / 3 &&
+        Math.abs(o.bbox.y + o.bbox.height / 2 - cy) < b.height / 3,
+    )
+    if (twin) {
+      // Géométrie native retenue (exacte, indépendante du rendu) : une case du raster fusionnée
+      // avec sa coche serait plus grande et décentrée, et son masque se distinguerait.
+      twin.native = square.nativeState
+      twin.bbox = { ...b }
+      continue
+    }
+    // Visibilité : le contour n'est pas blanc (au moins 60 % des points du liseré, seuil 245 et
+    // non 215 : l'opérateur prouve déjà le dessin ; une case pâle reste visible à l'œil).
+    let edge = 0
+    let dark = 0
+    const n = 12
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n
+      for (const [x, y] of [
+        [b.x + t * b.width, b.y],
+        [b.x + t * b.width, b.y + b.height],
+        [b.x, b.y + t * b.height],
+        [b.x + b.width, b.y + t * b.height],
+      ] as const) {
+        edge++
+        const near = Math.min(lum(x, y), lum(x + 0.5, y + 0.5), lum(x - 0.5, y - 0.5))
+        if (near < VISIBLE) dark++
+      }
+    }
+    if (dark / edge < 0.6) continue
+    // Remplissage observé au centre (60 % du côté).
+    let inner = 0
+    let blackInner = 0
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 6; j++) {
+        inner++
+        if (
+          lum(
+            b.x + (0.2 + (0.6 * (i + 0.5)) / 6) * b.width,
+            b.y + (0.2 + (0.6 * (j + 0.5)) / 6) * b.height,
+          ) < BLACK
+        )
+          blackInner++
+      }
+    }
+    const density = blackInner / inner
+    const filled =
+      square.nativeState === 'filled'
+        ? true
+        : square.nativeState === 'empty'
+          ? false
+          : density >= 0.75
+    const under = charUnder(page, b)
+    out.push({
+      pageIndex: page.pageIndex,
+      bbox: { ...b },
+      filled,
+      density: filled ? Math.max(density, 0.85) : density,
+      ...(under ? { char: under.char } : {}),
+      native: square.nativeState,
+    })
+  }
+  return out
+}
+
 function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Box[] {
   const { width: W, height: H, rgba } = raster
   const s = W / page.width
@@ -60,11 +239,14 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
   // Taille plausible d'une case : entre 4 et 30 points de côté.
   const minSide = Math.max(4, Math.round(4 * s))
   const maxSide = Math.round(30 * s)
-  const seen = new Uint8Array(W * H)
+  // Numéro de composante de chaque pixel (0 : non visité).
+  const seen = new Int32Array(W * H)
+  let label = 0
   const stack: number[] = []
   const boxes: Box[] = []
   for (let start = 0; start < W * H; start++) {
     if (!dark[start] || seen[start]) continue
+    label++
     // Composante connexe (4-connexité), avec abandon dès qu'elle dépasse la taille maximale.
     let x0 = W
     let y0 = H
@@ -73,7 +255,7 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
     let count = 0
     let tooBig = false
     stack.push(start)
-    seen[start] = 1
+    seen[start] = label
     while (stack.length > 0) {
       const p = stack.pop()!
       const x = p % W
@@ -87,7 +269,7 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       for (const q of [p - 1, p + 1, p - W, p + W]) {
         if (q < 0 || q >= W * H || seen[q] || !dark[q]) continue
         if ((q === p - 1 && x === 0) || (q === p + 1 && x === W - 1)) continue
-        seen[q] = 1
+        seen[q] = label
         stack.push(q)
       }
     }
@@ -134,12 +316,15 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       const ix1 = x1 - Math.round(w * 0.3)
       const iy0 = y0 + Math.round(h * 0.3)
       const iy1 = y1 - Math.round(h * 0.3)
+      // Centre clair : seuls les pixels de la forme elle-même comptent. La lettre imprimée dans
+      // une case (non reliée au contour) n'en fait pas une case pleine, quel que soit le rendu
+      // de sa police (plus sombre dans Edge).
       let inner = 0
       let innerDark = 0
       for (let y = iy0; y <= iy1; y++) {
         for (let x = ix0; x <= ix1; x++) {
           inner++
-          if (black[y * W + x]) innerDark++
+          if (black[y * W + x] && seen[y * W + x] === label) innerDark++
         }
       }
       if (inner > 0 && innerDark / inner > 0.5) continue

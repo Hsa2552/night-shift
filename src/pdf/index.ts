@@ -3,6 +3,7 @@ import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 import type { PageData, PageDimensions, RasterData, VectorPageObservation } from '../shared/types'
 import { fitCanvas, MAX_DISPLAY_PIXELS, MAX_RASTER_PIXELS } from './canvas-size'
 import { readPageText } from './read-text'
+import { createVectorSource } from './vector-source'
 
 export type { PageData, PageDimensions, RasterData, Rect, TextItem } from '../shared/types'
 
@@ -63,6 +64,10 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
     return document.getPage(pageIndex + 1)
   }
 
+  const vectors = createVectorSource(document.numPages, getPage, (page) =>
+    readPageText(page, page.getViewport({ scale: 1 }).transform, document.isPureXfa),
+  )
+
   async function renderPage(
     pageIndex: number,
     canvas: HTMLCanvasElement,
@@ -120,6 +125,7 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
       return { pageIndex, width, height, textItems }
     },
     renderPage,
+    getVectors: vectors.getVectors,
     async getRaster(pageIndex) {
       const canvas = globalThis.document.createElement('canvas')
       // Initialize before PDF.js so its opaque canvas context does not introduce
@@ -136,6 +142,7 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
       }
     },
     close() {
+      vectors.close()
       closing ??= task.destroy()
       return closing
     },

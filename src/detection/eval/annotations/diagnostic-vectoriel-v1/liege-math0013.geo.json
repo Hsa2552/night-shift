@@ -1,0 +1,89 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "humaine (Wael et/ou Salif selon la section). Page 5 lue visuellement par Salif. La matrice initiale et les calculs du corrigé ont des rôles distincts. Échantillon visuel délimité sans prédiction du détecteur.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [86, 60, 247, 14]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "formula",
+      "bbox": [236, 83, 123, 44]
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "text",
+      "bbox": [86, 135, 204, 15],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [253, 156, 89, 47],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [194, 217, 207, 50],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "text",
+      "bbox": [92, 266, 355, 17],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [257, 288, 114, 47],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [209, 345, 215, 65],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [245, 435, 154, 63],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [154, 515, 336, 94],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [268, 631, 111, 51],
+      "group": "L-II"
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "formula",
+      "bbox": [262, 704, 123, 66],
+      "group": "L-II"
+    }
+  ]
+}

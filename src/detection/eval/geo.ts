@@ -16,7 +16,7 @@ export function provenanceKind(provenance: string) {
   return 'unspecified'
 }
 
-export type ElementCategory = 'text' | 'empty-box' | 'filled-box' | 'figure'
+export type ElementCategory = 'text' | 'empty-box' | 'filled-box' | 'figure' | 'formula' | 'table'
 
 export interface GeoTruth {
   format: 'unspoil-verite-geo/1'

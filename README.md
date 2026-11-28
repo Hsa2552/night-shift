@@ -4,6 +4,8 @@ Dépôt du projet Unspoil pour le hackathon Night Shift 2026 de l'ENSAI.
 
 Unspoil permet de réviser avec une annale au format PDF sans voir ses corrigés à l'avance. Le lecteur conserve la mise en page et masque les corrections qu'il détecte. La révélation progressive permet de découvrir manuellement le document, même sans texte extractible. Les fichiers restent sur l'appareil.
 
+L’application est installable et fonctionne hors ligne après le premier chargement. Elle fonctionne sans compte ni serveur de traitement. [Ouvrir Unspoil](https://hsa2552.github.io/night-shift/) · [Recette et procédure de livraison](memoire/LIVRAISON.md#convergence-finale)
+
 ## Installation
 
 Prérequis : [Node.js](https://nodejs.org/) 22.13 ou plus récent (version LTS recommandée).

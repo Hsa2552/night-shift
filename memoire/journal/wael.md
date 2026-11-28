@@ -118,3 +118,14 @@
 
 - Une figure MIT intégralement protégée et deux partielles. Le raster seul rejoint l’hybride sur la couverture. La fusion des blocs historiques seule ne produit aucun gain. Protocole Edge, chiffres et limites dans V-28-0510-WB.
 - Échelle graphique corrigée pour la rotation du viewport avec taille de police C1. Prototype conditionnel documenté et transmis à Hazem dans la PR #26.
+
+### 28/11 06:02 · Convergence phase 5, candidat intermédiaire
+
+- `e1322384e3f874c3a6b4b249f3505a108104f849` publié sur `feat/convergence-phase-5` et communiqué à Salif dans la PR #27. Départ `0444703`, moteur `3ab2453` (algorithme `6f7c4e4`), graphique et géométrie `2cb23cd`. Les transports PDF et outils de recette de Salif sont déjà dans ces historiques. Conflits limités à DECISIONS et QUALITE, entrées indépendantes préservées.
+- Transport graphique raccordé aux blocs propriétaires et protections existantes. Aucune preuve de périmètre voisin, aucune extension artificielle. Les pages avec masquage spécialisé QCM gardent leur chemin. Vingt-et-un tests ciblés passent, dont transmission C1, exclusion QCM et panne optionnelle. Recette Edge et bilan final en cours.
+
+### 28/11 06:09 · Convergence, recette QCM et gel du code
+
+- Le moteur historique et le candidat avec raccordement graphique donnent les mêmes sorties publiques, ainsi que les mêmes blocs, masques et marqueurs sur les six ENSAI-dev. Les chiffres d’annotation ENSAI restent ceux de Hazem. Le QCM quatre pages 09e… passe la recette de commandes, le rechargement et le nouveau PDF hors ligne dans Edge.
+- Le balayage graphique raster de la phase 4.4 n’apporte aucune couverture supplémentaire avec les preuves disponibles et ajoute du travail à des pages déjà traitées. Le gel conserve le raccordement natif sans extension, les protections QCM et la segmentation historique.
+- Procédure de fusion humaine, synchronisation, Pages et archive locale dans `memoire/LIVRAISON.md`. Le SHA candidat complet et les résultats de la vérification finale sont publiés dans la PR #27.
