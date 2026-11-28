@@ -194,6 +194,15 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - PDF atypique — Un PDF synthétique chiffré a été refusé sans afficher de canvas. L'ouverture suivante d'une annale de Liège hors ligne a réussi dans le même onglet.
 - Intégration — Dans une copie du build avec le détecteur `e784dc1` de Hazem, Edge classe le `qcm-cases.pdf` synthétique en `mixed`, avec deux blocs et aucun avertissement. L'interface affiche six régions masquées et annonce deux blocs hors ligne. La suite d'intégration réussit 127 tests. Le test d'évaluation facultatif passe séparément avec `UNSPOIL_EVAL_DIR` pointant sur les exemples du détecteur.
 
+### V-28-0118-WB · Détection colorimétrique indépendante sur quatre documents universitaires
+
+- Protocole : Edge sous Windows, `openPdf`, `getPageData` et `getRaster` sur le serveur Vite local. Déclaration recherchée sur la première page puis analyse isolée par page. Temps du classifieur seul, relevé ponctuel, hors ouverture, extraction et rasterisation. Les PDF n'entrent pas dans le dépôt.
+- [Berkeley CS186, examen final 2010](https://hkn.eecs.berkeley.edu/examfiles/cs186_sp10_f_sol.pdf), p. 2 à 4. Annotation visuelle par sous-question, tableau de la p. 3 compté comme une sous-question. Sur 8 réponses, 5 entièrement couvertes, 1 partielle (commentaire rouge couvert, arbre de la réponse visible), 2 visibles (sélections surlignées en jaune). Les 9 zones d'encre rouge annotées sont couvertes sur tous les pixels à dominante rouge (`R - max(G, B) > 18`, `min(G, B) < 230`). Aucun pixel sombre couvert dans les 10 zones d'énoncé échantillonnées. L'arbre et les surlignages restent des indices de réponse. Le classifieur demande le repli p. 4, mais ne signale pas le dessin noir p. 2. Temps des trois pages : 15,5 à 32,1 ms.
+- [UCLouvain IEPR1011, janvier 2018](https://perso.uclouvain.be/vincent.legat/documents/iepr1011/iepr1011-examen-janv18-soluce.pdf), p. 2 à 4. Les passages rouges sont des annotations au sein de corrigés également écrits en noir. Aucun masque retourné, corrections laissées visibles par ce détecteur isolé, repli demandé sur les trois pages. Pas de comptage par réponse. Temps : 13,2 à 20,0 ms.
+- [Liège MATH0013, août 2025](https://www.mmm.ulg.ac.be/files/MATH0013/examens_alg/ExamenAlg_Se25_pub.pdf), p. 1 à 2. Les pages d'énoncé restent visibles. Sept candidats décoratifs p. 1, aucun masque et aucun repli couleur sur ces pages. Temps : 7,2 à 32,9 ms.
+- [MIT 16.30, corrigé manuscrit numérisé](https://ocw.mit.edu/courses/16-30-estimation-and-control-of-aerospace-systems-spring-2004/resources/final_solna/), p. 1 à 3. Aucun fragment textuel, aucun indice couleur ni masque. Les trois pages restent visibles dans le résultat isolé. Le moteur doit conserver son repli pour les pages sans texte. Temps : 4,8 à 5,6 ms.
+- Limites : échantillon de pages annotées par un seul lecteur. Les documents du diagnostic initial sont sur la machine de Salif. Aucune mesure de couverture des trois originaux, du moteur intégré ou sur téléphone.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

@@ -16,6 +16,11 @@ export interface ColorCandidate {
   evidence: 'supported' | 'ambiguous'
 }
 
+/** A hue explicitly identified as the correction color in the document. */
+export interface ColorConvention {
+  hue: number
+}
+
 export interface QcmCandidate {
   /** Every observed option marker, including empty ones, in canonical page coordinates. */
   regions: PageRegion[]
@@ -27,6 +32,7 @@ export interface QcmCandidate {
 export type ColorPageDetector = (
   page: PageData,
   raster: RasterData,
+  convention?: ColorConvention,
 ) => VisualPageResult<ColorCandidate>
 
 export type QcmPageDetector = (page: PageData, raster: RasterData) => VisualPageResult<QcmCandidate>

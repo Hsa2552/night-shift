@@ -47,3 +47,10 @@
 
 - Les canvas éloignés de la fenêtre libèrent leur bitmap et le recréent à leur retour dans la zone de préchargement. Le défilement ne change aucune couverture.
 - Vérifié : document graphique synthétique de huit pages dans Edge, `npm run check` (102 tests), build Ubuntu, parcours Edge et Firefox et nouvel import hors ligne dans Edge.
+
+### 28/11 01:18 · SESSION · T-WB-3 · Détection colorimétrique
+
+- Interfaces publiées dans la PR #13 depuis `main` `3ed5e93` pour permettre l'intégration par Hazem. Les nouveaux détecteurs restent dans `src/detection/visual/`.
+- Détecteur couleur disponible. Il combine les pixels chromatiques et les positions du texte, avec un paramètre facultatif pour une convention annoncée sur une autre page. C1 inchangé.
+- Vérifié : sept tests ciblés, mesure dans Edge sur quatre documents universitaires, dont une annale contenant des réponses rouges et un scan manuscrit sans couche texte. Sur Berkeley, la couleur seule laisse visibles un arbre de la correction et deux sélections jaunes. Voir V-28-0118-WB.
+- Suite : analyser les groupes de cases et la grille sur un QCM local, sans publier le document. Intégration du moteur à la charge de Hazem.
