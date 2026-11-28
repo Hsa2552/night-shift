@@ -20,6 +20,19 @@ const manifest = JSON.parse(await readFile(resolve(checkout, 'dist/.vite/manifes
 const vectorEntry = manifest['src/detection/visual/vector/index.ts']?.file
 const { GEO_METRICS_VERSION } = await import('../src/detection/eval/geo.ts')
 const build = await openBuild(checkout)
+function countDifferentFields(left, right) {
+  if (left.length !== right.length) return { length: [left.length, right.length] }
+  const changes = {}
+  for (const [index, item] of left.entries()) {
+    for (const field of new Set([...Object.keys(item), ...Object.keys(right[index])])) {
+      if (field === 'font' || JSON.stringify(item[field]) === JSON.stringify(right[index][field]))
+        continue
+      changes[field] = (changes[field] ?? 0) + 1
+    }
+  }
+  return changes
+}
+
 function signature(obs) {
   if (!obs) return null
   const { rectangles, textPaint, ...pageData } = obs
@@ -123,7 +136,18 @@ try {
             ),
           )
         }
-        pages.push({ index, node: signature(nodeVectors), edge: signature(observation) })
+        const nodeSignature = signature(nodeVectors)
+        const edgeSignature = signature(observation)
+        const differences =
+          observation &&
+          nodeVectors &&
+          JSON.stringify(nodeSignature) !== JSON.stringify(edgeSignature)
+            ? {
+                rectangles: countDifferentFields(nodeVectors.rectangles, observation.rectangles),
+                textPaint: countDifferentFields(nodeVectors.textPaint, observation.textPaint),
+              }
+            : undefined
+        pages.push({ index, node: nodeSignature, edge: edgeSignature, differences })
       }
     } finally {
       await node.close()
