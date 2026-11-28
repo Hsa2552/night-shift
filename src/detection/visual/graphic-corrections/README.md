@@ -2,6 +2,8 @@
 
 Le moteur appelle `detectGraphicCorrections({ page, vectors, raster, anchors, existingBlocks, protectedRegions })` après identification des ancres et avant fusion finale. Il conserve sa classification textuelle, ses conventions colorimétriques et ses groupes de QCM. Le module travaille sur une seule page en repère C1, sans accès au lecteur et sans effet de bord.
 
+Dans la convergence, le moteur transmet les observations des pages où une correction est déjà établie et où le canal vectoriel contient des objets graphiques. Il réutilise les blocs propriétaires, les lignes d’énoncé et le raster déjà disponible. Les pages recevant des masques spécialisés de QCM sont exclues. Le moteur ne dispose pas de périmètres confirmés hors masque ni de conventions locales fiables pour les figures mixtes. Les résultats du module ne changent donc pas la couverture existante, ne créent aucun bloc et ne déclenchent aucun repli. Les cadres et la géométrie adaptative servent à l’analyse graphique locale. L’ordre de lecture historique reste celui de `layoutPage`.
+
 ```ts
 const graphics = detectGraphicCorrections({
   page,

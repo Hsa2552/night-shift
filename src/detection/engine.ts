@@ -32,6 +32,7 @@ import {
   type ExternalColorResult,
 } from './fusion.ts'
 import { analyzeColorPage, readColorConvention } from './visual/index.ts'
+import type { GraphicAnchor } from './visual/graphic-corrections/index.ts'
 import { buildPageInk, graphicBottom, graphicTop, type PageInk } from './graphics.ts'
 import { layoutPage, type Line, type PageLayout } from './layout.ts'
 import {
@@ -695,6 +696,27 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     kind = 'unknown'
     needsFallback = true
     if (!warnings.includes(WARNINGS.noVisualCheck)) warnings.push(WARNINGS.noVisualCheck)
+  }
+
+  if (!needsFallback && (kind === 'mixed' || kind === 'correction_only') && input.getVectors) {
+    // Une géométrie de QCM porte aussi la neutralisation des cases. La laisser à son détecteur.
+    const customPages = new Set(drafts.flatMap((d) => d.custom?.map((r) => r.pageIndex) ?? []))
+    const protectedRegions: PageRegion[] = []
+    const questions: GraphicAnchor[] = []
+    flow.forEach((line, i) => {
+      if (modeAt[i] !== 'statement') return
+      const region = { pageIndex: line.pageIndex, bbox: line.bbox }
+      protectedRegions.push(region)
+      if (parsed[i]?.q) {
+        questions.push({ id: `question:${i}`, role: 'question', reliability: 'confirmed', region })
+      }
+    })
+    const graphics = await import('./visual/graphic-corrections/convergence.ts').catch(() => null)
+    await graphics
+      ?.fuseGraphicCorrections(input, blocks, questions, protectedRegions, customPages, rasters)
+      .catch(() => {
+        // L'analyse optionnelle ne doit pas invalider les masques du moteur historique.
+      })
   }
 
   return { kind, blocks, warnings, needsFallback }

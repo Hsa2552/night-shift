@@ -173,6 +173,13 @@
 - Dépend de : observations C1 du lecteur et ancres pédagogiques du moteur. Hazem garde la fusion globale.
 - Maturité : sous-détecteur isolé testé sous Edge sur pages publiques et contrôles synthétiques. Géométrie alternative et cadres disponibles séparément. Les expériences nécessitent des périmètres pédagogiques fiables, à raccorder par Hazem. PR #26 et `research/graphic-corrections/README.md`.
 
+### T-WB-9 · Convergence et livraison finale
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/convergence-phase-5`
+- Candidat intermédiaire pour Salif : `e1322384e3f874c3a6b4b249f3505a108104f849`. Moteur `6f7c4e4`, historique Hazem `3ab2453`, géométrie et graphisme Wael `2cb23cd`, transport et benchmark Salif déjà inclus.
+- Raccordement conservateur du sous-détecteur graphique. Masques spécialisés QCM exclus, périmètres sans preuve laissés hors production. Suivi dans la PR #27 et le journal de Wael.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._
