@@ -409,3 +409,214 @@ describe('glyphes rendus comme des carrés (rendu des polices du navigateur) : p
     expect(answerBoxes(findBoxes(raster, page))).toEqual([])
   })
 })
+
+describe('lettre sombre imprimée dans une case vide (rendu des polices du navigateur)', () => {
+  it('la case reste reconnue comme vide : le centre est jugé sur le contour seul', () => {
+    const p = new QcmPage(0)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1))
+    // Lettres peintes en noir (et non en gris) : elles remplissent le centre des cases vides.
+    const page: PageData = { pageIndex: 0, ...A4, textItems: p.items }
+    const raster = fakeRaster(page)
+    for (const s of p.shapes) box(raster, s.x, s.y, s.side, s.filled)
+    const found = findBoxes(raster, page)
+    const empty = p.shapes.filter((s) => !s.filled)
+    for (const s of empty) {
+      const hit = found.find(
+        (b) => Math.abs(b.bbox.x - s.x) < 2 && Math.abs(b.bbox.y - s.y) < 2 && !b.filled,
+      )
+      expect(hit).toBeDefined()
+    }
+  })
+})
+
+describe('cases natives (opérateurs du PDF, C1 v1.1) confirmées par le raster', () => {
+  /** Rectangle vectoriel tracé (contour) d'une case, tel que l'observe la couche vectorielle. */
+  const strokeRect = (
+    pageIndex: number,
+    s: { x: number; y: number; side: number; filled: boolean },
+  ) => ({
+    region: { pageIndex, bbox: { x: s.x, y: s.y, width: s.side, height: s.side } },
+    operatorIndex: 0,
+    fill: s.filled ? '#000000' : null,
+    fillOpacity: s.filled ? 1 : 0,
+    stroke: '#000000',
+    strokeOpacity: 1,
+    lineWidth: 0.5,
+    visibility: 'paint-command' as const,
+  })
+
+  it('case vide au contour pâle, invisible pour findBoxes : masquée grâce aux opérateurs', async () => {
+    const p = new QcmPage(0)
+    p.text('Correction', 268)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1).map((o) => ({ ...o, correct: o.letter === 'B' })))
+    p.text('Question 2 Que peut-on conclure ?')
+    p.options(OPTS(2))
+    p.items = p.items.filter((it) => it.text.length > 1) // pas de complétion par les lettres
+    const pale = p.shapes[3]! // proposition D de la question 1, vide, en fin de colonne
+    const { page, raster } = p.build()
+    // Contour gris clair (luminance 230) : visible à l'œil, sous le seuil d'encre du raster.
+    paint(raster, pale.x - 1, pale.y - 1, pale.x + pale.side + 1, pale.y + pale.side + 1, 255)
+    for (const [x0, y0, x1, y1] of [
+      [pale.x, pale.y, pale.x + pale.side, pale.y + 1],
+      [pale.x, pale.y + pale.side - 1, pale.x + pale.side, pale.y + pale.side],
+      [pale.x, pale.y, pale.x + 1, pale.y + pale.side],
+      [pale.x + pale.side - 1, pale.y, pale.x + pale.side, pale.y + pale.side],
+    ] as const)
+      paint(raster, x0, y0, x1, y1, 230)
+    const vectors = {
+      pageIndex: 0,
+      width: page.width,
+      height: page.height,
+      rectangles: p.shapes.map((s) => strokeRect(0, s)),
+      textPaint: [],
+      unresolvedPaths: 0,
+      unsupportedPathEncoding: 0,
+      images: 0,
+    }
+    const cx = pale.x + pale.side / 2
+    const cy = pale.y + pale.side / 2
+    const covered = (r: DetectionResult) =>
+      regions(r).some((g) => g.pageIndex === 0 && inside(g.bbox, cx, cy))
+    const rasterOnly = await detectCorrections({ pages: [page], getRaster: async () => raster })
+    expect(covered(rasterOnly)).toBe(false) // la case pâle resterait visible (indice)
+    const withVectors = await detectCorrections({
+      pages: [page],
+      getRaster: async () => raster,
+      getVectors: async () => vectors as never,
+    })
+    expect(covered(withVectors)).toBe(true)
+  })
+
+  it('case native absente du rendu (masquée ou blanche) : ignorée', async () => {
+    const p = new QcmPage(0)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1))
+    const { page, raster } = p.build()
+    const ghost = { x: 400, y: 600, side: 12, filled: false } // rien n'est peint à cet endroit
+    const vectors = {
+      pageIndex: 0,
+      width: page.width,
+      height: page.height,
+      rectangles: [...p.shapes, ghost].map((s) => strokeRect(0, s)),
+      textPaint: [],
+      unresolvedPaths: 0,
+      unsupportedPathEncoding: 0,
+      images: 0,
+    }
+    const result = await detectCorrections({
+      pages: [page],
+      getRaster: async () => raster,
+      getVectors: async () => vectors as never,
+    })
+    expect(regions(result).some((g) => inside(g.bbox, 406, 606))).toBe(false)
+  })
+})
+
+describe('QCM marqués par des relations natives (coches, aplats)', () => {
+  const vec = (page: PageData, extra: object) => ({
+    pageIndex: 0,
+    width: page.width,
+    height: page.height,
+    rectangles: [],
+    textPaint: [],
+    unresolvedPaths: 0,
+    unsupportedPathEncoding: 0,
+    images: 0,
+    ...extra,
+  })
+
+  it('coche superposée à une case : réponse marquée, masques identiques pour toutes les cases', async () => {
+    const p = new QcmPage(0)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1).map((o) => ({ ...o, correct: false }))) // le raster ne montre que des cases vides
+    p.text('Question 2 Que peut-on conclure ?')
+    p.options(OPTS(2).map((o) => ({ ...o, correct: false })))
+    const { page, raster } = p.build()
+    const ticked = [p.shapes[1]!, p.shapes[4]!] // B pour Q1, A pour Q2
+    const glyphSymbols = ticked.map((s) => ({
+      region: {
+        pageIndex: 0,
+        bbox: { x: s.x + 1, y: s.y - 2, width: s.side + 2, height: s.side + 3 },
+      },
+      kind: 'tick',
+      visibility: 'paint-command',
+    }))
+    const markRelations = ticked.map((s, markIndex) => ({
+      frame: {
+        kind: 'drawn',
+        region: { pageIndex: 0, bbox: { x: s.x, y: s.y, width: s.side, height: s.side } },
+      },
+      markIndex,
+      kind: 'overlap',
+      overlap: 0.8,
+      distance: 0,
+    }))
+    const rasterOnly = await detectCorrections({ pages: [page], getRaster: async () => raster })
+    expect(rasterOnly.blocks).toEqual([]) // aucune case pleine : pas un QCM corrigé
+    const result = await detectCorrections({
+      pages: [page],
+      getRaster: async () => raster,
+      getVectors: async () => vec(page, { glyphSymbols, markRelations }) as never,
+    })
+    // Chaque case reçoit le même profil de masque (carré + gabarit de coche), quel que soit l'état.
+    const profile = (s: { x: number; y: number; side: number }) =>
+      regions(result)
+        .filter((g) => inside(g.bbox, s.x + s.side / 2, s.y + s.side / 2))
+        .map((g) =>
+          // Arrondi au point (le benchmark quantifie à 2 points) : l'arrondi aux pixels du rendu
+          // décale certaines rangées de quelques dixièmes, indépendamment de l'état de la case.
+          [g.bbox.x - s.x, g.bbox.y - s.y, g.bbox.width, g.bbox.height]
+            .map((v) => Math.round(v))
+            .join(','),
+        )
+        .sort()
+        .join(';')
+    // Un seul profil par question (4 propositions), case cochée comprise.
+    for (const group of [p.shapes.slice(0, 4), p.shapes.slice(4, 8)]) {
+      const profiles = new Set(group.map(profile))
+      expect(profiles.size).toBe(1)
+      expect([...profiles][0]!.split(';').length).toBe(2) // carré + gabarit de la coche
+    }
+  })
+
+  it('aplat derrière la proposition marquée : masqué hors des lignes de texte, propositions lisibles', async () => {
+    const p = new QcmPage(0)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1).map((o) => ({ ...o, correct: false })))
+    const { page, raster } = p.build()
+    const marked = p.shapes[2]!
+    const fill = { x: marked.x - 2, y: marked.y - 3, width: 300, height: marked.side + 6 }
+    const backgroundRelations = [
+      {
+        frame: {
+          kind: 'drawn',
+          region: {
+            pageIndex: 0,
+            bbox: { x: marked.x, y: marked.y, width: marked.side, height: marked.side },
+          },
+        },
+        region: { pageIndex: 0, bbox: fill },
+        operatorIndex: 0,
+        rgb: [217, 234, 211],
+      },
+    ]
+    const result = await detectCorrections({
+      pages: [page],
+      getRaster: async () => raster,
+      getVectors: async () => vec(page, { backgroundRelations }) as never,
+    })
+    // L'aplat est couvert au-dessus de la ligne de la proposition, pour toutes les propositions.
+    for (const s of p.shapes) {
+      expect(regions(result).some((g) => inside(g.bbox, s.x + 150, s.y - 2))).toBe(true)
+    }
+    // Le texte des propositions reste lisible.
+    const optionText = page.textItems.filter((t) => t.text.startsWith('proposition'))
+    for (const t of optionText) {
+      expect(
+        regions(result).some((g) => inside(g.bbox, t.bbox.x + 60, t.bbox.y + t.bbox.height / 2)),
+      ).toBe(false)
+    }
+  })
+})

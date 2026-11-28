@@ -1,0 +1,188 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "humaine (Wael et/ou Salif selon la section). Cases de la page 15 reprises de la vérité visuelle de Wael. Une case cochée correspond à filled-box, ce qui décrit son état visible. Salif a délimité le texte bleu de réponse et les énoncés imprimés. Échantillon visuel délimité sans prédiction du détecteur.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [145.25, 195.25, 7.25, 7.5],
+      "group": "V-0"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [301.5, 195.25, 7.5, 7.5],
+      "group": "V-0"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [457, 194.25, 8.75, 8.5],
+      "group": "V-0"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [81.75, 283.5, 7.5, 7.5],
+      "group": "V-1"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [129.75, 282.75, 8.5, 8.25],
+      "group": "V-1"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [81.75, 354.5, 8.75, 8.5],
+      "group": "V-2"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [131.5, 355.5, 7.25, 7.5],
+      "group": "V-2"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [81.75, 408.75, 8.75, 8.5],
+      "group": "V-3"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [131.5, 409.75, 7.25, 7.5],
+      "group": "V-3"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [81.75, 462.75, 8.75, 8.5],
+      "group": "V-4"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [131.5, 463.75, 7.25, 7.5],
+      "group": "V-4"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [81.75, 517.75, 7.5, 7.5],
+      "group": "V-5"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [129.75, 517, 8.5, 8.25],
+      "group": "V-5"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [81.75, 590, 7.5, 7.5],
+      "group": "V-6"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [129.75, 589.25, 8.5, 8.25],
+      "group": "V-6"
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "text",
+      "bbox": [54, 145, 440, 17]
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "table",
+      "bbox": [70, 164, 473, 19]
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "text",
+      "bbox": [66, 250, 495, 23]
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "text",
+      "bbox": [66, 321, 495, 23]
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "text",
+      "bbox": [66, 376, 495, 23]
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "text",
+      "bbox": [66, 429, 495, 23]
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "text",
+      "bbox": [66, 484, 495, 23]
+    },
+    {
+      "page": 14,
+      "role": "q",
+      "category": "text",
+      "bbox": [66, 557, 495, 23]
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "text",
+      "bbox": [77, 55, 481, 53],
+      "group": "V-prev"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "text",
+      "bbox": [80, 297, 410, 17],
+      "group": "V-1"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "text",
+      "bbox": [79, 533, 478, 17],
+      "group": "V-5"
+    },
+    {
+      "page": 14,
+      "role": "c",
+      "category": "text",
+      "bbox": [79, 604, 473, 29],
+      "group": "V-6"
+    }
+  ]
+}

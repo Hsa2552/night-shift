@@ -1,0 +1,170 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "humaine (Wael et/ou Salif selon la section). Cadres de la page 1 repris de la vérité visuelle de Wael, empreinte PDF contrôlée. Salif a distingué les aplats indiquant la réponse, les explications, les cellules réponses et les données d’énoncé sur les pages 1 et 4. Échantillon visuel délimité sans prédiction du détecteur.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [76, 107, 443, 12]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [109, 137, 328, 10]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [109, 166, 328, 10]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [109, 195, 328, 10]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [109, 224, 328, 10]
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [96.25, 136.25, 10, 10],
+      "group": "W-1A"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "empty-box",
+      "bbox": [96.25, 165.25, 10, 10.25],
+      "group": "W-1A"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [96.25, 194.25, 10, 10.25],
+      "group": "W-1A"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "filled-box",
+      "bbox": [96.25, 223.25, 10, 10.25],
+      "group": "W-1A"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "figure",
+      "bbox": [94, 133, 258, 3],
+      "group": "W-1A"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "figure",
+      "bbox": [94, 191, 258, 3],
+      "group": "W-1A"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "figure",
+      "bbox": [94, 220, 322, 3],
+      "group": "W-1A"
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [37, 263, 507, 54]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [73, 327, 305, 276]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "table",
+      "bbox": [32, 627, 544, 24]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "table",
+      "bbox": [32, 651, 106, 67]
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [394, 364, 195, 182],
+      "group": "W-1B"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "table",
+      "bbox": [139, 655, 428, 15],
+      "group": "W-1B"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "table",
+      "bbox": [139, 678, 428, 15],
+      "group": "W-1B"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "table",
+      "bbox": [139, 701, 428, 15],
+      "group": "W-1B"
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [34, 72, 555, 353]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [33, 432, 532, 38]
+    },
+    {
+      "page": 3,
+      "role": "c",
+      "category": "text",
+      "bbox": [463, 481, 20, 20],
+      "group": "W-3A"
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [32, 516, 548, 54]
+    },
+    {
+      "page": 3,
+      "role": "c",
+      "category": "text",
+      "bbox": [131, 664, 142, 22],
+      "group": "W-3B"
+    }
+  ]
+}

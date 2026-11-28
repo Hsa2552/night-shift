@@ -43,6 +43,9 @@ export interface FusionContext {
   /** Première question numérotée du document (repère canonique), si elle existe : une encre
    * colorée placée avant elle (logo, titre) n'est pas un indice de correction. */
   firstQuestion?: { pageIndex: number; y: number } | null
+  /** Fragments de texte dont la couleur native (opérateurs du PDF, état `matched`) est neutre.
+   * Une couleur vue par le raster sur ce texte vient du fond ou d'un aplat, pas de l'encre. */
+  neutralText?: PageRegion[]
   /** Libellé de la question qui précède un point, pour étiqueter un bloc ajouté. */
   labelAt: (pageIndex: number, y: number) => string | undefined
 }
@@ -137,7 +140,8 @@ export function fuseExternalColor(
         const alreadyMasked = ctx.ownRegions.some(
           (o) => o.pageIndex === region.pageIndex && overlapRatio(o.bbox, region.bbox) > 0.9,
         )
-        if (onQuestionHue || hitsQuestion || !supported) {
+        const nativeNeutral = coveredShare(region, ctx.neutralText ?? []) >= 0.5
+        if (onQuestionHue || hitsQuestion || !supported || nativeNeutral) {
           rejected++
           continue
         }
@@ -183,8 +187,15 @@ export function fuseExternalColor(
   }
   for (const r of results) {
     for (const c of r.candidates) {
+      const nativeNeutral = coveredShare(c.region, ctx.neutralText ?? []) >= 0.5
       if (covered(c)) audit.convergent++
-      else if (isQuestionHue(c) || onQuestion(c) || furniture(c) || beforeQuestions(c)) {
+      else if (
+        isQuestionHue(c) ||
+        onQuestion(c) ||
+        furniture(c) ||
+        beforeQuestions(c) ||
+        nativeNeutral
+      ) {
         if (c.evidence === 'supported') audit.contradicted++
         else audit.explained++
       } else if (r.needsFallback) audit.unexplained.push(c.region)

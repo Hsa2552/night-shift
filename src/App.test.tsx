@@ -85,6 +85,38 @@ describe('Unspoil', () => {
     expect(screen.getByTestId('correction-mask')).toBeTruthy()
   })
 
+  it('exposes vector readers bound to the active document during detection', async () => {
+    const first = {
+      ...fakePdf(),
+      getVectors: vi.fn().mockResolvedValue({ pageIndex: 0, width: 400 }),
+    }
+    const second = {
+      ...fakePdf(),
+      getVectors: vi.fn().mockResolvedValue({ pageIndex: 0, width: 200 }),
+    }
+    loadPdf.mockResolvedValueOnce(first).mockResolvedValueOnce(second)
+    detect.mockResolvedValue({
+      kind: 'statement_only',
+      blocks: [],
+      needsFallback: false,
+      warnings: [],
+    })
+    await importDocument()
+    expect(first.getVectors).not.toHaveBeenCalled()
+    startAnalysis()
+    await waitFor(() => expect(detect).toHaveBeenCalledTimes(1))
+    const firstInput = detect.mock.calls[0]![0]
+    await expect(firstInput.getVectors?.(0)).resolves.toMatchObject({ width: 400 })
+    selectFile('nouveau.pdf')
+    await screen.findByRole('heading', { name: 'nouveau.pdf' })
+    expect(first.close).toHaveBeenCalledOnce()
+    startAnalysis()
+    await waitFor(() => expect(detect).toHaveBeenCalledTimes(2))
+    await expect(detect.mock.calls[1]![0].getVectors?.(0)).resolves.toMatchObject({ width: 200 })
+    expect(first.getVectors).toHaveBeenCalledOnce()
+    expect(second.getVectors).toHaveBeenCalledOnce()
+  })
+
   it('navigue sans miniature rendue et garde le document couvert au zoom', async () => {
     const pdf = fakePdf()
     pdf.pageCount = 2
@@ -102,6 +134,50 @@ describe('Unspoil', () => {
     expect(screen.getAllByTestId('page-cover')).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: 'Ajuster à la largeur' }))
     expect(screen.getByText('100 %')).toBeTruthy()
+  })
+
+  it('saisit une page sans déclencher les raccourcis ni générer de miniature', async () => {
+    const pdf = fakePdf()
+    pdf.pageCount = 12
+    pdf.getPageDimensions.mockImplementation(async (pageIndex) => ({ ...page, pageIndex }))
+    loadPdf.mockResolvedValue(pdf)
+    await importDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Navigation par page' }))
+    const nav = screen.getByRole('navigation', { name: 'Pages du PDF' })
+    const input = within(nav).getByRole('spinbutton', { name: 'Numéro de page' })
+    fireEvent.keyDown(input, { key: 'F', altKey: true, shiftKey: true })
+    expect(
+      screen.getByRole('button', { name: 'Mode concentration' }).getAttribute('aria-pressed'),
+    ).toBe('false')
+    expect(nav.querySelector('canvas, img')).toBeNull()
+    expect(nav.querySelectorAll('.page-tile')).toHaveLength(12)
+    fireEvent.change(input, { target: { value: '10' } })
+    fireEvent.submit(input.closest('form')!)
+    expect(screen.getByLabelText('Page 10 sur 12')).toBeTruthy()
+    expect(screen.getAllByTestId('page-cover')).toHaveLength(12)
+    fireEvent.click(screen.getByRole('button', { name: 'Révélation progressive' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Navigation par page' }))
+    expect(
+      screen.getByRole('navigation', { name: 'Pages du PDF' }).querySelector('canvas, img'),
+    ).toBeNull()
+  })
+
+  it('conserve l’accès aux corrections et leur état en mode concentration', async () => {
+    detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
+    await importDocument()
+    startAnalysis()
+    const direct = await screen.findByRole('button', { name: 'Révéler dans le PDF — Question 1' })
+    const concentration = screen.getByRole('button', { name: 'Mode concentration' })
+    fireEvent.click(concentration)
+    expect(concentration.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(direct)
+    expect(screen.queryByTestId('correction-mask')).toBeNull()
+    expect(screen.getByText('1 / 1 correction révélée')).toBeTruthy()
+    fireEvent.keyDown(direct, { key: 'F', altKey: true, shiftKey: true })
+    expect(concentration.getAttribute('aria-pressed')).toBe('false')
+    expect(screen.queryByTestId('correction-mask')).toBeNull()
+    fireEvent.keyDown(direct, { key: 'R', altKey: true, shiftKey: true })
+    expect(screen.getByTestId('correction-mask')).toBe(direct)
   })
 
   it('ne découvre rien après l’annulation explicite d’une analyse en cours', async () => {
@@ -326,9 +402,11 @@ describe('Unspoil', () => {
     startAnalysis()
     const first = await screen.findByRole('button', { name: 'Afficher le corrigé — Question 1' })
     const second = screen.getByRole('button', { name: 'Afficher le corrigé — Question 2' })
-    const global = screen.getByRole<HTMLButtonElement>('button', { name: 'Masquer les corrigés' })
+    const global = screen.getByRole<HTMLButtonElement>('button', { name: 'Tout remasquer' })
     expect(global.disabled).toBe(true)
-    fireEvent.click(first)
+    fireEvent.click(screen.getByRole('button', { name: 'Révéler dans le PDF — Question 1' }))
+    expect(screen.getByText('1 / 2 corrections révélées')).toBeTruthy()
+    expect(first.getAttribute('data-revealed')).toBe('true')
     fireEvent.click(second)
     expect(screen.queryAllByTestId('correction-mask')).toHaveLength(0)
     expect(global.disabled).toBe(false)

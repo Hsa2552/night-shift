@@ -75,9 +75,19 @@
 - Contrôle Savoie dans Edge : les cinq rasters témoin sont identiques à ceux de production, même sans polices système. Basculer `disableFontFace` reproduit exactement la sortie Node du détecteur. Mesure par le navigateur de production conservée pour les résultats produit.
 - Les deux rapports sur `9615001` concordent avec l'empreinte du build et rendent la perte de parité mesurable. La recette Edge hors ligne passe. Pages et la validation physique restent dépendantes de l'activation par le propriétaire. Voir V-28-0322-S.
 
+### 28/11 · SESSION · T-S-6 raccordement vectoriel · Codex
+
+- Accord collectif confirmé par Salif. Le contrat C1 v1.1 est dans la PR #19. Le transport utilise le type de Wael et transmet la méthode du document à App, au chargeur Node et au benchmark Edge.
+- Le fournisseur mutualise uniquement les appels simultanés d'une page. Après fermeture, les demandes en vol ne produisent plus d'observation utilisable. Les tests ciblés de chargement, repli, fermeture et remplacement passent.
+
 ### 28/11 · SESSION · T-S-7 commandes de révélation · Codex
 
 - Diagnostic et correctif sur `fix/commandes-revelation`. La commande individuelle reste dans le même pied de page. Le bouton global remasque les régions révélées sans relancer le détecteur. Voir V-28-0359-S pour les essais réels et la validation de Pages.
+
+### 28/11 · SESSION · T-S-6 validation du premier moteur hybride · Codex
+
+- PR #23 : transport enrichi à partir de la couche native de Wael, paquet PDF.js dédupliqué et mesure Node–Edge. Transport seul à résultats identiques. Le moteur case vectorielle + raster a demandé des observations dans le build réel.
+- Les résultats publics v2 et les agrégats réservés figurent dans V-28-0422-S et V-28-0430-S. La PR #22 et son déploiement HTTPS ont été vérifiés dans Edge. Les PDF privés ENSAI et les téléphones physiques restent à vérifier.
 
 ### 28/11 06:22 · SESSION · T-S-8 validation finale et pitch · Codex
 
