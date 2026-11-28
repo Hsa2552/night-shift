@@ -222,6 +222,7 @@ try {
       await page.close()
     }
   }
+  const families = [...new Set(documents.map((doc) => doc.family))].sort()
   const report = {
     format: 'unspoil-benchmark/2',
     metricsVersion: GEO_METRICS_VERSION,
