@@ -111,3 +111,4 @@
 - Fait : parité Node/Edge du moteur. Faux carrés de glyphes écartés (`6829b38`), case vide avec lettre sombre reconnue (`fc5ce79`). Edge dev : 5/10 → 8/10, 88 → 0 correction visible ; ensai-dev Edge 602/602. Détail : `QUALITE.md` V-28-0415-HZ.
 - Pour Salif : version candidate pour le test et le réservé : `861a75d`. Le temps moyen Edge est passé de 2,1 à 4,3 s par document entre `6829b38` et `861a75d` : à vérifier (transport vectoriel ou charge).
 - Pour Wael : je raccorde maintenant `nativeSquares` dans le moteur (cases natives, état `ambiguous` conservé, visibilité confirmée par le raster), comme prévu par C1 v1.1.
+- 04:25 : cases natives raccordées (`090e86e`, aucun gain mesurable sur dev, cas synthétique démontré) ; consigne de notation (`6a78b02`, sujets seuls 3/3). Edge sur `6a78b02` identique à Node sur les trois partitions de développement. Nouvelle version candidate pour Salif : `6a78b02` (V-28-0425-HZ).

@@ -202,6 +202,14 @@
 - Temps moyen Edge par document (import et interaction compris) : 2,1 s sur `6829b38`, 4,3 s sur `861a75d` ; non expliqué (transport vectoriel nouvellement raccordé ou charge de la machine), à mesurer à part.
 - Non vérifié : partitions test et réservée (évaluation par Salif sur version figée) ; Safari, téléphone.
 
+### V-28-0425-HZ · Cases natives (C1 v1.1) et consignes de notation
+
+- Par : Hazem (Claude Code). Commits `090e86e` (cases natives), `6a78b02` (consigne de notation). Dev, ensai-dev et dev-v2-sujets uniquement.
+- Cases natives : `nativeSquares` (Wael) sur `getVectors` complète `findBoxes` ; ajout si le raster montre la case peinte (contour non blanc, seuil 245) ; état natif conservé (`ambiguous` compris, état lu dans le raster). Rappel brut des cases de réponse sur ensai-dev : raster seul 602/602, y compris à demi-résolution : **aucun bénéfice mesurable sur dev**. Bénéfice démontré seulement sur un cas synthétique (case vide pâle, luminance 230, en fin de colonne : visible sans les opérateurs, masquée avec). Aucune régression.
+- Consigne de notation : « Solutions that violate … may get partial credit » faisait abstenir le sujet seul de Stanford (indice « corrigé annoncé »). Une ligne de notation (crédit, points, barème, « tiendra compte »…) n'annonce plus un corrigé. dev-v2-sujets : 2/3 → 3/3 ; dev et ensai-dev inchangés.
+- Edge, `6a78b02`, produit réel : dev 8/10 (3 strictes), 2 072/2 072, 311/1 304 énoncés masqués, 0 document avec fuite ; ensai-dev 602/602, 62/476 ; dev-v2-sujets 3/3 strictes, 0/292 énoncé masqué. Aucun écart oracle/masques. Temps moyen Edge 2,4 s (dev) : les 4,3 s de `861a75d` relevaient de la charge de la machine.
+- Non vérifié : test et réservé (Salif, version candidate `6a78b02`).
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
