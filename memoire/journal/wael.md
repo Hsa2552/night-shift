@@ -105,3 +105,7 @@
 ### 28/11 04:50 · SESSION · T-WB-8 · Premier sous-détecteur graphique
 
 - API locale publiée pour Hazem. Les figures natives dans un périmètre de correction confirmé peuvent être rattachées à un bloc ou former une proposition. Trois tests couvrent le rattachement, les ancres sans périmètre, les protections et les conflits. La mesure du masquage sur PDF publics suit.
+
+### 28/11 04:54 · SESSION · T-WB-8 · Géométrie alternative
+
+- Parité avec les groupes Python sur 14 cas horizontaux de la phase 4.3. Activation conditionnelle par gouttière répétée, indices du lecteur préservés. Deux tests ciblent les invariances et le document simple. Le moteur historique reste en place.

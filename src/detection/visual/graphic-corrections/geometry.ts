@@ -1,5 +1,5 @@
 import type { Rect } from '../../../shared/types'
-import { intersect } from '../vector/geometry'
+import { intersect } from '../vector/geometry.ts'
 
 export const right = (box: Rect) => box.x + box.width
 export const bottom = (box: Rect) => box.y + box.height
