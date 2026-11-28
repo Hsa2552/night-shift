@@ -24,6 +24,7 @@ import {
   type NativeMarks,
 } from './boxes.ts'
 import { nativeSquares, type NativeSquare } from './visual/vector/cases.ts'
+import { overlayBlocks, pageOverlay, type OverlayVectors, type PageOverlay } from './overlay.ts'
 import type { TextColorObservation } from './visual/vector/text-colors.ts'
 import {
   fuseExternalColor,
@@ -143,7 +144,27 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   const layouts = input.pages.map(layoutPage)
   // En-têtes et pieds de page répétés (« Correction » en tête de chaque page) : hors du flux.
   const furniture = runningHeaders(layouts)
-  const flow = layouts.flatMap((p) => p.lines.filter((l) => !furniture.has(l)))
+  // Corrigé annoté (couche d'annotation aplatie par-dessus le sujet, voir overlay.ts) : le texte
+  // de cette couche (reconnaissance de l'écriture, souvent invisible) sort de l'analyse.
+  const overlays: PageOverlay[] = []
+  if (input.getVectors) {
+    for (const page of input.pages) {
+      const vectors = await input.getVectors(page.pageIndex).catch(() => undefined)
+      const overlay = pageOverlay(vectors as OverlayVectors | undefined, page)
+      if (overlay) overlays.push(overlay)
+    }
+  }
+  const inOverlayText = (l: Line) =>
+    overlays.some(
+      (o) =>
+        o.pageIndex === l.pageIndex &&
+        o.textMask.some((r) => {
+          const cx = l.bbox.x + l.bbox.width / 2
+          const cy = l.bbox.y + l.bbox.height / 2
+          return cx >= r.x && cx <= r.x + r.width && cy >= r.y && cy <= r.y + r.height
+        }),
+    )
+  const flow = layouts.flatMap((p) => p.lines.filter((l) => !furniture.has(l) && !inOverlayText(l)))
   const textlessPages = layouts.filter((p) => !p.hasText).map((p) => p.pageIndex)
 
   if (flow.length === 0) {
@@ -392,6 +413,32 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     drafts.push(...boxes.drafts)
   }
 
+  // Blocs de la couche d'annotation : zones manuscrites, dessins, et cadres identiques autour
+  // des propositions dont l'une est entourée.
+  let annotation = 0
+  for (const overlay of overlays) {
+    for (const regions of overlayBlocks(overlay)) {
+      const top = Math.min(...regions.map((r) => r.bbox.y))
+      let anchor = -1
+      flow.forEach((l, i) => {
+        if (l.pageIndex === overlay.pageIndex && l.bbox.y <= top) anchor = i
+      })
+      if (anchor < 0)
+        anchor = Math.max(
+          0,
+          flow.findIndex((l) => l.pageIndex >= overlay.pageIndex),
+        )
+      annotation++
+      drafts.push({
+        start: anchor,
+        end: anchor,
+        label: `Annotation ${annotation}`,
+        grouped: false,
+        custom: regions,
+      })
+    }
+  }
+
   // Couleurs : encre de chaque ligne, dès que le rendu raster est disponible.
   const inks = input.getRaster ? await lineInks(flow, layouts, rasterOf, input) : null
 
@@ -497,7 +544,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     // Un titre de corrigé n'impose pas « corrigé seul » si une convention (encre des questions,
     // couleur des réponses) a laissé des énoncés visibles.
     kind =
-      (correctionFromStart && !byQuestionInk && !byColor) || !hasStatement
+      ((correctionFromStart && !byQuestionInk && !byColor) || !hasStatement) && annotation === 0
         ? 'correction_only'
         : 'mixed'
     if (byColor) warnings.push(WARNINGS.color)
@@ -1174,6 +1221,29 @@ async function boxDrafts(
       : found
     // Coches, croix et aplats natifs : désignent la case marquée.
     all.push(...markBoxes(merged, vectors as NativeMarks | undefined, page.pageIndex))
+  }
+  // Case cochée d'une croix tapée (« x », « X », « × », « ✗ » isolé au centre de la case) :
+  // réponse marquée. Les formes placées avant la première question (code de page, cadre du
+  // nom) ne sont pas des cases de réponse.
+  const firstQ = flow.findIndex((_, i) => {
+    const q = parsed[i]!.q
+    return q !== null && q.kind !== 'part' && q.kind !== 'exercise'
+  })
+  const startOfQuestions = firstQ >= 0 ? flow[firstQ]! : null
+  for (let k = all.length - 1; k >= 0; k--) {
+    const b = all[k]!
+    if (
+      startOfQuestions &&
+      (b.pageIndex < startOfQuestions.pageIndex ||
+        (b.pageIndex === startOfQuestions.pageIndex &&
+          b.bbox.y + b.bbox.height < startOfQuestions.bbox.y))
+    ) {
+      all.splice(k, 1)
+      continue
+    }
+    if (!b.filled && !b.glyph && b.char !== undefined && /^[xX×✗✘✕✖]$/u.test(b.char)) {
+      all[k] = { ...b, filled: true, density: Math.max(b.density, 0.85) }
+    }
   }
   const kept = answerBoxes(all)
   if (kept.length === 0) return { drafts: [], lines: new Set() }
