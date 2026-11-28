@@ -74,6 +74,13 @@
 - Maturité : correctif intégré. Recette de production avec Mako testée sur Edge, Firefox et WebKit. Mesures reproductibles hors ligne.
 - Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
 
+### T-S-7 · Stabilité des commandes de révélation
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/commandes-revelation`. Travail signalé à Wael dans la PR #18.
+- Critères d'acceptation : une commande stable par bloc, indépendant du zoom et du rendu ; remasquage global synchronisé ; remplacement et lecture progressive sûrs.
+- Maturité : reproduite sur le build de `main` `da87ece`, corrigée et testée sur de vraies annales et un QCM synthétique dans Edge. Recette et limites dans `QUALITE.md` V-28-0359-S.
+
 ### T01 · Socle technique commun
 
 - Statut : en revue · Priorité : P0

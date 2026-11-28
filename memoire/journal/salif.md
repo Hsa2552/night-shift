@@ -61,3 +61,7 @@
 - Recette sur trois moteurs, deux versions du service worker et observabilité réseau et stockage. Traitement hors ligne, annulation, remplacement, rotations, grande page, symbole, zoom et thème exercés. `npm run check` réussit avec 143 tests et une évaluation facultative ignorée. Build de production réussi.
 - Huit cycles locaux sur scan, corrigé illustré et algèbre. Aucun worker du document ne reste après fermeture dans le benchmark. Le résiduel est surtout porté par le processus GPU du navigateur. Voir `QUALITE.md` V-28-0221-S et V-28-0223-S.
 - Build de repli `BASE_PATH=/` validé depuis un checkout propre de `329d297`, avec rechargement, import et masquage hors ligne dans Edge. Le ZIP local dans `dev-dist/` contient le site statique sans PDF du corpus. Activation et recette physique attendues.
+
+### 28/11 · SESSION · T-S-7 commandes de révélation · Codex
+
+- Diagnostic et correctif sur `fix/commandes-revelation`. La commande individuelle reste dans le même pied de page. Le bouton global remasque les régions révélées sans relancer le détecteur. Voir V-28-0359-S pour les essais réels et la validation de Pages.

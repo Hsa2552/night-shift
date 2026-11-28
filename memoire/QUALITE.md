@@ -267,6 +267,13 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Virginia Tech p. 15. `findBoxes` apparie 11/15 cases et renvoie toutes les cochées comme vides. Les glyphes PyMuPDF apparient les 7 cochées et 3 des 8 vides. À IoU 0,50, les 15 glyphes sont appariés dans leur bon état, avec une médiane IoU 0,608.
 - Washington p. 1. Les 4 cases s’apparient dans les comparaisons PDF.js et raster. Les états raster sont tous « vide » et les états natifs sont ambigus. Les trois marqueurs verts apparaissent dans le relevé PDF.js parmi les rectangles englobants. Le raster fournit 88 candidats en dehors des quatre cibles de la page.
 
+### V-28-0359-S · Commandes de révélation et disponibilité du site HTTPS
+
+- Protocole — Build local de production `da87ece` pour la reproduction, puis `npm run build` sur la branche de correctif. Edge sous Windows, 1440 × 900 et 390 × 844, zoom 150 %, défilement rapide entre première et dernière page. Liège MATH0013 (8 pages, 6 blocs), corrigé de Toulouse (6 pages, 27 blocs dont 95 régions groupées), Lyon 2 (aucun masque sur ce build) et QCM synthétique `qcm-cases.pdf` (2 blocs groupés, 6 régions).
+- Avant — Toulouse passe de 5 à 4 puis 5 commandes intégrées aux masques après redimensionnement et zoom. Une commande est démontée puis remontée en pied de page. La commande s'y déplaçait aussi lors de la révélation d'un bloc intégré. La barre supérieure reste visible dans les essais, mais « Masquer les corrigés » reste désactivé lorsque des blocs sont révélés, car l'état automatique suffisait à le désactiver.
+- Après — Aucun nœud de commande remplacé au changement de largeur ou de zoom. Chaque bloc garde une commande en pied de sa première page. Les masques groupés se révèlent et se remasquent ensemble. « Masquer les corrigés » remasque les blocs déjà révélés sans nouvelle analyse. Les bascules vers la lecture progressive repartent de pages couvertes. Importations, remplacement et analyse hors ligne vérifiés. `node scripts/verify-viewer-controls.mjs <URL locale> assert <PDF> <PDF> …` reproduit la recette.
+- Distribution — Pages est en service, HTTPS imposé, déploiement `da87ece` confirmé par GitHub Actions. Le SHA-256 du module JavaScript public correspond au build local propre. Dans Edge en émulation tactile, après précache initial, rechargement, import et analyse réussissent hors ligne sur l'URL HTTPS. Installation et essais sur appareils physiques restent à effectuer. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46099507179)
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
