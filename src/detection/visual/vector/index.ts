@@ -11,8 +11,11 @@ import {
   type Matrix,
   type Point,
 } from './geometry'
+import { placeGlyphs, type FontMetrics, type GlyphCursor, type PositionedGlyph } from './glyph-run'
+import type { NativeSymbol } from './native-page'
+import type { TextColorObservation } from './text-colors'
 
-type Visibility = 'paint-command' | 'clipped' | 'invisible' | 'unresolved'
+export type Visibility = 'paint-command' | 'clipped' | 'invisible' | 'unresolved'
 
 export interface VectorRectangle {
   region: PageRegion
@@ -40,8 +43,14 @@ export interface VectorTextPaint {
   visibility: Visibility
 }
 
-type SymbolKind =
-  'empty-square' | 'filled-square' | 'marked-square' | 'tick' | 'empty-circle' | 'filled-circle'
+export type SymbolKind =
+  | 'empty-square'
+  | 'filled-square'
+  | 'marked-square'
+  | 'tick'
+  | 'cross'
+  | 'empty-circle'
+  | 'filled-circle'
 
 const symbols: Record<string, SymbolKind> = {
   '□': 'empty-square',
@@ -53,9 +62,17 @@ const symbols: Record<string, SymbolKind> = {
   '☒': 'marked-square',
   '✓': 'tick',
   '✔': 'tick',
+  '✗': 'cross',
+  '✘': 'cross',
+  '✕': 'cross',
+  '×': 'cross',
   '○': 'empty-circle',
   '◯': 'empty-circle',
   '●': 'filled-circle',
+}
+
+export function symbolKind(unicode: string): SymbolKind | undefined {
+  return Object.hasOwn(symbols, unicode) ? symbols[unicode] : undefined
 }
 
 function glyphInfo(glyphs: unknown[]) {
@@ -65,7 +82,7 @@ function glyphInfo(glyphs: unknown[]) {
     if (!glyph || typeof glyph !== 'object') continue
     glyphCount++
     if (!('unicode' in glyph) || typeof glyph.unicode !== 'string') continue
-    const symbol = Object.hasOwn(symbols, glyph.unicode) ? symbols[glyph.unicode] : undefined
+    const symbol = symbolKind(glyph.unicode)
     if (symbol) counts[symbol] = (counts[symbol] ?? 0) + 1
   }
   return { glyphCount, symbols: counts }
@@ -77,6 +94,8 @@ export interface VectorPageObservation extends PageDimensions {
   unresolvedPaths: number
   unsupportedPathEncoding: number
   images: number
+  textColors?: TextColorObservation[]
+  glyphSymbols?: NativeSymbol[]
 }
 
 interface GraphicState {
@@ -97,6 +116,21 @@ interface GraphicState {
   leading: number
   rise: number
   originKnown: boolean
+  cursor: GlyphCursor
+  signedSize: number
+  horizontalScale: number
+  wordSpacing: number
+  charSpacing: number
+}
+
+export interface NativeGlyph extends PositionedGlyph {
+  paint: VectorTextPaint
+  visibility: Visibility
+}
+
+interface GlyphCapture {
+  getFont: (id: string) => FontMetrics | undefined
+  onGlyph: (glyph: NativeGlyph) => void
 }
 
 const fillOps = new Set([
@@ -152,6 +186,7 @@ function opacity(value: unknown, previous: number) {
 function move(state: GraphicState, x: number, y: number) {
   state.lineX += x
   state.lineY += y
+  state.cursor = { x: state.lineX, y: state.lineY }
   state.originKnown = true
 }
 
@@ -164,6 +199,7 @@ export function readVectorOperators(
   page: PageDimensions,
   viewport: Matrix,
   list: OperatorList,
+  capture?: GlyphCapture,
 ): VectorPageObservation {
   const output: VectorPageObservation = {
     ...page,
@@ -189,6 +225,11 @@ export function readVectorOperators(
     leading: 0,
     rise: 0,
     originKnown: false,
+    cursor: { x: 0, y: 0 },
+    signedSize: 0,
+    horizontalScale: 1,
+    wordSpacing: 0,
+    charSpacing: 0,
   }
   const stack: GraphicState[] = []
   const markedContent: boolean[] = []
@@ -208,7 +249,10 @@ export function readVectorOperators(
   }
   const setFont = (font: unknown, size: unknown) => {
     if (typeof font === 'string') state.font = font
-    if (typeof size === 'number') state.size = Math.abs(size)
+    if (typeof size === 'number' && Number.isFinite(size)) {
+      state.size = Math.abs(size)
+      state.signedSize = size
+    }
   }
 
   for (const [operatorIndex, op] of list.fnArray.entries()) {
@@ -341,6 +385,7 @@ export function readVectorOperators(
       case OPS.beginText:
         state.textMatrix = identity
         state.lineX = state.lineY = 0
+        state.cursor = { x: 0, y: 0 }
         state.originKnown = true
         break
       case OPS.setTextMatrix: {
@@ -348,6 +393,7 @@ export function readVectorOperators(
         state.originKnown = Boolean(textMatrix)
         state.textMatrix = textMatrix ?? identity
         state.lineX = state.lineY = 0
+        state.cursor = { x: 0, y: 0 }
         break
       }
       case OPS.setFont:
@@ -358,6 +404,15 @@ export function readVectorOperators(
         break
       case OPS.setTextRise:
         if (typeof args[0] === 'number') state.rise = args[0]
+        break
+      case OPS.setCharSpacing:
+        if (typeof args[0] === 'number') state.charSpacing = args[0]
+        break
+      case OPS.setWordSpacing:
+        if (typeof args[0] === 'number') state.wordSpacing = args[0]
+        break
+      case OPS.setHScale:
+        if (typeof args[0] === 'number') state.horizontalScale = args[0] / 100
         break
       case OPS.setLeading:
         if (typeof args[0] === 'number') state.leading = -args[0]
@@ -384,15 +439,14 @@ export function readVectorOperators(
                 mode !== 1 && state.fill !== 'transparent' ? state.fillOpacity : 0,
                 mode !== 0 && state.stroke !== 'transparent' ? state.strokeOpacity : 0,
               )
-        if (Array.isArray(args[0]))
-          output.textPaint.push({
+        let cursor: GlyphCursor | undefined
+        if (Array.isArray(args[0])) {
+          const transform = compose(state.transform, state.textMatrix)
+          const optional = markedContent.includes(true)
+          const paint: VectorTextPaint = {
             operatorIndex,
             origin: state.originKnown
-              ? point(
-                  compose(state.transform, state.textMatrix),
-                  state.lineX,
-                  state.lineY + state.rise,
-                )
+              ? point(transform, state.cursor.x, state.cursor.y + state.rise)
               : undefined,
             ...glyphInfo(args[0]),
             font: state.font,
@@ -402,10 +456,31 @@ export function readVectorOperators(
             stroke: state.stroke,
             fillOpacity: state.fillOpacity,
             strokeOpacity: state.strokeOpacity,
-            visibility: visibility(state, null, paintAlpha, markedContent.includes(true)),
-          })
-        // A glyph advance depends on its font matrix, metrics and spacing.
-        state.originKnown = false
+            visibility: visibility(state, null, paintAlpha, optional),
+          }
+          output.textPaint.push(paint)
+          const font =
+            capture && state.originKnown && state.font ? capture.getFont(state.font) : undefined
+          if (capture && font) {
+            cursor = placeGlyphs(
+              args[0],
+              { ...state, transform, font, size: state.signedSize },
+              (glyph) =>
+                capture.onGlyph({
+                  ...glyph,
+                  paint,
+                  visibility: visibility(
+                    state,
+                    glyph.bbox,
+                    glyph.present ? paintAlpha : 0,
+                    optional,
+                  ),
+                }),
+            )
+          }
+        }
+        state.originKnown = Boolean(cursor)
+        if (cursor) state.cursor = cursor
         if (state.mode >= 4) state.complex = true
         break
       }
@@ -417,10 +492,18 @@ export function readVectorOperators(
 type VectorPageSource = Pick<PDFPageProxy, 'pageNumber' | 'getViewport' | 'getOperatorList'>
 
 /** Standalone PDF.js experiment. The production reader does not call this function. */
-export async function observeVectorPage(source: VectorPageSource): Promise<VectorPageObservation> {
+export async function observeVectorPage(
+  source: VectorPageSource,
+  capture?: GlyphCapture,
+): Promise<VectorPageObservation> {
   const { width, height, transform } = source.getViewport({ scale: 1 })
   const viewport = matrix(transform)
   if (!viewport) throw new Error('Invalid PDF.js viewport transform')
   const list = await source.getOperatorList({ intent: 'display' })
-  return readVectorOperators({ pageIndex: source.pageNumber - 1, width, height }, viewport, list)
+  return readVectorOperators(
+    { pageIndex: source.pageNumber - 1, width, height },
+    viewport,
+    list,
+    capture,
+  )
 }

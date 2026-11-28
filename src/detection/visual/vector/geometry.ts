@@ -34,7 +34,7 @@ export function point([a, b, c, d, e, f]: Matrix, x: number, y: number): Point {
   return [a * x + c * y + e, b * x + d * y + f]
 }
 
-function extent(points: Point[]): Rect {
+export function extent(points: Point[]): Rect {
   const xs = points.map(([x]) => x)
   const ys = points.map(([, y]) => y)
   const x = Math.min(...xs)

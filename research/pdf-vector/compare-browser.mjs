@@ -3,11 +3,14 @@ import { readFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
 const [server, ...args] = process.argv.slice(2)
-const vector = args[0] === '--vector'
+const nativeText = args[0] === '--native-text'
+const vector = nativeText || args[0] === '--vector'
 const files = vector ? args.slice(1) : args
 const url = server ? new URL(server) : null
 if (!url || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) || !files.length) {
-  throw new Error('Usage: node compare-browser.mjs <URL locale Vite> [--vector] <PDF>...')
+  throw new Error(
+    'Usage: node compare-browser.mjs <URL locale Vite> [--vector | --native-text] <PDF>...',
+  )
 }
 
 const modulePath = process.env.UNSPOIL_PLAYWRIGHT_MODULE
@@ -33,6 +36,13 @@ try {
         '/research/pdf-vector/pdfjs-browser.ts',
       ]
     : ['/src/pdf/index.ts', '/src/detection/boxes.ts']
+  if (nativeText)
+    sources.push(
+      '/src/detection/visual/vector/native-page.ts',
+      '/src/detection/visual/vector/glyph-run.ts',
+      '/src/detection/visual/vector/text-colors.ts',
+      '/src/pdf/read-text.ts',
+    )
   const fingerprints = {}
   for (const path of sources) {
     const source = await tab.evaluate(async (path) => (await import(path + '?raw')).default, path)
@@ -42,11 +52,11 @@ try {
   for (const file of files) {
     const bytes = await readFile(file)
     const observed = await tab.evaluate(
-      async ({ encoded, vector }) => {
+      async ({ encoded, vector, nativeText }) => {
         const bytes = Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0))
         if (vector) {
           const { measure } = await import('/research/pdf-vector/pdfjs-browser.ts')
-          return measure(bytes)
+          return measure(bytes, nativeText)
         }
         const { openPdf } = await import('/src/pdf/index.ts')
         const { findBoxes } = await import('/src/detection/boxes.ts')
@@ -74,13 +84,17 @@ try {
           await doc.close()
         }
       },
-      { encoded: bytes.toString('base64'), vector },
+      { encoded: bytes.toString('base64'), vector, nativeText },
     )
     documents.push({ build, sha256: createHash('sha256').update(bytes).digest('hex'), ...observed })
   }
   console.log(
     JSON.stringify({
-      format: vector ? 'unspoil-pdfjs-vector/1' : 'unspoil-raster-comparison/1',
+      format: nativeText
+        ? 'unspoil-native-text/1'
+        : vector
+          ? 'unspoil-pdfjs-vector/1'
+          : 'unspoil-raster-comparison/1',
       sourceSha256: fingerprints,
       documents,
     }),

@@ -267,6 +267,12 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Virginia Tech p. 15. `findBoxes` apparie 11/15 cases et renvoie toutes les cochées comme vides. Les glyphes PyMuPDF apparient les 7 cochées et 3 des 8 vides. À IoU 0,50, les 15 glyphes sont appariés dans leur bon état, avec une médiane IoU 0,608.
 - Washington p. 1. Les 4 cases s’apparient dans les comparaisons PDF.js et raster. Les états raster sont tous « vide » et les états natifs sont ambigus. Les trois marqueurs verts apparaissent dans le relevé PDF.js parmi les rectangles englobants. Le raster fournit 88 candidats en dehors des quatre cibles de la page.
 
+### V-28-0358-WB · Rattachement des couleurs natives au texte C1
+
+- Protocole. PDF.js 6.5.438 dans Edge. Référence PyMuPDF `rawdict` restreinte aux fragments localisés de façon unique. Comparaison avec `observePageInk` sur le raster, teintes à 15°. Huit documents hors partitions réservées, dont les deux ENSAI de diagnostic.
+- Résultats. 9 958 fragments sur 10 470 ont une couleur résolue. Les 9 936 de ces fragments vérifiables correspondent exactement à la référence, dont deux bicolores. 204 fragments ambigus et 308 sans association. Sur Lyon 2, 61 des 75 fragments bleus sont associés, contre 75 observés dans le raster. Sur Berkeley, 135 des 135 fragments chromatiques concordent côté natif et 134 côté raster, qui relève aussi une teinte sur 46 fragments neutres de référence. Le scan MIT ne fournit aucun fragment.
+- Temps natif médian par page textuelle de 8,3 à 14,7 ms selon le document, hors extraction initiale du texte. Limites et commandes dans `research/pdf-vector/NATIVE-TEXT.md`. Aucune mesure de couverture des corrections ou de raccordement à l’application.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
