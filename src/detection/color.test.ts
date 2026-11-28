@@ -101,9 +101,13 @@ describe('détection par couleur', () => {
     expect(result.blocks).toEqual([])
   })
 
-  it('une seule ligne colorée ne suffit pas', async () => {
+  it('une seule ligne colorée hors question : pas de masque, mais abstention', async () => {
+    // Une ligne seule ne suffit pas à masquer ; le détecteur visuel la signale comme correction
+    // plausible non localisée : on n'affirme pas « aucun corrigé » (document couvert).
     const result = await withRaster(page, paint(BLUE, 'On a'))
-    expect(result.kind).toBe('statement_only')
+    expect(result.blocks).toEqual([])
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
   })
 
   it('un échec du rendu raster : pas de promesse « aucun corrigé », repli', async () => {
@@ -132,5 +136,89 @@ describe('détection par couleur', () => {
     expect(result.warnings).not.toContain(WARNINGS.color)
     // Rendu demandé au plus une fois par page (vérification des graphiques).
     expect(calls).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('questions colorées servant d’ancres (couleur des questions, corrections neutres)', () => {
+  const GREEN: RGB = [20, 140, 60]
+  const ex = [
+    'Exercice 1 : probabilités',
+    'Données : P(A) = 0,3 et P(B) = 0,5.',
+    '1) Calculer la probabilité de A ou B',
+    'lorsque A et B sont indépendants :',
+    'P(A ∪ B) = 0,3 + 0,5 − 0,15 = 0,65.',
+    '2) Calculer la probabilité de A sachant B :',
+    'P(A/B) = P(A) = 0,3 par indépendance.',
+    'On vérifie que la somme vaut 1.',
+  ]
+  const isQuestion = (t: string) => /^\d\)|^lorsque/.test(t)
+
+  it('un bloc par question, données et questions visibles, ancres de n’importe quelle teinte', async () => {
+    const page = fakePage(0, ex)
+    const result = await withRaster(page, (item) => (isQuestion(item.text) ? GREEN : undefined))
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.map((b) => b.questionLabel)).toEqual([
+      'Exercice 1, question 1',
+      'Exercice 1, question 2',
+    ])
+    const top = (n: number) => 72 + n * 16.5
+    const covered = (n: number) =>
+      result.blocks.some((b) =>
+        b.regions.some((r) => r.bbox.y <= top(n) + 2 && r.bbox.y + r.bbox.height >= top(n) + 9),
+      )
+    expect([0, 1, 2, 3, 5].map(covered)).toEqual([false, false, false, false, false])
+    expect([4, 6, 7].map(covered)).toEqual([true, true, true])
+  })
+
+  it('intertitre de la couleur des questions après « ? » : masqué avec la correction', async () => {
+    const lines = [
+      'Exercice 1 : tests',
+      '1) Les moyennes sont-elles différentes',
+      'au risque de 5 % ? :',
+      'Comparaison de deux moyennes : test de Student',
+      'La statistique vaut 2,4 donc on rejette H0.',
+      '2) Les variances sont-elles égales ? :',
+      'Test de Fisher : on ne rejette pas H0.',
+    ]
+    const page = fakePage(0, lines)
+    const colored = (t: string) => /^\d\)|^au risque|^Comparaison/.test(t)
+    const result = await withRaster(page, (item) => (colored(item.text) ? GREEN : undefined))
+    const top = (n: number) => 72 + n * 16.5
+    const covered = (n: number) =>
+      result.blocks.some((b) =>
+        b.regions.some((r) => r.bbox.y <= top(n) + 2 && r.bbox.y + r.bbox.height >= top(n) + 9),
+      )
+    expect([0, 1, 2, 5].map(covered)).toEqual([false, false, false, false])
+    expect([3, 4, 6].map(covered)).toEqual([true, true, true])
+  })
+
+  it('correction sur deux pages : un seul bloc, deux régions', async () => {
+    const p0 = fakePage(0, ['Exercice 1', '1) Démontrer le résultat :', 'Première étape.'])
+    const p1 = fakePage(1, ['Deuxième étape.', '2) Conclure :', 'Conclusion.'])
+    const paintQ = (item: { text: string }) => (/^\d\)/.test(item.text) ? GREEN : undefined)
+    const rasters = [fakeRaster(p0, paintQ), fakeRaster(p1, paintQ)]
+    const result = await detectCorrections({
+      pages: [p0, p1],
+      getRaster: async (i) => rasters[i]!,
+    })
+    const q1 = result.blocks.find((b) => b.questionLabel === 'Exercice 1, question 1')!
+    expect(new Set(q1.regions.map((r) => r.pageIndex))).toEqual(new Set([0, 1]))
+    expect(result.blocks).toHaveLength(2)
+  })
+
+  it('seuls les titres d’exercice sont colorés : pas d’ancres', async () => {
+    const page = fakePage(0, ex)
+    const result = await withRaster(page, (item) =>
+      /^Exercice/.test(item.text) ? GREEN : undefined,
+    )
+    expect(result.warnings).not.toContain(WARNINGS.questionInk)
+  })
+
+  it('convention inverse (corrections colorées) : traitée par la couleur des corrections', async () => {
+    const page = fakePage(0, ex)
+    const answers = (t: string) => /^(P\(|On vérifie)/.test(t)
+    const result = await withRaster(page, (item) => (answers(item.text) ? GREEN : undefined))
+    expect(result.warnings).not.toContain(WARNINGS.questionInk)
+    expect(result.warnings).toContain(WARNINGS.color)
   })
 })

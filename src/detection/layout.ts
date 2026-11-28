@@ -132,13 +132,16 @@ function buildSegment(items: TextItem[], pageIndex: number): Segment {
     fontSizeSum += item.fontSize && item.fontSize > 0 ? item.fontSize : h
     prev = item
   }
+  // Accents détachés (PDF produits par LaTeX avec d'anciennes polices : « Corrig´e »,
+  // « Contrˆole ») : retirés quand ils touchent une lettre, pour que les mots se lisent.
+  const clean = stripDetachedAccents(text, charX)
   // Supprime les espaces de début et de fin en gardant l'alignement des abscisses.
-  const lead = text.length - text.trimStart().length
-  const trimmed = text.trim()
+  const lead = clean.text.length - clean.text.trimStart().length
+  const trimmed = clean.text.trim()
   return {
     pageIndex,
     text: trimmed,
-    charX: charX.slice(lead, lead + trimmed.length),
+    charX: clean.charX.slice(lead, lead + trimmed.length),
     bbox: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 },
     fontSize: fontSizeSum / items.length,
     fontNames: [...fontNames],
@@ -233,4 +236,28 @@ export function layoutPage(page: PageData): PageLayout {
   })
 
   return { pageIndex, width, height, lines, hasText, columns: gutter === null ? 1 : 2 }
+}
+
+const DETACHED_ACCENTS = new Set([
+  '\u00b4',
+  '\u0060',
+  '\u02c6',
+  '\u00a8',
+  '\u02dc',
+  '\u00b8',
+  '\u02da',
+])
+const isLetter = (ch: string | undefined) => ch !== undefined && /\p{L}/u.test(ch)
+
+/** Retire les accents isolés adjacents à une lettre, en gardant les abscisses alignées. */
+export function stripDetachedAccents(text: string, charX: number[]) {
+  let out = ''
+  const xs: number[] = []
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!
+    if (DETACHED_ACCENTS.has(ch) && (isLetter(text[i - 1]) || isLetter(text[i + 1]))) continue
+    out += ch
+    xs.push(charX[i] ?? charX[charX.length - 1] ?? 0)
+  }
+  return { text: out, charX: xs }
 }

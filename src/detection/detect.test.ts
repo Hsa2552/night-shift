@@ -396,6 +396,33 @@ describe('detectCorrections', () => {
     expect(result.kind).toBe('statement_only')
   })
 
+  it('réponses rédigées sans marqueur après les questions : abstention, pas « sujet seul »', async () => {
+    const result = await run(
+      fakePage(0, [
+        '1. Calculer la dérivée de f.',
+        'On a f′(x) = 2x pour tout réel x.',
+        'Donc f est croissante sur les positifs.',
+        '2. Calculer la limite de f en l’infini.',
+        'Ainsi la limite vaut plus l’infini.',
+      ]),
+    )
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
+    expect(result.warnings).toContain(WARNINGS.correctionHint)
+  })
+
+  it('pied de page « Corrigé » sans correction localisée : abstention', async () => {
+    const page = (i: number) =>
+      fakePage(i, [
+        `${2 * i + 1}. Énoncer le théorème numéro ${2 * i + 1}.`,
+        `${2 * i + 2}. Énoncer le théorème numéro ${2 * i + 2}.`,
+        { text: 'Corrigé du partiel de mathématiques', y: 800 },
+      ])
+    const result = await run(page(0), page(1))
+    expect(result.kind).toBe('unknown')
+    expect(result.warnings).toContain(WARNINGS.correctionHint)
+  })
+
   it('question contenant le mot « solution » : pas un marqueur', async () => {
     const result = await run(
       fakePage(0, [
@@ -559,5 +586,42 @@ describe('detectCorrections', () => {
   it('est déterministe', async () => {
     const page = fakePage(0, ['1. Calculer 2 + 2.', 'Correction : 4.', '2. Calculer 3 + 3.'])
     expect(await run(page)).toEqual(await run(page))
+  })
+})
+
+describe('énoncés recopiés dans le corrigé', () => {
+  const statement = [
+    'Exercice 1',
+    '1. On considère la fonction f définie sur R par f(x) = x² + 1.',
+    'Montrer que f admet un minimum sur R et le calculer.',
+  ]
+  const correction = [
+    'Corrigé',
+    'Exercice 1',
+    '1. On considère la fonction f définie sur R par f(x) = x² + 1.',
+    'Montrer que f admet un minimum sur R et le calculer.',
+    'La dérivée de f vaut deux fois x, elle est nulle en zéro.',
+    'Le minimum de f sur R vaut donc un, atteint en zéro.',
+  ]
+
+  it('énoncé recopié (déjà visible plus haut) : visible, la correction reste masquée', async () => {
+    // Énoncé placé plus bas : hors des bandes d'en-tête (lignes répétées au même endroit).
+    const result = await run(fakePage(0, statement, 300), fakePage(1, correction))
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.every((b) => b.regions.every((r) => r.pageIndex === 1))).toBe(true)
+    const after = coverage(result, 1, 6)
+    expect([after[2], after[3]]).toEqual([null, null])
+    expect(after[4]).not.toBeNull()
+    expect(after[5]).not.toBeNull()
+  })
+
+  it('texte identique mais absent de la partie visible : reste masqué', async () => {
+    // Pas d'énoncé avant : rien n'est « déjà visible », rien n'est démasqué.
+    const result = await run(
+      fakePage(0, ['Sujet : voir la feuille distribuée.']),
+      fakePage(1, correction),
+    )
+    const after = coverage(result, 1, 6)
+    expect(after.slice(4).every((b) => b !== null)).toBe(true)
   })
 })

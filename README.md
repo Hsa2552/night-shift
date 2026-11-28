@@ -84,6 +84,30 @@ Partir du même commit intégrant le lecteur, le détecteur et l'interface. Les 
 5. **Hors ligne**. Attendre le chargement du site et recharger une fois en ligne. Sur téléphone, ouvrir une fois l'app depuis l'icône installée. Activer le mode avion et couper le Wi-Fi. Fermer complètement l'app, rouvrir depuis l'icône, puis importer un autre PDF déjà enregistré dans **Fichiers**. Vérifier le masquage, le geste tactile et la rotation encore en mode avion.
 6. Reporter le SHA, l'appareil, le navigateur et les résultats dans [memoire/QUALITE.md](memoire/QUALITE.md). Pour un masque décalé, indiquer le PDF, la page et l'orientation.
 
+### Recette sur le build de l'équipe
+
+Depuis la racine du dépôt, remplacer `SHA_COMPLET` par le commit à tester. Une copie séparée et un port strict permettent d’identifier le serveur et le build utilisés.
+
+```sh
+git fetch origin
+git worktree add --detach ../unspoil-recette SHA_COMPLET
+cd ../unspoil-recette
+git rev-parse HEAD
+npm ci
+BASE_PATH=/night-shift/ npm run build
+BASE_PATH=/night-shift/ npm run preview -- --host 127.0.0.1 --port 4190 --strictPort
+```
+
+Dans PowerShell, définir `$env:BASE_PATH = '/night-shift/'` avant les deux dernières commandes. Dans un deuxième terminal ouvert dans la même copie, lancer la recette dans un profil Edge neuf. Le SHA figurant dans le HTML doit correspondre au SHA attendu, y compris après rechargement hors ligne.
+
+```sh
+node scripts/verify-real-pdfs.mjs http://127.0.0.1:4190/night-shift/ SHA_COMPLET "/chemin/vers/annale.pdf"
+```
+
+Le script vérifie l’ouverture couverte, les appels à l’analyseur colorimétrique dans le bundle par couverture V8, la révélation et le remasquage, le zoom, le rendu de la dernière page et la lecture progressive. Il vérifie aussi le premier import et l’analyse après un rechargement hors ligne. Pour une recette manuelle, lire `document.querySelector('meta[name="unspoil-build"]').content` dans la console. Refaire le build sur un arbre propre si la valeur porte le suffixe `-dirty`.
+
+Pour calculer les taux en navigateur, définir `UNSPOIL_RECETTE_VERITES` vers un dossier de fichiers `.geo.json` du benchmark portant le même nom de base que chaque PDF. La recette appelle `scoreGeo` sur les masques effectivement affichés. `UNSPOIL_RECETTE_SORTIE` permet de conserver les rectangles et les résultats dans un fichier local hors du dépôt. Utiliser le [benchmark de Hazem](src/detection/eval/CORPUS.md) pour le corpus indépendant et indiquer séparément les résultats du moteur sous Node et ceux du navigateur.
+
 ## Limitations connues
 
 La détection dépend de conventions documentaires. Un document atypique ou un scan peut nécessiter la révélation progressive. Le lecteur réduit la résolution interne des bitmaps sur les très grandes pages pour maîtriser la mémoire.

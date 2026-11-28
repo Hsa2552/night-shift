@@ -218,6 +218,20 @@ describe('Unspoil', () => {
     expect(screen.queryByTestId('correction-mask')).toBeNull()
   })
 
+  it('garde le PDF couvert si un r?sultat sujet seul renvoie aussi un corrig?', async () => {
+    detect.mockResolvedValue({
+      kind: 'statement_only',
+      blocks: [block],
+      warnings: [],
+      needsFallback: false,
+    })
+    await importDocument()
+    startAnalysis()
+    const mask = await screen.findByTestId('progressive-mask')
+    expect(mask.style.top).toBe('0%')
+    expect(screen.queryByText('Aucun corrig? n?a ?t? d?tect?.')).toBeNull()
+  })
+
   it.each<DetectionResult['kind']>(['unknown', 'mixed'])(
     'active la révélation progressive pour un résultat incertain (%s)',
     async (kind) => {

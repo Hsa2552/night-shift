@@ -95,6 +95,26 @@
 - Résultat : avec raster, type correct 14/15, corrections hors blocs 6/109 (les 6 cases de `qcm-cases.pdf`, perdues par Q-27-2330-HZ ; le document est classé `unknown` et reste entièrement couvert dans l'interface), énoncés masqués 1/65. Texte seul : 12/15, 18/109, 0/65. Edge : les 15 documents ont le comportement attendu (blocs, libellés, avertissements, repli)
 - Limites : corpus synthétique créé par l'équipe ; aucune vraie annale ; téléphone et Safari non testés par moi
 
+### V-28-0115-HZ · QCM corrigés par cases noircies (annales ENSAI « DOC-corrige »), P0
+
+- Par : Hazem (Claude Code) · Branche `feat/detection-generalisation`
+- Cause de l'échec initial : cases dessinées (rectangles vectoriels) invisibles au texte extrait ; titre « Correction » répété en tête de chaque page pris pour une correction ; « réponses. » en début de ligne pris pour un marqueur ; numérotation relancée par la seconde session avalée dans une correction.
+- Méthode (`src/detection/boxes.ts`, `engine.ts`) : composantes connexes du raster (deux seuils d'encre), case pleine = carré dense, case vide = contour carré à centre clair ; taille de référence prise sur les cases vides ; grilles d'identification exclues (chiffre sous la case) ; emplacements complétés par le texte (suites A, B, C… des propositions et des grilles) et recentrés sur la case dessinée ; un bloc par question et par session (propositions + ligne de la grille) ; même carré blanc pour toutes les cases d'une série ; en-têtes répétés ignorés ; raster en échec = document entièrement couvert.
+- Vérité terrain indépendante : opérations vectorielles du PDF (carrés remplis noirs ou blancs). DOC-corrige (1) : **46 cases noircies** (8, 14, 8, 16 par page ; 23 dans les questions, les mêmes 23 dans les grilles) et 74 vides, 80 cases d'identification. Le chiffre de 26 transmis par l'équipe n'a pas pu être reproduit.
+- Résultats (cases de réponse visibles / lignes d'énoncé masquées) : 12 annales DOC-corrige distinctes, 6 de développement : 0/602 et 55/476 ; **6 de test jamais ouvertes avant l'évaluation : 1/1012 et 213/1499**, type correct 6/6. Edge avec l'interface : DOC-corrige (1), 120 masques identiques de 14 pt, aucune case noire visible, grille d'identification visible, révélation de « Question 1 » : 6 masques en page 1 et 6 en page 2 retirés, seconde session intacte.
+- Limites : une seule convention d'établissement (AMC, ENSAI) ; sur-masquage de 14 % des lignes en test (lettres des propositions dans les cases, marge de sécurité de 1,5 point, consignes) ; non testé sur téléphone ni Safari. PDF ENSAI hors dépôt (droits de diffusion non établis).
+
+### V-28-0120-HZ · Correction d'un défaut de protocole des tests Edge
+
+- Constat : un serveur `vite preview` lancé depuis la copie d'intégration locale n'était pas arrêté par mon script ; les tests Edge suivants ont été servis par ce build-là. **V-28-0005-HZ (phase 2) a donc porté sur le build de la copie d'intégration (`feat/detection-robustesse` + interface de Wael, fusion locale), pas sur la branche à jour.**
+- Correctif : script de test qui refuse de démarrer si le port est occupé et arrête le serveur par son port ; tous les résultats Edge de V-28-0115-HZ ont été refaits après correction, port vérifié libre.
+
+### V-28-0125-HZ · Généralisation, corpus réels (phase 3, état intermédiaire)
+
+- Protocole : `src/detection/eval/CORPUS.md` ; dev général 10 annales, test général 12 annales d'autres établissements (annotées à l'aveugle, figées le 28/11 00:28).
+- Résultats (corrections visibles / énoncés masqués) : dev 968/2002 et 281/1266 au départ, puis 398/2002 et 661/1266 ; test 691/3348 et 621/2004 au départ, puis 685/3348 et 629/2004, type correct 8/12 puis 10/12.
+- Point ouvert : sur le test, documents avec au moins une correction visible 4/9 au départ, 7/9 maintenant ; le détail du test n'est pas consulté pour régler le détecteur, analyse à mener sur le dev. Familles identifiées sur le dev : corrigés sans marqueur (questions puis réponses, retraits), numérotations « A.1. », « VII.1 », « C.I.1. », extraction dégradée (lettres perdues), recueils en deux colonnes.
+
 ### V-28-0039-WB · Recette Mako, production et groupes QCM
 
 - Par : Wael (Codex). Build Ubuntu Node.js 24 avec `BASE_PATH=/night-shift/`, puis [recette Playwright](../scripts/verify-mako.cjs) dans Edge sous Windows. Les tests de l’interface sont dans `App.test.tsx` et `viewer/DocumentViewer.test.tsx`.
@@ -103,6 +123,65 @@
 - QCM : `qcm-cases.pdf` confirme en navigateur les masques opaques groupés et la commande hors des cases. Un test synthétique de quatre cases confirme l’application du même traitement, la restauration en bloc et le remasquage. Le comportement dépend de la fourniture de toutes les régions par le détecteur.
 - Annale externe : [MIT 18.05, examen final 2022](https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/mit18_05_s22_exam_final.pdf), 23 pages, ouverte puis analysée localement. Le détecteur a renvoyé un bloc. La vérification porte sur le parcours, sans mesure d’exactitude du bloc.
 - Contrastes calculés : 6,75:1 pour le texte secondaire clair, 8,44:1 en sombre, au moins 4,93:1 aux arrêts du bouton dégradé, 9,23:1 pour la commande dans les masques. L’émulation tactile ne valide pas Safari ni un téléphone physique.
+
+### V-28-0200-HZ · BUG-001 (Lyon 2 L2 CCC1, questions colorées, corrections neutres) résolu
+
+- Par : Hazem (Claude Code) · Commits `d386998` (méthode), `e839b26` (intégration du détecteur de Wael), branche `feat/detection-generalisation` à jour de main (`329d297`)
+- Cause : aucune correction marquée ; seul le titre « Corrigé » était reconnu, d'où tout le document masqué (ou, avant la phase 3, « Aucun corrigé n'a été détecté »).
+- Méthode générique : une teinte qui porte au moins 60 % des questions numérotées et presque uniquement des questions et leurs lignes de suite devient l'encre des questions (aucune couleur supposée) ; chaque question ouvre un bloc jusqu'à la question suivante, un intitulé d'exercice ou un séparateur décoratif ; données avant les questions visibles ; blocs multipages. Fusion avec `analyzeColorPage` de Wael : régions sur une question ou sur la teinte des questions rejetées.
+- Résultats (vérité humaine, blocs annotés) : 17/17 blocs entièrement masqués et révélables indépendamment, 0/38 ligne d'énoncé ou de données masquée, type `mixed`. Autre annale de même convention (`lyon2-stat-ccc1`, dev) : 130 → 3 corrections visibles sur 152, 0/46 énoncé masqué. Dans Edge avec l'interface Mako de main : 18 régions (17 blocs, 4.2 sur deux pages), questions bleues, données et définition de F(x) visibles.
+- Limites : convention vérifiée sur deux annales du même auteur ; tests synthétiques avec d'autres teintes ; non testé sur téléphone.
+
+### V-28-0205-HZ · Benchmark automatique et intégration du détecteur de Wael
+
+- Par : Hazem (Claude Code) · Commit `e839b26`
+- Commande : `npm run benchmark:dev` / `:test` (téléchargement, SHA-256, vrai lecteur et détecteur, rapports Markdown et JSON avec commit, version du corpus, familles, régressions). Partition test téléchargée depuis un cache vide : 12/12 PDF, 36 s.
+- Résultats (unités = lignes ou cases ; réussite = aucune correction incomplète, au plus 5 % d'énoncé masqué, pas d'abstention) :
+  - dev (11, dont BUG-001) : réussite 3/10 mesurables, abstention 1, taux de fuite 13,1 %, énoncés masqués 50,7 % ;
+  - test (12, totaux seulement) : réussite 1/12, abstention 1, fuite 20,5 %, énoncés masqués 31,4 % ; famille « sujet seul » : 0/3 réussite, 36 % d'énoncés masqués (non analysé sur le test, à étudier sur le dev) ;
+  - ENSAI dev : fuite 0 %, énoncés masqués 13,0 % ; ENSAI test : fuite 0,1 %, énoncés masqués 14,5 %.
+- Intégration du détecteur colorimétrique de Wael par défaut : aucune régression sur les quatre partitions (comparaison automatique du benchmark).
+- Limites : vérités dev et test annotées par Hazem seul (pas de second annotateur) ; vérités ENSAI automatiques (opérations vectorielles) ; workflow GitHub `benchmark.yml` non exécuté (à valider par l'équipe).
+
+### V-28-0215-HZ · Améliorations par famille sur le dev (numérotations, extraction dégradée, sections)
+
+- Par : Hazem (Claude Code) · Commits `54e0e7b` (titre de corrigé malgré une extraction dégradée), `fcb54c8` (numérotations hiérarchiques A.1., C.I.1., II.a, VII.1 avec continuité), `c52cf6c` (intitulés « B. Exercice », sous-questions « b. »). Mesures faites sur le contenu de `c52cf6c` (rapport marqué `fcb54c8` + modifications locales, identiques au commit).
+- Commande : `node scripts/benchmark.mjs <partition> --cache <cache hors dépôt> --hors-ligne`, raster actif (`@napi-rs/canvas`).
+- Résultats, comparés à V-28-0205-HZ :
+  - dev (réglages faits sur cette partition) : réussite 3/10 → 7/10 mesurables, abstention 1 → 0, fuite 13,1 % → 0,1 % (2069/2072 corrections entièrement masquées, 3 non masquées dans un document), énoncés masqués 50,7 % → 29,7 % (387/1304) ;
+  - test (totaux seulement, aucun réglage) : inchangé, réussite 1/12, fuite 20,5 %, énoncés masqués 31,4 % ;
+  - ENSAI dev : fuite 0 %, énoncés masqués 13,0 % ; ENSAI test : fuite 0,1 % (1/1012), énoncés masqués 14,5 % : inchangés.
+  - Comparaison automatique : 0 régression sur les quatre partitions ; dev : `tlse-l1pc-2009-corrige` résolu (4/105 énoncés masqués).
+- `npm run check` : 179 tests réussis, 2 ignorés ; `npm run build` OK.
+- Résultat négatif, non retenu : découper une correction aux questions recopiées en repérant un changement de police dominante a produit 5 régressions sur le dev ; annulé avant commit.
+- Suite, commit `63f4d82` (intertitre de la couleur des questions après « ? » masqué avec la correction ; test unitaire qui échoue sans le correctif, vérifié) : dev réussite 8/10, fuite 0 % (2072/2072), énoncés masqués inchangés (29,7 %) ; `lyon2-stat-ccc1` résolu ; test, ENSAI dev et ENSAI test inchangés, 0 régression ; 180 tests, build OK.
+- Limites : le gain du dev ne se transfère pas au test (aucune amélioration mesurée) ; restent ouverts le sur-masquage de Bordeaux (309 lignes), labri sans marqueur (73/73 masquées) et la famille « sujet seul » (36 % d'énoncés masqués sur le test, aucun exemple disponible dans le dev).
+
+### V-28-0310-HZ · Phase 4, premier jalon : fusion, conventions locales, QCM, énoncés recopiés
+
+- Par : Hazem (Claude Code). Base : `fd88420` + PR #14 de Wael fusionnée dans la branche (`8cebd09`, sans conflit, 181 tests). PR #15 non fusionnée dans main à 03:10 : main non intégrée.
+- Protocole : diagnostic et réglage sur dev et ensai-dev uniquement ; **partitions test et ensai-test non lancées** (évaluation par Salif sur version figée). Commande : `node scripts/benchmark.mjs <partition> --cache <hors dépôt> --hors-ligne`, raster actif. Même corpus et mêmes métriques que V-28-0215-HZ.
+- Diagnostic structurel (P0 de Wael, V-28-0211-WB) :
+  1. `colorDrafts` ne s'exécutait que si le document n'avait **aucun** bloc : les cases d'un QCM suffisaient à désactiver l'inférence colorimétrique de tout le document hybride (convention unique par PDF) ;
+  2. le repli colorimétrique externe n'était pris en compte que pour « sujet seul » : un document `mixed` grâce aux cases ignorait l'encre rouge inexpliquée des pages rédigées ;
+  3. la complétion des cases manquantes reposait seulement sur les lettres extractibles A, B, C… ;
+  4. famille « énoncés recopiés dans le corrigé » : un bloc de corrigé avalait l'énoncé recopié (Bordeaux, 308 lignes d'énoncé dans un seul bloc).
+- Mécanismes et mesures (chacun avec un test unitaire qui échoue sans lui, vérifié) :
+
+| Étape | Commit | dev : réussite / fuite / énoncés masqués / abstentions | ensai-dev : cases visibles / énoncés masqués |
+|---|---|---|---|
+| Avant (63f4d82 + PR #14) | `8cebd09` | 8/10 · 0 % · 387/1304 (29,7 %) · 0 | 0/602 · 62/476 |
+| M1 conventions locales (couleur par unité section × page non expliquée) | `f3a3d8e` | identique | identique |
+| M2 contrôle final de la fusion (convergent / contredit / expliqué / ambigu inexpliqué ; mobilier de page et encre avant la 1re question expliqués) | `f3a3d8e` | identique (première version : 2 abstentions à tort sur Lyon, logo répété ; corrigée) | identique |
+| M3 cases manquantes par régularité du groupe (interpolation seule) | `5cafcbe` | identique | identique |
+| M4 énoncés recopiés (tous les 4-grammes déjà visibles, suites ≥ 2) | `65d8543` | 8/10 · 0 % · **311/1304 (23,8 %)** · 0 | identique |
+
+- Lecture honnête : M1, M2 et M3 n'ont **aucun effet mesurable sur les partitions de développement**, qui ne contiennent ni hybride ni case manquante ; leur bénéfice n'est démontré que sur des cas synthétiques reproduisant les P0 de Wael. Leur effet réel est à mesurer par Salif (ensai-test contient les deux hybrides de 12 pages) et dans Edge.
+- Résultats négatifs, non retenus : (a) démasquer les questions par la syntaxe (« ? », verbes d'instruction) dans un corrigé : au mieux +10 lignes d'énoncé visibles, et 4 fuites pour la variante sans « ? » ; (b) lissage séquentiel (ligne courte entre deux lignes visibles) : +2 lignes d'énoncé, **29 fuites** (Toulouse) ; (c) M4 aux seuils 0,6 ou 0,8, ou en suites d'une ligne : 2 à 20 fuites sur Bordeaux, Liège, exo7, labri.
+- Conclusion intermédiaire sur la segmentation globale (programmation dynamique O(nK²)) : **non justifiée à ce stade**. Les erreurs restantes du dev viennent d'observations locales insuffisantes (formules courtes, reformulations partielles, corrigé titré sans marqueur chez labri) et non d'incohérences de transitions ; le seul lissage séquentiel testé crée des fuites. Prototype non engagé ; à reconsidérer si les observations vectorielles de Wael apportent de nouveaux coûts locaux fiables.
+- Bordeaux, 228 lignes d'énoncé encore masquées : 77 lignes courtes (formules), 87 reprises à moins de 50 %, 64 reprises partielles ; certaines lignes annotées « énoncé » ressemblent à des calculs de corrigé : bruit d'annotation probable (annotateur unique), à confirmer par la validation indépendante de Salif.
+- Temps : dev 803 ms par document en moyenne sur une exécution non chargée (`5cafcbe`) ; les mesures à 1,5 s du même soir correspondent à une machine chargée (même écart sur ensai-dev), non à un coût des mécanismes.
+- Non vérifié : Edge ; partitions de test ; documents hybrides réels.
 
 ## Problèmes connus et risques
 
@@ -253,6 +332,34 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Résultat : 226/226 cases noircies entièrement couvertes, 0 partielle, 0 visible. Huit cases non noircies de propositions à masquer restent partiellement couvertes (2) ou visibles (6). Elles ne correspondent pas à une boîte reconnue dans le raster à ces positions. Ces différences donnent un indice indirect par élimination. Aucun comptage vérifié des énoncés masqués à tort sur ce document. Temps du moteur sur 28 pages : 2 041 ms lors du passage sans instrumentation supplémentaire, dont 913 ms pour les rasters.
 - Signalé à Hazem dans la PR #13. Aucun deuxième détecteur géométrique de QCM développé sur cette branche.
 
+### V-28-0211-WB · Recette P0 du produit intégré sur annales réelles
+
+- Build testé `ef23fa2f25c3066350534472352fc2a63455cec0`, base `329d2973609fb8c6babfd92fa6611416e7cc8d3f` et moteur `54e0e7b4e399625310e4c2efb15cecf40c1b9da0`. Production Ubuntu sous `/night-shift/`, Edge 1440 × 900 avec profil neuf et port local distinct. Le SHA lu dans le HTML correspond après rechargement hors ligne. La couverture V8 du bundle confirme les appels effectifs à l’analyseur couleur lors de l’action « Masquer les corrigés » (12 et 4 sur les annales ENSAI, 4 sur Lyon 2). L’analyseur est désormais enregistré par défaut dans le moteur.
+- Protocole des mesures ENSAI. Vérité indépendante issue des carrés vectoriels des propositions et grilles, des fragments de correction rouges et des fragments d’énoncé du PDF original. Les cases vides et pleines de chaque groupe de réponses figurent dans les unités à neutraliser. Les grilles d’identification figurent dans les unités à préserver. La recette recueille les rectangles visibles dans le DOM, puis déduit le rattachement aux blocs en activant chaque commande. Calcul avec `scoreGeo` de Hazem, seuils de couverture à 95 % et 5 %. Les PDF, annotations locales et captures restent hors du dépôt. Les unités sont des fragments et des cases, distinctes du nombre de réponses.
+- Comparaison avec `329d2973609fb8c6babfd92fa6611416e7cc8d3f` avant intégration du moteur. Les deux builds ont été construits et servis séparément. Le build de référence ne contenait pas encore de métadonnée SHA.
+
+| Document et build | Unités entièrement / partiellement / non couvertes | Énoncés touchés selon le seuil | Blocs indépendants |
+| --- | ---: | ---: | ---: |
+| ENSAI hybride, 12 p., `329d297` | 124 / 0 / 1 427 sur 1 551 | 354 / 3 746 | 0 / 34 |
+| ENSAI hybride, 12 p., `ef23fa2` | 347 / 0 / 1 204 sur 1 551 | 0 / 3 746 | 16 / 34 |
+| ENSAI QCM, 4 p., `329d297` | 71 / 7 / 26 sur 104 | 576 / 916 | 0 / 10 |
+| ENSAI QCM, 4 p., `ef23fa2` | 103 / 0 / 1 sur 104 | 0 / 916 | 7 / 10 |
+| Lyon 2 L2, 4 p., `ef23fa2` | 70 / 0 / 0 sur 70 | 0 / 38 | 17 / 17 |
+
+- Hybride. Sur les p. 1–4, 103/1 303 fragments rouges couverts. Sur les p. 5–12, les 66 cases noircies des propositions et de la grille à 26 lignes sont couvertes. Les 40 cases d’identification restent visibles. Quatre propositions conservent une case vide visible, ce qui donne un indice par élimination. L’analyse prend 3,68 s sur ce passage navigateur.
+- QCM à deux sessions. Les 22 cases noircies et les deux grilles de réponses sont couvertes. Les 80 cases d’identification restent visibles. Une case vide de proposition reste visible dans la seconde session et donne un indice. Les numéros répétés ont des commandes distinctes, mais trois groupes sur dix échouent encore au critère géométrique d’indépendance. L’analyse prend 0,82 s sur ce passage.
+- Deux annales ENSAI sur deux s’affichent en mode automatique avec des fuites. Sur six PDF testés dans Edge, seul le corrigé manuscrit MIT s’abstient. Le document reste entièrement couvert et la révélation progressive n’expose que la première page au premier déplacement. Les essais confirment la couverture à l’ouverture, l’opacité, l’alignement au zoom, le rendu de la dernière page, le remasquage et la reprise de l’import et de l’analyse hors ligne.
+- Corpus indépendant de Hazem sous Node, même SHA et arbre propre. 1/12 documents réussis automatiquement, 1/12 abstention, 2 663/3 348 unités entièrement couvertes, 36 partiellement, 649 visibles. Le moteur masque 629/2 004 lignes d’énoncé au-delà du seuil. Sur Savoie INFO201, le benchmark couvre 101/101 corrections et masque 55/86 énoncés. Le produit dans Edge couvre 51/101 corrections, laisse 4 partielles et 46 visibles, et masque 5/86 énoncés. L’appel direct au moteur confirme l’écart avant le visualiseur (11 blocs et 16 régions sous Node, 8 blocs et 27 régions dans Edge). Les empreintes des rasters et des fragments diffèrent bien que leurs dimensions et effectifs concordent. La cause fine de l’écart reste à isoler. Sur le sujet MIT 18.05, 77/434 unités d’énoncé masquées sont reproduites dans Edge.
+- La vidéo locale montre `QCM3.pdf` et une URL de développement sur le port 5173. Le nom et le texte observable ne confirment la correspondance avec aucun des deux PDF fournis. Le SHA de la vidéo ne peut pas être établi.
+
+P0 transmis à Hazem, dans l’ordre :
+
+1. Le passage couleur indique une incertitude sur chacune des quatre pages rédactionnelles. Le moteur exploite ce signal pour `statement_only`, mais son classement `mixed` sur les blocs AMC permet de laisser les réponses rouges visibles. Décider de la couverture par exercice ou conserver le document couvert tant qu’une convention plausible reste sans résolution.
+2. Les cinq cases vides résiduelles sont absentes de la sortie brute de `findBoxes`. Vérifier la complétude de chaque groupe avec le contexte et les emplacements voisins avant de rendre un résultat automatique. Une grille de réponses reliée doit suivre le bloc de son groupe et de sa session.
+3. L’écart Node/Edge exige une vérification navigateur représentative pour conclure sur l’utilisabilité. Un contrôle des entrées du détecteur doit isoler les différences textuelles et raster, puis établir leur contribution.
+
+Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette repose sur Edge sous Windows pour l’affichage. Téléphone physique et Safari restent à vérifier. L’interface rejette désormais un résultat contradictoire `statement_only` contenant des blocs et conserve la couverture progressive. `npm run check` passe avec 171 tests réussis et 2 évaluations optionnelles ignorées. Le build de production réussit.
+
 ### V-28-0319-WB · Perception vectorielle et comparaison avec les cases raster
 
 - Par Wael (Codex). Protocole et sources dans `research/pdf-vector/`. Référence raster dans Edge sur `edf4b92`, avec le lecteur réel et `findBoxes`. Prototype Edge PDF.js 6.5.438. L’évaluateur consigne aussi les empreintes des sources mises en service.
@@ -266,6 +373,35 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Protocole. Annotation visuelle indépendante des boîtes et états, appariement à IoU 0,60. Voir `research/pdf-vector/public-truth/` pour les deux pages et les empreintes des PDF.
 - Virginia Tech p. 15. `findBoxes` apparie 11/15 cases et renvoie toutes les cochées comme vides. Les glyphes PyMuPDF apparient les 7 cochées et 3 des 8 vides. À IoU 0,50, les 15 glyphes sont appariés dans leur bon état, avec une médiane IoU 0,608.
 - Washington p. 1. Les 4 cases s’apparient dans les comparaisons PDF.js et raster. Les états raster sont tous « vide » et les états natifs sont ambigus. Les trois marqueurs verts apparaissent dans le relevé PDF.js parmi les rectangles englobants. Le raster fournit 88 candidats en dehors des quatre cibles de la page.
+
+### V-28-0301-S · Référence dev et divergence Savoie Node–Edge
+
+- Protocole — `8cebd095e18b4526180a2ecb28f2830be9f065f2` construit depuis un checkout propre. Corpus historique `c74560353248`, mêmes PDF et annotations. Node 24.18.0 avec `@napi-rs/canvas` 1.2.1, Edge 158.0.4370.45 Windows et PDF.js 6.5.438. Mesures géométriques et d'encre `unspoil-geo/2` calculées sur les sorties de ce SHA, avant les évolutions suivantes du moteur.
+
+| Référence dev historique | Mesurables | Réussites | Abstentions | Couverture brute ≥ 95 % | Couverture stricte brute | Zones de correction avec encre visible |
+|---|---:|---:|---:|---:|---:|---:|
+| Node | 10/11 | 8/10 | 1 | 2 072/2 072 | 2 053/2 072 | 0 |
+| Edge | 10/11 | 5/10 | 1 | 1 984/2 072 | 1 968/2 072 | 88 |
+
+- Le rapport v1 donnait zéro abstention Node. Bordeaux fournit 438 zones couvertes au seuil historique, mais demande la lecture progressive. Avec v2, les 438 zones restent dans le score brut et le parcours est compté comme abstention. Aucune divergence entre l'oracle et le parcours réellement observé sur les 11 documents importés sous Edge.
+- Toulouse est présent, HTTP 200, et le SHA-256 du manifeste correspond. Les 111 rectangles comprennent 104 unités `q` et 7 titres `t`. Node présente « sujet seul » avec 0/104 unités masquées. Edge présente le masquage automatique et touche 3/104 unités au seuil historique. L'unique document non mesurable est `ens-sleurent-stats`, dont les plages ont toutes le rôle `m`. Aucun téléchargement ni contrôle d'empreinte n'a échoué. La vérité Toulouse est inchangée.
+- Savoie, test historique exposé exclusivement pour le diagnostic. Même PDF `c6b2a674…`, annotation `72bd9a27…`, mêmes résultats à `ef23fa2` et `8cebd09`. Node/Node et Edge/Node couvrent 101 unités sur 101. Node/Edge et Edge/Edge couvrent 51, avec 4 couvertures partielles et 46 absentes. Le vrai bundle Edge donne le même résultat et la même empreinte que le croisement Edge/Edge. Les fragments, leur ordre, leurs boîtes, les tailles et la reconstruction des lignes concordent après normalisation du préfixe d'identifiants de police. Les cinq rasters font 595 × 842 pixels sous les deux moteurs. Sur la première page, le RVB diffère sur 34 415 pixels, dont 8 525 changent de classe avec le seuil d'encre. Les observations d'encre changent avec le raster et restent identiques en échangeant le texte.
+- Les contrôles Node sur la transformée, les ressources et les polices système ne font pas basculer la sortie. Dans Edge, le contrôle par le module PDF.js brut et le worker du build reproduit les cinq rasters de production pixel pour pixel. Désactiver uniquement les polices système donne les mêmes rasters. Activer `disableFontFace` avec les polices système toujours coupées bascule la sortie de 51 à 101, avec exactement l'empreinte du résultat Node. Le chemin de rendu des glyphes FontFace explique donc l'écart de verdict sur cette annale. Ce contrôle n'implique pas que les rasters Node et Edge en tracés sont identiques. Le mode de rendu du produit reste la référence de classement, et aucune heuristique n'est calibrée sur Savoie.
+- Pages était désactivé et l'URL HTTPS standard répondait 404. Le workflow du dépôt est prêt. La vérification du SHA public et l'installation physique attendent l'activation et des appareils.
+
+### V-28-0310-S · Extension sujets seuls et corpus réservé gelé
+
+- La partition `dev-v2-sujets` ajoute Paris-Saclay, Strasbourg et Stanford, avec 292 unités d'énoncé. Les plages ont été relues sur les originaux. Les rectangles proviennent de l'extraction PDF.js sans sortie du détecteur. Sur le moteur `5cafcbe` dans Edge, 2/3 sont montrés comme sujets seuls, 1/3 passe en révélation progressive, aucune erreur et aucun énoncé touché au seuil historique. La recette Node sur le même moteur donne les mêmes modes.
+- Le chargeur Node `pdfjs-native-canvas/2` reçoit les répertoires de ressources de la distribution PDF.js, dont WASM. Un scan JBIG2 présentait un rendu vide sous le chargeur Node dépourvu de cette ressource. Le rendu de préparation lit bien les images après ajout du répertoire. Le chargeur Node applique désormais la transformée et la limite raster du lecteur. Les rapports identifient son nouveau profil. Le canvas Node reste distinct de celui du navigateur.
+- Corpus réservé v1, gelé le 28/11 à 03:08 Paris avant exécution du détecteur, engagement SHA-256 `544258e372f586fd29e291bd48e8e52946c879bb82af63f6f3a79e2e41f63730` sur le manifeste qui inclut les empreintes des PDF et des annotations. Cinq documents, onze pages échantillonnées et 100 unités visuelles annotées sans prédiction. Familles représentées : sujet seul, alternance, corrigé en fin de partie, QCM vectoriel, document hybride, figures et scan manuscrit. Le panel ne comprend pas de QCM non vectoriel vérifié.
+- Edge sur le build candidat propre `5cafcbe`, avec métriques v2. Les 5 documents sont mesurables. Un parcours est une réussite stricte, un est en lecture progressive, trois présentent une autre issue infructueuse. Aucune erreur technique et aucun écart entre oracle et mode/masques observés. Ces chiffres décrivent un échantillon de pages. Les PDF, annotations, choix de pages et résultats individuels restent hors du dépôt.
+
+### V-28-0322-S · Vérification croisée du build de la PR #17
+
+- Les rapports Node et Edge sur le checkout propre `9615001`, moteur de Hazem `65d8543`, ont le même format, les mêmes onze documents et les mêmes empreintes d'annotation. L'ENS sans unité évaluable explique la seule exclusion. Aucune erreur technique ni différence entre oracle et parcours réellement observé dans Edge. La recette d'ouverture et d'analyse après rechargement hors ligne passe sur `fb47938`, qui contient le même code produit.
+- Edge produit 5 réussites sur 10, dont 2 strictes, et 1 abstention. Au seuil historique, 1 984/2 072 unités de correction sont couvertes et 298/1 304 unités d'énoncé touchées. Le témoin Edge `8cebd09` comptait 372 unités d'énoncé touchées et les mêmes totaux de réussites et de corrections couvertes. Toulouse affiche encore des masques sur 3/104 unités d'énoncé dans le vrai parcours.
+- Node avec le chargeur v2 produit 6 réussites sur 10, dont 2 strictes, et 1 abstention. Il couvre 2 059/2 072 unités de correction et touche 317/1 304 unités d'énoncé. Le profil de rendu diffère du benchmark Node historique, donc l'écart de score Node entre les deux références mélange les changements de moteur et de chargeur.
+- La recette refuse une empreinte d'annotation discordante avant d'évaluer le PDF. À 03:22, la PR #15 était toujours ouverte, le dépôt public et Pages désactivé. Aucune mesure d'un SHA publié ni validation sur téléphone physique.
 
 ### V-28-0359-S · Commandes de révélation et disponibilité du site HTTPS
 

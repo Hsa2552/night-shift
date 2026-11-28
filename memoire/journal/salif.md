@@ -62,6 +62,19 @@
 - Huit cycles locaux sur scan, corrigé illustré et algèbre. Aucun worker du document ne reste après fermeture dans le benchmark. Le résiduel est surtout porté par le processus GPU du navigateur. Voir `QUALITE.md` V-28-0221-S et V-28-0223-S.
 - Build de repli `BASE_PATH=/` validé depuis un checkout propre de `329d297`, avec rechargement, import et masquage hors ligne dans Edge. Le ZIP local dans `dev-dist/` contient le site statique sans PDF du corpus. Activation et recette physique attendues.
 
+### 28/11 · SESSION · T-S-5 métriques et référence navigateur · Codex
+
+- Branche `fix/benchmark-parity` basée sur `8cebd09` qui intègre la PR #14. Définition partagée de la décision produit, métriques historiques et strictes, rapports navigateur et diagnostic croisé.
+- Référence Node et Edge sur le même SHA, corpus dev historique et mesure d'encre. Toulouse est mesurable, la ligne exclue correspond à une autre annale sans annotation évaluable. Savoie isole l'effet du raster. Voir V-28-0301-S. Aucun réglage du moteur sur ce document du test historique.
+- PR #15 encore en revue humaine. Pages reste désactivé. Le corpus réservé est en constitution, et aucun résultat détaillé n'est diffusé à l'équipe.
+
+### 28/11 · SESSION · T-S-5 corpus et contrôle strict · Codex
+
+- PR #17 ouverte et premier contrôle GitHub réussi. Extension séparée de trois sujets seuls et rapport Node/Edge. Le profil Node a désormais les ressources PDF.js et la géométrie du lecteur.
+- Vérité réservée gelée avant toute prédiction, avec empreintes locales et engagement dans `QUALITE.md`. Les seules mesures publiées sont agrégées. Le test des indices de forme dans les groupes QCM est distinct de la couverture historique.
+- Contrôle Savoie dans Edge : les cinq rasters témoin sont identiques à ceux de production, même sans polices système. Basculer `disableFontFace` reproduit exactement la sortie Node du détecteur. Mesure par le navigateur de production conservée pour les résultats produit.
+- Les deux rapports sur `9615001` concordent avec l'empreinte du build et rendent la perte de parité mesurable. La recette Edge hors ligne passe. Pages et la validation physique restent dépendantes de l'activation par le propriétaire. Voir V-28-0322-S.
+
 ### 28/11 · SESSION · T-S-7 commandes de révélation · Codex
 
 - Diagnostic et correctif sur `fix/commandes-revelation`. La commande individuelle reste dans le même pied de page. Le bouton global remasque les régions révélées sans relancer le détecteur. Voir V-28-0359-S pour les essais réels et la validation de Pages.

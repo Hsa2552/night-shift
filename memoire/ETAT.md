@@ -72,7 +72,17 @@
 - Responsable : Salif · Agent : Codex · Branches : `fix/pwa-distribution` (PR #11 fusionnée), `fix/recette-distribution` (recette Mako)
 - Critères d'acceptation : une mise à jour du cache préserve la lecture en cours, les essais de confidentialité et de libération sont reproductibles, et le propriétaire dispose de la procédure HTTPS.
 - Maturité : correctif intégré. Recette de production avec Mako testée sur Edge, Firefox et WebKit. Mesures reproductibles hors ligne.
-- Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
+- Blocage externe : Pages est actif. La recette sur téléphone physique reste à faire.
+
+### T-S-5 · Parité Node–navigateur et validation scientifique
+
+- Statut : fusionnée (PR #17, puis #18) · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/benchmark-parity`
+- Dépend de : benchmark et marqueur de build intégrés par la PR #14 à `feat/detection-generalisation`. C1 reste applicable.
+- Critères d'acceptation : mêmes décisions d'affichage dans le produit et le score, référence Node/Edge avec empreintes, exclusions documentées, corpus réservé avant évaluation et vérification HTTPS après activation humaine.
+- Maturité : oracle partagé, score strict et recette réelle testés. Savoie isolé au raster. Trois sujets seuls supplémentaires mesurés, et corpus réservé gelé puis mesuré dans Edge. Voir `QUALITE.md` V-28-0301-S et V-28-0310-S.
+- Notes : PR #17 vers la branche de Hazem qui contient le benchmark.
+- Blocage externe : Pages est actif. La recette physique dépend de l'accès aux appareils.
 
 ### T-S-7 · Stabilité des commandes de révélation
 
@@ -92,12 +102,22 @@
 
 ### T-HZ-2 · Robustesse et généralisation du détecteur (phase 2)
 
-- Statut : en revue (PR #10) · Priorité : P0
+- Statut : fusionnée (PR #10) · Priorité : P0
 - Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection-robustesse`
 - Dépend de : contrat C1 (fusionné) ; vraies annales fournies par l'équipe pour l'évaluation locale
 - Critères d'acceptation : corrections visibles et énoncés masqués mesurés séparément (`src/detection/eval/`) et en baisse sur de vraies annales ; tests de régression pour chaque défaut corrigé
 - Maturité : intégrée (main à jour, vérifiée dans Edge avec l'interface et le lecteur ; évaluation V-28-0005-HZ). Non testé : vraies annales, téléphone
 - Notes : journal `journal/hazem.md`, entrées du 27/11 23:35 à 28/11 00:05 ; T-HZ-1 fusionnée par la PR #6 ; dépendance ouverte : Q-27-2330-HZ (Salif)
+
+### T-HZ-3 · Généralisation du détecteur sur annales réelles (phase 3)
+
+- Statut : en cours · Priorité : P0
+- Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection-generalisation`
+- Dépend de : rien de bloquant ; contrat C1 inchangé
+- Critères d'acceptation : mesures avant/après sur corpus réels dev et test séparés ; QCM ENSAI DOC-corrige sans indice visuel
+- Maturité : intégrée (189 tests, benchmark automatique, détecteur de Wael fusionné) ; QCM ENSAI et BUG-001 vérifiés dans Edge. Non testé : téléphone, Safari
+- Phase 4 (fusion, conventions locales, QCM, sur-masquage) : premier jalon `65d8543`, voir V-28-0310-HZ ; candidat à évaluer par Salif sur test.
+- Notes : journal entrées du 28/11 01:25, 02:00, 02:20 et 03:15 ; `QUALITE.md` V-28-0115-HZ à V-28-0310-HZ ; PR à ouvrir (lien dans le journal) ; à valider par l'équipe : `benchmark.yml` et scripts `benchmark:*` de `package.json`
 
 ### T-WB-3 · Détecteurs visuels déterministes
 
@@ -107,6 +127,14 @@
 - Critères d'acceptation : relevé d'encre indépendant du rôle, candidat de correction colorée quand les indices le permettent, bilan sur de vraies annales et tests de régression.
 - Maturité : testée en isolation avec le lecteur PDF dans Edge et par tests unitaires, dont le cas des questions bleues et données/corrections noires. Intégration structurelle par Hazem.
 - Notes : PR #13. Vérifications V-28-0118-WB et V-28-0128-WB. Détecteur QCM développé par Hazem, relu en isolation par Wael (V-28-0129-WB).
+
+### T-WB-4 · Recette intégrée et couverture de sécurité
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `fix/recette-production`
+- Dépend de : moteur de Hazem, lecteur réel et C1. Comparaison indépendante supplémentaire demandée à Salif.
+- Critères d’acceptation : SHA vérifié par le navigateur et après rechargement hors ligne, appel couleur observé dans le build, verdict mesuré sur les annales et transmission des P0 au responsable du moteur.
+- Maturité : recette reproductible et correctif d’interface testés. Lyon 2 validé dans Edge. Les deux annales ENSAI échouent encore au masquage automatique. Voir V-28-0211-WB.
 
 ### T-WB-5 · Perception vectorielle des PDF
 

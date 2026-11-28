@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
@@ -13,9 +14,31 @@ const base = process.env.BASE_PATH ?? '/'
 const require = createRequire(import.meta.url)
 const pdfjsRoot = dirname(require.resolve('pdfjs-dist/package.json'))
 
+function buildRevision() {
+  try {
+    const git = (args: string[]) =>
+      execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+    const revision = git(['rev-parse', 'HEAD'])
+    return git(['status', '--porcelain', '--untracked-files=no']) ? revision + '-dirty' : revision
+  } catch {
+    const revision = process.env.UNSPOIL_BUILD_SHA
+    return revision && /^[a-f0-9]{40}$/.test(revision) ? revision : 'unknown'
+  }
+}
+
 export default defineConfig({
   base,
   plugins: [
+    {
+      name: 'unspoil-build-revision',
+      transformIndexHtml: () => [
+        {
+          tag: 'meta',
+          attrs: { name: 'unspoil-build', content: buildRevision() },
+          injectTo: 'head',
+        },
+      ],
+    },
     react(),
     tailwindcss(),
     {
