@@ -1,6 +1,6 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
-import type { PageData, PageDimensions, RasterData } from '../shared/types'
+import type { PageData, PageDimensions, RasterData, VectorPageObservation } from '../shared/types'
 import { fitCanvas, MAX_DISPLAY_PIXELS, MAX_RASTER_PIXELS } from './canvas-size'
 import { readPageText } from './read-text'
 
@@ -24,6 +24,7 @@ export interface PdfDocument {
     options?: RenderPageOptions,
   ): Promise<void>
   getRaster(pageIndex: number): Promise<RasterData>
+  getVectors?(pageIndex: number): Promise<VectorPageObservation | undefined>
   close(): Promise<void>
 }
 

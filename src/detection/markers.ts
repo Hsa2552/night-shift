@@ -50,7 +50,13 @@ const STRONG_WORDS: Record<string, { kind: QuestionKind; level: number; name: st
 }
 
 const STRONG_RE =
-  /^(partie|part|exercice|exercise|exo|probleme|problem|question|q)\s*(?:n\s*[°o]\s*)?\.?\s*(\d{1,3}(?:\.\d{1,2})?|[ivx]{1,5}|[a-h])(?![\w])\s*[.:)\-–—]?\s*/
+  /^(partie|part|exercice|exercise|exo|probleme|problem|question|q)\s*(?:n\s*[°o]\s*)?\.?\s*(\d{1,3}(?:\.\d{1,2})?|[ivx]{1,5}\.\d{1,3}|[ivx]{1,5}|[a-h])(?![\w])\s*[.:)\-–—]?\s*/
+/**
+ * Numérotation hiérarchique : « A.1. », « C.I.1. », « C.II.3 », « II.a », « 1.a ». Le second
+ * composant est un chiffre romain, un nombre ou une lettre (après un nombre ou un romain).
+ */
+const HIER_RE =
+  /^((?:[a-h]|[ivx]{1,4})\.(?:[ivx]{1,4}|\d{1,2})(?:\.\d{1,2})?|[ivx]{1,4}\.[a-h]|\d{1,2}\.[a-h])(?![\w])\s*[.)]?\s+(?=\S)/
 const DOTTED_RE = /^(\d{1,2}\.\d{1,2}(?:\.\d{1,2})?)(?![\d])\s*([.)])?\s+(?=\S)/
 const NUMERIC_RE = /^(\d{1,2})\s*([.)])\s+(?=\S)/
 const LETTER_RE = /^(?:\(([a-h])\)|([a-h])\))\s+(?=\S)/
@@ -59,6 +65,18 @@ const LETTER_RE = /^(?:\(([a-h])\)|([a-h])\))\s+(?=\S)/
 export function parseQuestion(text: string): QuestionMarker | null {
   const stripped = text.replace(LEADING_DECORATION, '')
   const folded = fold(stripped)
+
+  const section = SECTION_RE.exec(folded)
+  if (section && /^[A-H]/.test(stripped)) {
+    return {
+      kind: 'part',
+      level: 0,
+      value: section[1]!,
+      style: 'part',
+      display: `Partie ${section[1]!.toUpperCase()}`,
+      rest: stripped.slice(2).trim(),
+    }
+  }
 
   const strong = STRONG_RE.exec(folded)
   if (strong) {
@@ -74,6 +92,20 @@ export function parseQuestion(text: string): QuestionMarker | null {
       style: word.kind,
       display: `${word.name} ${/^[a-z]+$/.test(value) ? value.toUpperCase() : value}`,
       rest: stripped.slice(strong[0].length),
+    }
+  }
+
+  const hier = HIER_RE.exec(folded)
+  // « i.e. » : un romain suivi d'une lettre n'est une numérotation qu'en majuscules (« II.a »).
+  const romanLetter = hier && /^[ivx]+\.[a-h]$/.test(hier[1]!) && !/^[IVX]/.test(stripped)
+  if (hier && !romanLetter && !/^\d{1,2}\.\d/.test(hier[1]!)) {
+    return {
+      kind: 'numeric',
+      level: 3,
+      value: hier[1]!,
+      style: 'hier',
+      display: hier[1]!.toUpperCase(),
+      rest: stripped.slice(hier[0].length),
     }
   }
 
@@ -113,8 +145,29 @@ export function parseQuestion(text: string): QuestionMarker | null {
       rest: stripped.slice(letter[0].length),
     }
   }
+
+  // « b. Écrire le volume… » : lettre minuscule et point, suivie d'une phrase (4 mots au
+  // moins) ; une option courte de QCM (« a. Paris ») reste une option.
+  const letterDot = /^([a-h])\.\s+(?=\S)/.exec(stripped)
+  if (letterDot) {
+    const rest = stripped.slice(letterDot[0].length)
+    if (rest.split(/\s+/).filter((w) => /\p{L}{2,}/u.test(w)).length >= 4) {
+      return {
+        kind: 'letter',
+        level: 4,
+        value: letterDot[1]!,
+        style: 'x.',
+        display: `${letterDot[1]})`,
+        rest,
+      }
+    }
+  }
   return null
 }
+
+/** Intitulé de section « B. Exercice : … », « C. Problème », « A. Question de cours ». */
+const SECTION_RE =
+  /^([a-h])\.\s+(?:exercice|exercise|probleme|problem|question|partie|part|etude|application)\b/
 
 /** Valeur suivante d'une numérotation (3 → 4, b → c, 1.2 → 1.3), ou null. */
 export function nextValue(value: string): string | null {
@@ -236,10 +289,44 @@ export function isPageFurniture(text: string): boolean {
 /** Titre de document annonçant un corrigé (et non un sujet accompagné de son corrigé). */
 export function isCorrectionTitle(text: string): boolean {
   const folded = fold(text)
-  if (!/\b(?:corriges?|corrections?|solutions?|elements\s+de\s+correction)\b/.test(folded)) {
-    return false
-  }
+  const exact = /\b(?:corriges?|corrections?|solutions?|elements\s+de\s+correction)\b/.test(folded)
+  if (!exact && !hasDegradedCorrectionWord(folded)) return false
   return !/\b(?:sujets?|enonces?)\b|\bavec\b|\+/.test(folded)
+}
+
+const CORRECTION_WORDS = [
+  'corrige',
+  'corriges',
+  'correction',
+  'corrections',
+  'solution',
+  'solutions',
+]
+
+/**
+ * Extraction dégradée (police dont une lettre n'a pas de correspondance Unicode : « orrigé »,
+ * « Exer i e ») : un mot de 6 lettres au moins à une lettre près d'un mot de corrigé.
+ */
+export function hasDegradedCorrectionWord(folded: string): boolean {
+  return folded
+    .split(/[^a-z]+/)
+    .filter((w) => w.length >= 6)
+    .some((w) => CORRECTION_WORDS.some((c) => editDistance(w, c) <= 1))
+}
+
+/** Distance de Levenshtein (mots courts). */
+export function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    let prev = d[0]!
+    d[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = d[j]!
+      d[j] = Math.min(d[j]! + 1, d[j - 1]! + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1))
+      prev = tmp
+    }
+  }
+  return d[b.length]!
 }
 
 /**

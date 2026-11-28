@@ -69,3 +69,38 @@
 - Vérifié : `npm run check` (126 tests), `npm run build`, évaluation et Edge : `QUALITE.md` V-28-0005-HZ.
 - PR : #10 (`feat/detection-robustesse`), ouverte par l'équipe ; je ne la fusionne pas.
 - Suite : plan de phase 3 présenté à l'équipe ; aucune modification de phase 3 avant validation.
+
+### 28/11 01:25 · SESSION · T-HZ-3 généralisation et P0 QCM ENSAI · Claude Code
+
+- Corpus réel : 22 annales publiques (manifeste `src/detection/eval/corpus.tsv`, annotations par plages), 12 annales ENSAI DOC-corrige locales (hors dépôt).
+- P0 DOC-corrige : détection des cases noircies, masques identiques, sessions séparées, en-têtes répétés ignorés ; vérifié dans Edge. Voir `QUALITE.md` V-28-0115-HZ.
+- Erreur de protocole corrigée (serveur de test orphelin) : V-28-0120-HZ.
+- Pour Wael : aucune évolution de C1 ni du visualiseur nécessaire (un bloc = plusieurs petits rectangles) ; à noter, les pages éloignées ne sont pas dessinées tant qu'on n'y fait pas défiler (normal, mais les captures pleine page les montrent blanches).
+- Suite : familles d'erreurs du dev général (V-28-0125-HZ), calibration du repli.
+
+### 28/11 02:00 · SESSION · T-HZ-3 BUG-001, fusion visuelle, benchmark · Claude Code
+
+- BUG-001 résolu (V-28-0200-HZ) ; détecteur de Wael intégré par défaut via `fusion.ts` (V-28-0205-HZ) ; « sujet seul » refusé sur indices de corrigé (titre, pied de page, tournures de réponse) ; benchmark `npm run benchmark:*` et workflow manuel.
+- main intégrée (`329d297`, PR #11, #12, #13) : conflits de mémoire résolus en gardant les deux versions.
+- PR : non ouverte par l'agent (`gh` absent, accès à l'identifiant Git refusé) ; lien à ouvrir par l'équipe.
+- Pour Wael : sur BUG-001, `analyzeColorPage` propose un bloc sur une question bleue (page 1) ; la fusion le rejette. `observePageInk` n'est pas encore utilisé par le moteur (l'encre par ligne vient de `color.ts`).
+- Suite : familles du dev (extraction dégradée, numérotations « A.1. » et « VII.1 », corrigés en fin avec énoncés recopiés).
+
+### 28/11 02:20 · SESSION · T-HZ-3 familles du dev · Claude Code
+
+- Fait : titre de corrigé reconnu malgré une extraction dégradée (`54e0e7b`) ; numérotations hiérarchiques avec continuité (`fcb54c8`) ; intitulés « B. Exercice » et sous-questions « b. » (`c52cf6c`). Tentative de découpage par changement de police annulée (5 régressions).
+- Vérifié : dev réussite 7/10, fuite 0,1 %, énoncés masqués 29,7 % ; test, ENSAI dev et ENSAI test inchangés, 0 régression ; 179 tests, build OK. Détail : `QUALITE.md` V-28-0215-HZ.
+- Puis `63f4d82` : intertitre coloré après « ? » masqué ; dev sans aucune fuite (2072/2072), réussite 8/10, 0 régression ailleurs.
+- Non vérifié : ces commits dans Edge (seulement sous Node) ; aucun gain mesuré sur le test.
+- PR : toujours à ouvrir par l'équipe : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation
+- Suite : sur-masquage de Bordeaux, labri sans marqueur, sujets seuls de sources indépendantes.
+
+### 28/11 03:15 · SESSION · T-HZ-3 phase 4, premier jalon · Claude Code
+
+- Intégration : PR #14 (Wael, `fix/recette-production`) fusionnée dans `feat/detection-generalisation` (`8cebd09`, sans conflit). PR #15 (Salif) pas encore fusionnée dans main : main non intégrée ; aucun conflit prévu (vérifié par `git merge-tree` avec #14 et #15). SHA commun de référence proposé : `65d8543` (moteur), après intégration de main dès la fusion de #15.
+- Fait : M1 conventions locales, M2 contrôle final de la fusion, M3 cases manquantes par régularité, M4 énoncés recopiés. Détail, mesures et résultats négatifs : `QUALITE.md` V-28-0310-HZ. Interface vectorielle proposée : `DECISIONS.md` D-28-0315-HZ.
+- Vérifié : 189 tests ; dev 8/10, fuite 0 %, énoncés masqués 29,7 % → 23,8 % ; ensai-dev inchangé. Test et ensai-test non lancés (protocole).
+- Pour Salif : (1) l'application se replie si `needsFallback` est vrai même quand `kind` vaut `mixed` ; le benchmark ne compte que `kind === 'unknown'` comme abstention : à distinguer (résultat brut / comportement de l'application) ; (2) la vérité ENSAI de mon benchmark ne contient que les cases : l'encre rouge rédigée des hybrides n'y est pas mesurée (la vérité de Wael, V-28-0211-WB, l'inclut) ; (3) version candidate à évaluer sur test : `65d8543`.
+- Pour Wael : M2 utilise ton `needsFallback` et tes candidats pour tous les types de document ; un logo répété (même rectangle sur deux pages) et l'encre placée avant la première question sont considérés comme expliqués. `observePageInk` n'est toujours pas utilisé : l'encre des lignes vient de `color.ts` ; la couche vectorielle (D-28-0315-HZ) permettrait de supprimer cet échantillonnage.
+- PR globale vers main : toujours à ouvrir par l'équipe (`gh` absent) : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation
+- Suite : intégrer main après #15 ; vérification Edge des quatre mécanismes ; famille « corrigé titré sans marqueur » (labri) ; observations vectorielles si l'interface est acceptée.

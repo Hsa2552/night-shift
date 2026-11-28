@@ -14,7 +14,10 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+    "benchmark:dev": "node scripts/benchmark.mjs dev",
+    "benchmark:test": "node scripts/benchmark.mjs test",
+    "benchmark:all": "node scripts/benchmark.mjs all"
   },
   "dependencies": {
     "pdfjs-dist": "^6.5.438",

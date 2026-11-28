@@ -1,0 +1,991 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "humaine (Salif) : sujet sans réponses, plages d’énoncé relues ; géométrie des lignes dérivée des fragments PDF.js sans prédiction du détecteur. Titres, pages de consignes et zones blanches exclus.",
+  "kind": "statement_only",
+  "elements": [
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 63, 249, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 81, 294, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [108, 117, 288, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [144, 132, 86, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [144, 147, 86, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [144, 162, 86, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [144, 177, 29, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [144, 192, 116, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [108, 206, 7, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 239, 256, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 265, 454, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 278, 403, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 292, 209, 12]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 466, 371, 12]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 63, 498, 12]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 77, 386, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 63, 167, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 81, 65, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 117, 468, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 154, 500, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 169, 499, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 183, 500, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 198, 500, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 212, 187, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 231, 131, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 268, 185, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 282, 205, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 310, 449, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 324, 416, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 338, 409, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 352, 462, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 385, 74, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [90, 404, 373, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [90, 424, 482, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [108, 438, 464, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [108, 453, 51, 12]
+    },
+    {
+      "page": 3,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 490, 331, 12]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 62, 442, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 63, 480, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 77, 453, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 92, 372, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 120, 389, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 135, 277, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 149, 178, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 163, 86, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 177, 119, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 206, 454, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 220, 449, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 235, 487, 12]
+    },
+    {
+      "page": 5,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 249, 51, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 63, 236, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 81, 450, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 96, 499, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 110, 481, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 125, 305, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 153, 151, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 166, 129, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 180, 79, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 193, 50, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 222, 480, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 236, 420, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 264, 158, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 277, 72, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 291, 86, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 304, 79, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 317, 57, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 346, 259, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 374, 230, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 387, 324, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 401, 216, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 414, 122, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 427, 115, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 440, 108, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 454, 64, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 467, 7, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 496, 488, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 510, 282, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 540, 468, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 553, 195, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 566, 345, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 579, 309, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 593, 244, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 606, 281, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 619, 158, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 632, 165, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 646, 144, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 659, 57, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 672, 180, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 685, 7, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 699, 137, 12]
+    },
+    {
+      "page": 7,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 712, 7, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 63, 493, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 77, 480, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 92, 473, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 106, 495, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 121, 493, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 136, 113, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 163, 302, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 658, 479, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 672, 498, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 687, 481, 12]
+    },
+    {
+      "page": 8,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 702, 461, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 63, 245, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 90, 130, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 116, 194, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 143, 223, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 169, 468, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 196, 136, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 222, 79, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 249, 309, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 275, 244, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 302, 295, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 315, 187, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 328, 439, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 355, 439, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 381, 201, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [158, 408, 411, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [158, 434, 411, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 461, 7, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 487, 7, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 514, 79, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 540, 468, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 567, 150, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 593, 439, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 620, 7, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 646, 468, 12]
+    },
+    {
+      "page": 9,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 672, 64, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 62, 190, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 81, 215, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [108, 109, 151, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [137, 122, 72, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [137, 135, 65, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [108, 149, 50, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 178, 450, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 193, 477, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 208, 491, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 223, 376, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 253, 245, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 266, 446, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [266, 280, 72, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 293, 295, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 319, 302, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 332, 208, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [130, 346, 352, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 359, 7, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 372, 64, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 385, 7, 12]
+    },
+    {
+      "page": 10,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 415, 317, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 62, 282, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 81, 496, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 96, 476, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 111, 74, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 143, 180, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 158, 151, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 173, 72, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 188, 7, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 218, 245, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 233, 180, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 248, 266, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 278, 266, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 293, 216, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [101, 308, 22, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 323, 7, 12]
+    },
+    {
+      "page": 11,
+      "role": "q",
+      "category": "text",
+      "bbox": [72, 354, 191, 12]
+    }
+  ]
+}
