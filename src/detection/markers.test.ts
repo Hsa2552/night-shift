@@ -125,3 +125,11 @@ describe('divers', () => {
     expect(isCorrectionTitle('Examen avec corrections')).toBe(false)
   })
 })
+
+describe('extraction dégradée', () => {
+  it('reconnaît un titre de corrigé à une lettre près', () => {
+    expect(isCorrectionTitle('Devoir Surveillé n 7 : orrigé')).toBe(true)
+    expect(isCorrectionTitle('Devoir Surveillé n 7')).toBe(false)
+    expect(isCorrectionTitle('Exercices de géométrie')).toBe(false)
+  })
+})
