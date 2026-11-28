@@ -8,6 +8,23 @@
       content="Entraînez-vous sur vos annales PDF en masquant les corrigés."
     />
     <meta name="theme-color" content="#0f172a" />
+    <script>
+      ;(() => {
+        let saved
+        try {
+          saved = localStorage.getItem('unspoil-theme')
+        } catch {}
+        const theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+        document.documentElement.dataset.theme = theme
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === 'dark' ? '#0B1020' : '#F8FAFC'
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Unspoil</title>
