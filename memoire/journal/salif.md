@@ -54,3 +54,10 @@
 - Les PR #9 et #10 sont fusionnées. La branche `fix/pwa-distribution` part de `3ed5e93`.
 - Deux builds sur la même origine reproduisaient une erreur 404 du module PDF pendant une mise à jour. Le service worker attend maintenant la fermeture du dernier onglet avant d'activer la nouvelle version. Vérification avant/après dans Edge, dont réouverture hors ligne. Voir `QUALITE.md` V-28-0012-S.
 - Dépôt public, Pages désactivé au contrôle. Les réglages attendus du propriétaire et le repli sur un hébergement statique HTTPS sont décrits dans le README.
+
+### 28/11 · SESSION · T-S-4 recette Mako et mémoire · Codex
+
+- PR #11 fusionnée. Après intégration de Mako et du détecteur visuel, reprise des essais sur `fix/recette-distribution` depuis `329d297`.
+- Recette sur trois moteurs, deux versions du service worker et observabilité réseau et stockage. Traitement hors ligne, annulation, remplacement, rotations, grande page, symbole, zoom et thème exercés. `npm run check` réussit avec 143 tests et une évaluation facultative ignorée. Build de production réussi.
+- Huit cycles locaux sur scan, corrigé illustré et algèbre. Aucun worker du document ne reste après fermeture dans le benchmark. Le résiduel est surtout porté par le processus GPU du navigateur. Voir `QUALITE.md` V-28-0221-S et V-28-0223-S.
+- Build de repli `BASE_PATH=/` validé depuis un checkout propre de `329d297`, avec rechargement, import et masquage hors ligne dans Edge. Le ZIP local dans `dev-dist/` contient le site statique sans PDF du corpus. Activation et recette physique attendues.

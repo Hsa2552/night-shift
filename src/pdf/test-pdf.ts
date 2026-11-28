@@ -53,15 +53,16 @@ export function makeDenseTestPdf(): Uint8Array<ArrayBuffer> {
   ])
 }
 
-// A two-page document with drawn content and no text layer.
+// Drawn content and an external link, with no text layer.
 export function makeGraphicsOnlyTestPdf(): Uint8Array<ArrayBuffer> {
   const content = '0.2 0.4 0.8 rg 20 20 60 35 re f'
   return encodePdf([
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 5 0 R >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 5 0 R /Annots [6 0 R] >>',
     '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 5 0 R >>',
     `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Annot /Subtype /Link /Rect [20 20 80 55] /Border [0 0 0] /A << /S /URI /URI (https://example.invalid/unspoil-private-fixture) >> >>',
   ])
 }
 

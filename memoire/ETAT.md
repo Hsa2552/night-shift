@@ -68,10 +68,10 @@
 
 ### T-S-4 · Distribution et résilience de la PWA
 
-- Statut : en cours · Priorité : P0
-- Responsable : Salif · Agent : Codex · Branche : `fix/pwa-distribution`
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branches : `fix/pwa-distribution` (PR #11 fusionnée), `fix/recette-distribution` (recette Mako)
 - Critères d'acceptation : une mise à jour du cache préserve la lecture en cours, les essais de confidentialité et de libération sont reproductibles, et le propriétaire dispose de la procédure HTTPS.
-- Maturité : correctif de mise à jour testé localement.
+- Maturité : correctif intégré. Recette de production avec Mako testée sur Edge, Firefox et WebKit. Mesures reproductibles hors ligne.
 - Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
 
 ### T01 · Socle technique commun
