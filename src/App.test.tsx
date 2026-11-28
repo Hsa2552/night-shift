@@ -249,6 +249,7 @@ describe('Unspoil', () => {
       await importDocument()
       startAnalysis()
       await screen.findByText('0 / 2 corrections révélées')
+      expect(screen.queryByRole('button', { name: 'Tout afficher' })).toBeNull()
       const revealAll = screen.getByRole('button', { name: 'Tout révéler' })
       fireEvent.click(revealAll)
       expect(screen.getAllByTestId('correction-mask')).toHaveLength(2)
@@ -465,7 +466,7 @@ describe('Unspoil', () => {
     await screen.findByText('Aucun corrigé n’a été détecté.')
     expect(screen.queryByTestId('page-cover')).toBeNull()
     expect(screen.queryByTestId('correction-mask')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Tout afficher' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Tout révéler' })).toBeNull()
   })
 
   it('garde le PDF couvert si un r?sultat sujet seul renvoie aussi un corrig?', async () => {
@@ -626,11 +627,11 @@ describe('Unspoil', () => {
       needsFallback: false,
     })
     await importDocument()
-    expect(screen.queryByRole('button', { name: 'Tout afficher' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Tout révéler' })).toBeNull()
     startAnalysis()
     const first = await screen.findByRole('button', { name: 'Afficher le corrigé — Question 1' })
     const second = screen.getByRole('button', { name: 'Afficher le corrigé — Question 2' })
-    const showAll = screen.getByRole<HTMLButtonElement>('button', { name: 'Tout afficher' })
+    const showAll = screen.getByRole<HTMLButtonElement>('button', { name: 'Tout révéler' })
     const global = screen.getByRole<HTMLButtonElement>('button', { name: 'Tout remasquer' })
     expect(screen.getAllByTestId('correction-mask')).toHaveLength(3)
     expect(global.disabled).toBe(true)
@@ -639,7 +640,12 @@ describe('Unspoil', () => {
     expect(first.getAttribute('data-revealed')).toBe('true')
     expect(screen.getAllByTestId('correction-mask')).toHaveLength(1)
     expect(showAll.disabled).toBe(false)
-    fireEvent.click(showAll)
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    try {
+      fireEvent.click(showAll)
+    } finally {
+      confirm.mockRestore()
+    }
     expect(screen.queryAllByTestId('correction-mask')).toHaveLength(0)
     expect(screen.getByText('2 / 2 corrections révélées')).toBeTruthy()
     expect(showAll.disabled).toBe(true)
@@ -655,7 +661,7 @@ describe('Unspoil', () => {
     expect(screen.getByRole('button', { name: 'Afficher le corrigé — Question 1' })).toBe(first)
     expect(global.disabled).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Révélation progressive' }))
-    expect(screen.queryByRole('button', { name: 'Tout afficher' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Tout révéler' })).toBeNull()
     expect(screen.getAllByTestId('progressive-mask')).toHaveLength(2)
   })
 })
