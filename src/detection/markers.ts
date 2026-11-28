@@ -50,7 +50,13 @@ const STRONG_WORDS: Record<string, { kind: QuestionKind; level: number; name: st
 }
 
 const STRONG_RE =
-  /^(partie|part|exercice|exercise|exo|probleme|problem|question|q)\s*(?:n\s*[°o]\s*)?\.?\s*(\d{1,3}(?:\.\d{1,2})?|[ivx]{1,5}|[a-h])(?![\w])\s*[.:)\-–—]?\s*/
+  /^(partie|part|exercice|exercise|exo|probleme|problem|question|q)\s*(?:n\s*[°o]\s*)?\.?\s*(\d{1,3}(?:\.\d{1,2})?|[ivx]{1,5}\.\d{1,3}|[ivx]{1,5}|[a-h])(?![\w])\s*[.:)\-–—]?\s*/
+/**
+ * Numérotation hiérarchique : « A.1. », « C.I.1. », « C.II.3 », « II.a », « 1.a ». Le second
+ * composant est un chiffre romain, un nombre ou une lettre (après un nombre ou un romain).
+ */
+const HIER_RE =
+  /^((?:[a-h]|[ivx]{1,4})\.(?:[ivx]{1,4}|\d{1,2})(?:\.\d{1,2})?|[ivx]{1,4}\.[a-h]|\d{1,2}\.[a-h])(?![\w])\s*[.)]?\s+(?=\S)/
 const DOTTED_RE = /^(\d{1,2}\.\d{1,2}(?:\.\d{1,2})?)(?![\d])\s*([.)])?\s+(?=\S)/
 const NUMERIC_RE = /^(\d{1,2})\s*([.)])\s+(?=\S)/
 const LETTER_RE = /^(?:\(([a-h])\)|([a-h])\))\s+(?=\S)/
@@ -74,6 +80,20 @@ export function parseQuestion(text: string): QuestionMarker | null {
       style: word.kind,
       display: `${word.name} ${/^[a-z]+$/.test(value) ? value.toUpperCase() : value}`,
       rest: stripped.slice(strong[0].length),
+    }
+  }
+
+  const hier = HIER_RE.exec(folded)
+  // « i.e. » : un romain suivi d'une lettre n'est une numérotation qu'en majuscules (« II.a »).
+  const romanLetter = hier && /^[ivx]+\.[a-h]$/.test(hier[1]!) && !/^[IVX]/.test(stripped)
+  if (hier && !romanLetter && !/^\d{1,2}\.\d/.test(hier[1]!)) {
+    return {
+      kind: 'numeric',
+      level: 3,
+      value: hier[1]!,
+      style: 'hier',
+      display: hier[1]!.toUpperCase(),
+      rest: stripped.slice(hier[0].length),
     }
   }
 
