@@ -98,6 +98,10 @@
 .reader-page-count {
   min-width: 3.25rem;
 }
+.reader-modes .ui-button {
+  padding-block: 0.3rem;
+  line-height: 1.2;
+}
 .reader-modes .ui-button svg {
   flex-shrink: 0;
 }

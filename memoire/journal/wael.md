@@ -134,3 +134,8 @@
 
 - Le README présente la proposition de valeur, les fonctions actives et les limites du moteur. Le comparatif et le GIF proviennent du build de production `b7ef36e` (Edge, QCM synthétique du dépôt), avec deux blocs réellement révélables. SHA et contexte documentés dans `RECETTE.md`.
 - Les agrégats publics de la validation de Salif sont référencés sur le SHA mesuré `ca93897`. Les procédures techniques du README précédent sont conservées dans `RECETTE.md`. Rendu GFM, images, ancres et badges vérifiés.
+
+### 28/11 08:41 · Tout afficher
+
+- Bouton visible en mode entraînement. Révèle les blocs détectés sur toutes les pages, actualise le compteur et se désactive une fois tous les blocs révélés. Les commandes individuelles et le remasquage global restent utilisables.
+- Test React avec un bloc multipage et un bloc indépendant. Recette Edge sur deux PDF synthétiques, au clavier et à six tailles de fenêtre. Aucun changement du moteur.

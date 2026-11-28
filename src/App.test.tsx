@@ -262,6 +262,7 @@ describe('Unspoil', () => {
     await screen.findByText('Aucun corrigé n’a été détecté.')
     expect(screen.queryByTestId('page-cover')).toBeNull()
     expect(screen.queryByTestId('correction-mask')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Tout afficher' })).toBeNull()
   })
 
   it('garde le PDF couvert si un r?sultat sujet seul renvoie aussi un corrig?', async () => {
@@ -386,35 +387,66 @@ describe('Unspoil', () => {
     expect(screen.queryByTestId('correction-mask')).toBeNull()
   })
 
-  it('remasque globalement les blocs révélés sans relancer l’analyse', async () => {
+  it('affiche et remasque tous les blocs sur plusieurs pages sans relancer l’analyse', async () => {
+    const secondPage = { ...page, pageIndex: 1 }
+    loadPdf.mockResolvedValueOnce({
+      ...fakePdf(),
+      pageCount: 2,
+      getPageDimensions: vi.fn().mockResolvedValueOnce(page).mockResolvedValue(secondPage),
+      getPageData: vi
+        .fn()
+        .mockResolvedValueOnce({ ...page, textItems: [] })
+        .mockResolvedValue({ ...secondPage, textItems: [] }),
+    })
+    const groupedBlock = {
+      ...block,
+      regions: [
+        ...block.regions,
+        { pageIndex: 1, bbox: { x: 40, y: 100, width: 250, height: 60 } },
+      ],
+    }
     const next = {
       id: 'q2',
       questionLabel: 'Question 2',
-      regions: [{ pageIndex: 0, bbox: { x: 40, y: 240, width: 250, height: 60 } }],
+      regions: [{ pageIndex: 1, bbox: { x: 40, y: 240, width: 250, height: 60 } }],
     }
     detect.mockResolvedValue({
       kind: 'mixed',
-      blocks: [block, next],
+      blocks: [groupedBlock, next],
       warnings: [],
       needsFallback: false,
     })
     await importDocument()
+    expect(screen.queryByRole('button', { name: 'Tout afficher' })).toBeNull()
     startAnalysis()
     const first = await screen.findByRole('button', { name: 'Afficher le corrigé — Question 1' })
     const second = screen.getByRole('button', { name: 'Afficher le corrigé — Question 2' })
+    const showAll = screen.getByRole<HTMLButtonElement>('button', { name: 'Tout afficher' })
     const global = screen.getByRole<HTMLButtonElement>('button', { name: 'Tout remasquer' })
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(3)
     expect(global.disabled).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Révéler dans le PDF — Question 1' }))
     expect(screen.getByText('1 / 2 corrections révélées')).toBeTruthy()
     expect(first.getAttribute('data-revealed')).toBe('true')
-    fireEvent.click(second)
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(1)
+    expect(showAll.disabled).toBe(false)
+    fireEvent.click(showAll)
     expect(screen.queryAllByTestId('correction-mask')).toHaveLength(0)
+    expect(screen.getByText('2 / 2 corrections révélées')).toBeTruthy()
+    expect(showAll.disabled).toBe(true)
+    fireEvent.click(second)
+    expect(first.getAttribute('data-revealed')).toBe('true')
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(1)
+    expect(showAll.disabled).toBe(false)
     expect(global.disabled).toBe(false)
     fireEvent.click(global)
     expect(detect).toHaveBeenCalledOnce()
-    expect(screen.getAllByTestId('correction-mask')).toHaveLength(2)
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(3)
     expect(screen.getByText('0 / 2 corrections révélées')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Afficher le corrigé — Question 1' })).toBe(first)
     expect(global.disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Révélation progressive' }))
+    expect(screen.queryByRole('button', { name: 'Tout afficher' })).toBeNull()
+    expect(screen.getAllByTestId('progressive-mask')).toHaveLength(2)
   })
 })

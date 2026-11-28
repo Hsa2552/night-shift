@@ -194,6 +194,12 @@
 - Responsable : Wael · Agent : Codex · Branche : `docs/readme-final`
 - Maturité : captures de la recette ergonomique `b7ef36e` réalisées dans Edge sur un QCM synthétique. Résultats attribués au candidat `ca93897` et à la validation de Salif. Procédures techniques déplacées dans `RECETTE.md`.
 
+### T-WB-12 · Tout afficher en mode entraînement
+
+- Statut : en revue · Priorité : P1
+- Responsable : Wael · Agent : Codex · Branche : `feat/tout-afficher`
+- Maturité : révélation et remasquage globaux testés avec le compteur, plusieurs pages et les commandes individuelles. La commande est réservée au mode entraînement.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._

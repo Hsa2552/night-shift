@@ -43,6 +43,7 @@ _Captures et GIF du build de [`b7ef36e`](https://github.com/Hsa2552/night-shift/
 
 - Import local d’un PDF, couvert pendant l’analyse.
 - Masquage automatique des corrections repérées et révélation ou remasquage par bloc. Sur les QCM détectés, la neutralisation porte aussi sur les cases non cochées pour éviter d’indiquer la réponse par l’apparence du masque.
+- En mode entraînement, « Tout afficher » révèle toutes les corrections et « Tout remasquer » les couvre de nouveau.
 - **Révélation progressive** quand la structure est trop incertaine. L’étudiant découvre alors le PDF à son rythme.
 - Navigation par page, zoom, thèmes clair et sombre et application installable.
 

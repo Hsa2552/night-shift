@@ -242,6 +242,18 @@ export function Reader({
               <Icon name="eye-off" size={17} />
               <span>{training ? 'Tout remasquer' : 'Masquer les corrigés'}</span>
             </button>
+            {training && (
+              <button
+                type="button"
+                className="ui-button"
+                disabled={revealed === total}
+                onClick={() => viewer.current?.revealAll()}
+                title="Afficher toutes les corrections"
+              >
+                <Icon name="eye" size={17} />
+                <span>Tout afficher</span>
+              </button>
+            )}
             <button
               type="button"
               className="ui-button"

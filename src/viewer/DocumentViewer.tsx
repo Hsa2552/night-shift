@@ -23,6 +23,7 @@ interface DocumentViewerProps {
 type CorrectionDirection = 'previous' | 'next' | 'unrevealed'
 
 export interface DocumentViewerHandle {
+  revealAll(): void
   remaskAll(): void
   navigateCorrection(direction: CorrectionDirection): void
 }
@@ -170,6 +171,9 @@ export function DocumentViewer({
   }
 
   useImperativeHandle(ref, () => ({
+    revealAll: () => {
+      if (mode.kind === 'automatic') setRevealed(new Set(mode.blocks.map(({ id }) => id)))
+    },
     remaskAll: () => setRevealed(new Set()),
     navigateCorrection,
   }))
