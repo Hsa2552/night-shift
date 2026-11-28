@@ -1,0 +1,124 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "visuelle (Codex pour Salif) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 1, question de portée lexicale et sa réponse en code et en prose.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [11.838, 382.749, 89.114, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [429.708, 382.749, 40.803, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [111.228, 397.194, 359.278, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [111.228, 411.64, 44.282, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.981, 436.052, 61.521, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.981, 464.944, 61.521, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.981, 493.835, 98.439, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.981, 522.727, 61.521, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "q",
+      "category": "text",
+      "bbox": [136.981, 551.619, 24.616, 11.955]
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [111.228, 574.882, 216.042, 11.955],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [136.981, 599.294, 92.282, 11.955],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [136.981, 613.74, 92.282, 11.955],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [136.981, 628.185, 141.502, 11.955],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [136.981, 642.631, 92.282, 11.955],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [136.981, 657.077, 98.439, 11.955],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [111.228, 680.34, 359.278, 11.955],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [111.228, 694.786, 359.272, 12.53],
+      "group": "question-courte"
+    },
+    {
+      "page": 0,
+      "role": "c",
+      "category": "text",
+      "bbox": [111.228, 709.232, 343.688, 12.53],
+      "group": "question-courte"
+    }
+  ]
+}

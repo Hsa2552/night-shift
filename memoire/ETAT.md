@@ -173,24 +173,32 @@
 - Dépend de : observations C1 du lecteur et ancres pédagogiques du moteur. Hazem garde la fusion globale.
 - Maturité : sous-détecteur isolé testé sous Edge sur pages publiques et contrôles synthétiques. Géométrie alternative et cadres disponibles séparément. Les expériences nécessitent des périmètres pédagogiques fiables, à raccorder par Hazem. PR #26 et `research/graphic-corrections/README.md`.
 
+### T-S-8 · Validation indépendante et préparation du pitch
+
+- Statut : en revue (PR #31) · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : test/validation-finale
+- Maturité : recette démontrable sur `ca93897` dans Edge, y compris hors ligne. Lyon 2, Illinois et un QCM synthétique sont prêts dans le dossier local. Le candidat de convergence a été intégré dans `main` par la PR #27.
+- Mesures : développement historique, diagnostic, nouveau développement, validation indépendante, réserve v1 et audit des indices QCM. Voir V-28-0622-S et validation-finale/resultats.md.
+- Limites : fichiers ENSAI-dev indisponibles sur ce poste. Nouveau test ZIP sans annotations consolidées. Seuls les agrégats autorisés sont publiés.
+
 ### T-WB-9 · Convergence et livraison finale
 
-- Statut : en revue · Priorité : P0
+- Statut : fusionnée (PR #27, `34b40dc`) · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/convergence-phase-5`
-- Candidat intermédiaire pour Salif : `e1322384e3f874c3a6b4b249f3505a108104f849`. Moteur `6f7c4e4`, historique Hazem `3ab2453`, géométrie et graphisme Wael `2cb23cd`, transport et benchmark Salif déjà inclus.
+- Candidat final vérifié : `ca93897ba1424e7570ab7b9ae271d5df39c13e5a`, après le candidat intermédiaire `e1322384e3f874c3a6b4b249f3505a108104f849`. Moteur `6f7c4e4`, historique Hazem `3ab2453`, géométrie et graphisme Wael `2cb23cd`, transport et benchmark Salif déjà inclus.
 - Maturité : parcours QCM démontré dans le build de convergence sous Edge, dont l’import hors ligne. Aucun changement de masque sur les six PDF ENSAI-dev dans la comparaison de raccordement. Raccordement graphique natif conservateur, périmètres sans preuve et balayage raster optionnel laissés hors du parcours automatique.
-- Notes : PR #27, recette V-28-0608-WB et procédure dans `LIVRAISON.md`. La fusion et le contrôle de Pages sur le nouveau `main` restent à l’équipe.
+- Notes : recette V-28-0608-WB et procédure de contrôle de Pages dans `LIVRAISON.md`.
 
 ### T-UX-51 · Ergonomie du lecteur et expérience d'entraînement
 
-- Statut : prête pour revue · Priorité : P0
+- Statut : fusionnée (PR #28, `dcbf709`) · Priorité : P0
 - Responsable : équipe · Agent : Codex · Branche : feat/final-reader-ux
 - Critères : clic et remasquage dans le PDF, commandes latérales hors du document, état par CorrectionBlock, suivi permanent.
 - Maturité : parcours Edge après redimensionnement, zoom et rechargement hors ligne. Comparaison exacte des blocs et régions affichés sur six PDF du développement ou de démonstration. Navigation ciblée, concentration, plein écran, zoom à la hauteur, miniatures schématiques et raccourcis vérifiés dans Edge. Fichiers ENSAI-dev indisponibles sur ce poste.
 
 ### T-WB-11 · README final pour le jury
 
-- Statut : en revue · Priorité : P1
+- Statut : fusionnée (PR #29, `536a122`) · Priorité : P1
 - Responsable : Wael · Agent : Codex · Branche : `docs/readme-final`
 - Maturité : captures de la recette ergonomique `b7ef36e` réalisées dans Edge sur un QCM synthétique. Résultats attribués au candidat `ca93897` et à la validation de Salif. Procédures techniques déplacées dans `RECETTE.md`.
 

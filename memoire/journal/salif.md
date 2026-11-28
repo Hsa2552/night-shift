@@ -88,3 +88,9 @@
 
 - PR #23 : transport enrichi à partir de la couche native de Wael, paquet PDF.js dédupliqué et mesure Node–Edge. Transport seul à résultats identiques. Le moteur case vectorielle + raster a demandé des observations dans le build réel.
 - Les résultats publics v2 et les agrégats réservés figurent dans V-28-0422-S et V-28-0430-S. La PR #22 et son déploiement HTTPS ont été vérifiés dans Edge. Les PDF privés ENSAI et les téléphones physiques restent à vérifier.
+
+### 28/11 06:22 · SESSION · T-S-8 validation finale et pitch · Codex
+
+- Validation du SHA figé ca93897 en worktree séparé. Build, cinq benchmarks Edge, recette hors ligne et audit des cadres QCM terminés. Le lot ENSAI-dev n'est pas disponible sur ce poste.
+- ZIP : développement complet téléchargé et annotations partielles sur les originaux. Le manifeste et les vérités de développement sont publiables. Le manifeste de validation, le nouveau test et les rapports individuels réservés restent au cache local.
+- Démo et secours prêts dans dev-dist/pitch-final. La branche test/validation-finale contient les résultats agrégés et le protocole. Voir V-28-0622-S. Aucun changement de production.

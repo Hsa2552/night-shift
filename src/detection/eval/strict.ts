@@ -52,32 +52,121 @@ function masksByPage(blocks: readonly CorrectionBlock[]) {
   return byPage
 }
 
+type MaskProfile = [number, number, number, number][]
+
+function relativeMasks(unit: Element, group: Element[], masks: Map<number, Rect[]>): MaskProfile {
+  const [x, y, width, height] = unit.bbox
+  return (masks.get(unit.page) ?? [])
+    .filter(
+      (mask) =>
+        group.filter((other) => other.page === unit.page && overlap(other.bbox, [mask]).length)
+          .length === 1 && overlap(unit.bbox, [mask]).length,
+    )
+    .map((mask) => [mask.x - x, mask.y - y, mask.width - width, mask.height - height])
+}
+
 function distinguishesCaseState(group: Element[], masks: Map<number, Rect[]>): boolean {
   const profiles = (category: Element['category']) =>
     new Set(
       group
         .filter((unit) => unit.category === category)
-        .map((unit) => {
-          const [x, y, width, height] = unit.bbox
-          const own = (masks.get(unit.page) ?? []).filter(
-            (mask) =>
-              group.filter(
-                (other) => other.page === unit.page && overlap(other.bbox, [mask]).length,
-              ).length === 1 && overlap(unit.bbox, [mask]).length,
-          )
-          return own
-            .map((mask) =>
-              [mask.x - x, mask.y - y, mask.width - width, mask.height - height]
-                .map((value) => Math.round(value / 2))
-                .join(','),
-            )
+        .map((unit) =>
+          relativeMasks(unit, group, masks)
+            .map((offsets) => offsets.map((value) => Math.round(value / 2)).join(','))
             .sort()
-            .join(';')
-        }),
+            .join(';'),
+        ),
     )
   const filled = profiles('filled-box')
   const empty = profiles('empty-box')
   return filled.size > 0 && empty.size > 0 && [...filled].every((profile) => !empty.has(profile))
+}
+
+function sameProfile(left: MaskProfile, right: MaskProfile) {
+  if (left.length !== right.length) return false
+  const remaining = [...right]
+  const tolerancePt = 1
+  for (const mask of left) {
+    const index = remaining.findIndex((other) =>
+      mask.every((coordinate, axis) => Math.abs(coordinate - other[axis]!) <= tolerancePt),
+    )
+    if (index < 0) return false
+    remaining.splice(index, 1)
+  }
+  return true
+}
+
+/**
+ * Additional QCM audit. Frame boxes come from the original PDF, independently of the masks.
+ * Their keys refer to the element indexes of the exact annotated truth. Coverage still uses
+ * the original rectangles, including any marks protruding beyond a frame.
+ */
+export function scoreQcmFrameGeometry(
+  truth: GeoTruth,
+  blocks: readonly CorrectionBlock[],
+  frames: ReadonlyMap<number, Element['bbox']>,
+) {
+  const byPage = masksByPage(blocks)
+  const groups = new Map<string, { element: Element; frame?: Element['bbox'] }[]>()
+  truth.elements.forEach((element, index) => {
+    if (
+      element.role !== 'c' ||
+      !element.group ||
+      (element.category !== 'filled-box' && element.category !== 'empty-box')
+    ) {
+      return
+    }
+    const cases = groups.get(element.group) ?? []
+    cases.push({ element, frame: frames.get(index) })
+    groups.set(element.group, cases)
+  })
+
+  let groupsWithFrameData = 0
+  let groupsWithIncompleteCoverage = 0
+  let groupsWithFrameGeometryCue = 0
+  for (const cases of groups.values()) {
+    if (
+      !cases.every(
+        ({ element, frame }) =>
+          frame &&
+          frame.every(Number.isFinite) &&
+          frame[2] > 0 &&
+          frame[3] > 0 &&
+          overlap(element.bbox, [{ x: frame[0], y: frame[1], width: frame[2], height: frame[3] }])
+            .length,
+      )
+    ) {
+      continue
+    }
+    const physical = cases.map(({ element, frame }) => ({ ...element, bbox: frame! }))
+    if (
+      !physical.some((unit) => unit.category === 'filled-box') ||
+      !physical.some((unit) => unit.category === 'empty-box')
+    )
+      continue
+
+    groupsWithFrameData++
+    if (cases.some(({ element }) => !fullCoverage(element.bbox, byPage.get(element.page) ?? []))) {
+      groupsWithIncompleteCoverage++
+      continue
+    }
+
+    const profiles = (category: Element['category']) =>
+      physical
+        .filter((unit) => unit.category === category)
+        .map((unit) => relativeMasks(unit, physical, byPage))
+    const filled = profiles('filled-box')
+    const empty = profiles('empty-box')
+    if (filled.every((profile) => empty.every((other) => !sameProfile(profile, other)))) {
+      groupsWithFrameGeometryCue++
+    }
+  }
+  return {
+    qcmGroupsAnnotated: groups.size,
+    groupsWithFrameData,
+    groupsWithIncompleteCoverage,
+    groupsWithFrameGeometryCue,
+  }
 }
 
 export function scoreStrictGeometry(truth: GeoTruth, blocks: readonly CorrectionBlock[]) {

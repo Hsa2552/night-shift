@@ -1,0 +1,181 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "visuelle (Codex pour Salif) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 3, énoncés, schémas et options des questions 5–6. Absence de correction sur la page.",
+  "kind": "statement_only",
+  "elements": [
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [49.606, 61.022, 9.174, 15.752]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.284, 61.198, 205.59, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.284, 87.198, 273.291, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [269.062, 235.267, 32.09, 14.641]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.288, 269.602, 10.593, 15.752]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [94.961, 269.778, 21.406, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.288, 291.602, 11.0, 15.752]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [94.961, 291.778, 15.29, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.288, 313.602, 11.0, 15.752]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [94.961, 313.778, 15.29, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.288, 335.602, 11.0, 15.752]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [94.961, 335.778, 27.522, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [49.606, 374.602, 12.232, 15.752]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.284, 374.778, 476.407, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.284, 387.778, 95.37, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [156.732, 412.79, 63.591, 14.641]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [154.29, 425.99, 68.475, 14.641]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [186.241, 450.04, 30.58, 14.641]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [175.083, 472.79, 26.895, 14.641]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [370.05, 457.693, 70.938, 14.641]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [370.05, 470.893, 42.79, 14.641]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.284, 501.988, 195.628, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.284, 527.988, 161.997, 15.015]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "figure",
+      "bbox": [223.704, 111.852, 145.185, 142.963]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "figure",
+      "bbox": [153.333, 415.556, 297.037, 77.037]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "figure",
+      "bbox": [97.037, 552.593, 88.148, 85.926]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "figure",
+      "bbox": [202.222, 552.593, 88.148, 85.926]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "figure",
+      "bbox": [308.148, 552.593, 88.148, 85.926]
+    },
+    {
+      "page": 2,
+      "role": "q",
+      "category": "figure",
+      "bbox": [411.111, 552.593, 88.148, 85.926]
+    }
+  ]
+}

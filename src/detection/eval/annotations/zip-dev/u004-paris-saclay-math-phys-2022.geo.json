@@ -1,0 +1,206 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "visuelle (Codex pour Salif) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 2, introduction SIR et Q I.1 complète, lecture des frontières de Q I.2.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 99.736, 468.208, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 113.285, 468.164, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 124.653, 468.003, 13.292]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 140.384, 299.161, 11.111]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [88.936, 153.933, 451.255, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 167.482, 468.24, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 181.031, 468.24, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 194.581, 468.23, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 208.13, 217.397, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "formula",
+      "bbox": [255.556, 232.593, 88.889, 90.37]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [88.936, 331.152, 451.085, 12.747]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 344.701, 468.003, 12.545]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [88.936, 358.25, 451.242, 11.097]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 371.799, 297.337, 11.111]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [88.936, 625.488, 275.28, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [88.936, 650.992, 451.156, 11.111]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [72.0, 664.541, 161.509, 10.909]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [252.331, 689.049, 107.34, 12.115]
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [88.936, 397.304, 447.583, 11.097],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 453.228, 12.764, 10.909],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 491.59, 468.045, 11.111],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [100.807, 505.139, 439.252, 14.671],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 518.688, 246.587, 11.111],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [88.936, 532.237, 451.261, 11.097],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 545.786, 468.034, 11.111],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 559.336, 468.012, 12.114],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 572.885, 468.002, 12.104],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 586.434, 468.113, 11.111],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [72.0, 599.983, 126.262, 10.909],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "formula",
+      "bbox": [258.519, 418.519, 94.815, 27.407],
+      "group": "q-i1"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "formula",
+      "bbox": [268.148, 461.481, 77.778, 25.185],
+      "group": "q-i1"
+    }
+  ]
+}

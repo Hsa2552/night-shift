@@ -1,0 +1,66 @@
+{
+  "format": "unspoil-verite-geo/1",
+  "provenance": "visuelle (Codex pour Salif) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 2 Q1 et p. 5 question d; arbre, texte explicatif et réponse rouge distincts.",
+  "kind": "mixed",
+  "elements": [
+    {
+      "page": 1,
+      "role": "q",
+      "category": "table",
+      "bbox": [56.296, 58.519, 217.037, 192.593]
+    },
+    {
+      "page": 1,
+      "role": "q",
+      "category": "text",
+      "bbox": [56.296, 261.481, 494.815, 33.333]
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "figure",
+      "bbox": [65.926, 312.593, 464.444, 197.037],
+      "group": "q1-arbre"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [56.76, 526.613, 431.001, 10.893],
+      "group": "q1-arbre"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "formula",
+      "bbox": [92.21, 628.163, 305.931, 15.169],
+      "group": "q1-bi"
+    },
+    {
+      "page": 1,
+      "role": "c",
+      "category": "text",
+      "bbox": [92.21, 678.288, 206.77, 13.284],
+      "group": "q1-bii"
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [55.556, 58.519, 474.074, 100.0]
+    },
+    {
+      "page": 4,
+      "role": "q",
+      "category": "text",
+      "bbox": [56.296, 184.444, 117.037, 12.593]
+    },
+    {
+      "page": 4,
+      "role": "c",
+      "category": "text",
+      "bbox": [175.556, 183.704, 354.074, 14.074],
+      "group": "q-page5-d"
+    }
+  ]
+}

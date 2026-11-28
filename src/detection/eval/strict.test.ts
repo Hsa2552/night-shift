@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { scorePresentedGeo, type GeoTruth } from './geo.ts'
-import { scoreStrictGeometry, scoreVisibleInk } from './strict.ts'
+import { scoreQcmFrameGeometry, scoreStrictGeometry, scoreVisibleInk } from './strict.ts'
 
 it('distingue la couverture du cadre d’une case et l’encre encore visible', async () => {
   const truth: GeoTruth = {
@@ -67,5 +67,69 @@ it('signale une différence de forme associée à l’état malgré deux cases e
     qcmGroupsAnnotated: 1,
     groupsAtRisk: 1,
     groupsWithGeometryCue: 1,
+  })
+})
+
+it('separates a protruding checkmark from the physical case and preserves the historical score', () => {
+  const truth: GeoTruth = {
+    format: 'unspoil-verite-geo/1',
+    provenance: 'exemple synthétique',
+    kind: 'mixed',
+    elements: [
+      { page: 0, role: 'c', bbox: [10, 10, 8, 8], category: 'empty-box', group: 'q1' },
+      { page: 0, role: 'c', bbox: [10, 32, 10, 10], category: 'filled-box', group: 'q1' },
+    ],
+  }
+  const frames = new Map<number, GeoTruth['elements'][number]['bbox']>([
+    [0, [10, 10, 8, 8]],
+    [1, [10, 34, 8, 8]],
+  ])
+  const symmetric = [
+    {
+      id: 'q1',
+      regions: [
+        { pageIndex: 0, bbox: { x: 8, y: 8, width: 12, height: 12 } },
+        { pageIndex: 0, bbox: { x: 8, y: 32, width: 12, height: 12 } },
+      ],
+    },
+  ]
+  expect(scoreStrictGeometry(truth, symmetric).indirect.groupsWithGeometryCue).toBe(1)
+  expect(scoreQcmFrameGeometry(truth, symmetric, frames)).toEqual({
+    qcmGroupsAnnotated: 1,
+    groupsWithFrameData: 1,
+    groupsWithIncompleteCoverage: 0,
+    groupsWithFrameGeometryCue: 0,
+  })
+  expect(scoreQcmFrameGeometry(truth, symmetric, new Map())).toMatchObject({
+    qcmGroupsAnnotated: 1,
+    groupsWithFrameData: 0,
+  })
+
+  const asymmetric = [
+    {
+      ...symmetric[0]!,
+      regions: [
+        symmetric[0]!.regions[0]!,
+        { pageIndex: 0, bbox: { x: 6, y: 32, width: 16, height: 12 } },
+      ],
+    },
+  ]
+  expect(scoreQcmFrameGeometry(truth, asymmetric, frames)).toMatchObject({
+    groupsWithIncompleteCoverage: 0,
+    groupsWithFrameGeometryCue: 1,
+  })
+
+  const uncoveredMark = [
+    {
+      ...symmetric[0]!,
+      regions: [
+        symmetric[0]!.regions[0]!,
+        { pageIndex: 0, bbox: { x: 10, y: 34, width: 8, height: 8 } },
+      ],
+    },
+  ]
+  expect(scoreQcmFrameGeometry(truth, uncoveredMark, frames)).toMatchObject({
+    groupsWithIncompleteCoverage: 1,
+    groupsWithFrameGeometryCue: 0,
   })
 })
