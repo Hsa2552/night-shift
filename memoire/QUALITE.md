@@ -154,6 +154,7 @@
   - Comparaison automatique : 0 régression sur les quatre partitions ; dev : `tlse-l1pc-2009-corrige` résolu (4/105 énoncés masqués).
 - `npm run check` : 179 tests réussis, 2 ignorés ; `npm run build` OK.
 - Résultat négatif, non retenu : découper une correction aux questions recopiées en repérant un changement de police dominante a produit 5 régressions sur le dev ; annulé avant commit.
+- Suite, commit `63f4d82` (intertitre de la couleur des questions après « ? » masqué avec la correction ; test unitaire qui échoue sans le correctif, vérifié) : dev réussite 8/10, fuite 0 % (2072/2072), énoncés masqués inchangés (29,7 %) ; `lyon2-stat-ccc1` résolu ; test, ENSAI dev et ENSAI test inchangés, 0 régression ; 180 tests, build OK.
 - Limites : le gain du dev ne se transfère pas au test (aucune amélioration mesurée) ; restent ouverts le sur-masquage de Bordeaux (309 lignes), labri sans marqueur (73/73 masquées) et la famille « sujet seul » (36 % d'énoncés masqués sur le test, aucun exemple disponible dans le dev).
 
 ## Problèmes connus et risques

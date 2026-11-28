@@ -90,6 +90,7 @@
 
 - Fait : titre de corrigé reconnu malgré une extraction dégradée (`54e0e7b`) ; numérotations hiérarchiques avec continuité (`fcb54c8`) ; intitulés « B. Exercice » et sous-questions « b. » (`c52cf6c`). Tentative de découpage par changement de police annulée (5 régressions).
 - Vérifié : dev réussite 7/10, fuite 0,1 %, énoncés masqués 29,7 % ; test, ENSAI dev et ENSAI test inchangés, 0 régression ; 179 tests, build OK. Détail : `QUALITE.md` V-28-0215-HZ.
-- Non vérifié : ces trois commits dans Edge (seulement sous Node) ; aucun gain mesuré sur le test.
+- Puis `63f4d82` : intertitre coloré après « ? » masqué ; dev sans aucune fuite (2072/2072), réussite 8/10, 0 régression ailleurs.
+- Non vérifié : ces commits dans Edge (seulement sous Node) ; aucun gain mesuré sur le test.
 - PR : toujours à ouvrir par l'équipe : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation
 - Suite : sur-masquage de Bordeaux, labri sans marqueur, sujets seuls de sources indépendantes.
