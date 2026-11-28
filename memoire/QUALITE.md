@@ -416,6 +416,12 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Scan MIT, 37/37 placements à IoU 0,90, médiane 1,000. Règles, trajectoires et surlignages testés sur contrôles synthétiques. La géométrie et les relations n’attribuent aucun rôle. Aucun test de couverture des corrections avant raccordement C1.
 - Passage après synchronisation `aac0adf`. Latence médiane native par page de 6,9 à 14,0 ms par document textuel et 38,5 ms pour le scan. La rasterisation et son analyse sont mesurées à part dans le rapport de laboratoire.
 
+### V-28-0428-WB · Géométrie adaptative et séparation des lignes
+
+- Protocole. Vrai `layoutPage` et reconstructions sur les mêmes fragments PDF.js. Cinq pages de quatre PDF publics, 81 lignes annotées sur le rendu. Cinq cas synthétiques et cinq transformations, sans accès aux partitions réservées.
+- Sur les pages publiques, lignes mélangeant deux colonnes ou cellules de 7 à 1. Concordance de l’ordre 581/655 en référence, 630/655 avec XY-Cut, 586/655 pour les voisins. Blocs à IoU 0,50 de 5/14 à 7/14 avec les deux méthodes, avec des régressions selon les pages.
+- Les voisins retrouvent 18/18 blocs synthétiques de base et 18/18 sous transformations. XY-Cut retrouve 3/18 et 7/18. Le graphe et la proximité brute donnent 3/3 relations synthétiques. Voir `research/document-layout/`. Les observations ne mesurent pas la couverture des corrections.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

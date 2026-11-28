@@ -144,6 +144,13 @@
 - Dépend de : repère C1 et tableau de fragments fourni par le lecteur. Salif raccorde le canal au lecteur. Hazem exploite les observations.
 - Maturité : association des couleurs, glyphes, relations et géométrie graphique testées en isolation. Comparaison Edge sur huit PDF, tests PDF.js Node et résultats dans `research/pdf-vector/NATIVE-TEXT.md`. PR #20. Raccordement et validation moteur à faire dans les branches responsables.
 
+### T-WB-7 · Géométrie adaptative et graphes documentaires
+
+- Statut : en cours · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/research-adaptive-layout`
+- Dépend de : C1 et perception vectorielle. Expériences indépendantes du moteur et du benchmark officiel.
+- Maturité : comparatif Python/Edge mesuré sur pages réelles et variantes synthétiques. Graphe et apport des structures natives en expérimentation. Voir `research/document-layout/`.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._
