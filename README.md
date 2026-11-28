@@ -1,129 +1,117 @@
-# Unspoil · Night Shift 2026
+<p align="center">
+  <a href="https://hsa2552.github.io/night-shift/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="public/brand/unspoil-sombre.svg">
+      <img alt="Unspoil" src="public/brand/unspoil-clair.svg" width="226">
+    </picture>
+  </a>
+</p>
 
-Dépôt du projet Unspoil pour le hackathon Night Shift 2026 de l'ENSAI.
+<h1 align="center">Révise sans te spoiler.</h1>
 
-Unspoil permet de réviser avec une annale au format PDF sans voir ses corrigés à l'avance. Le lecteur conserve la mise en page et masque les corrections qu'il détecte. La révélation progressive permet de découvrir manuellement le document, même sans texte extractible. Les fichiers restent sur l'appareil.
+<p align="center">Transforme une annale corrigée en sujet d’entraînement. Importe un PDF, tente les questions, puis révèle chaque correction quand tu le décides.</p>
 
-L’application est installable et fonctionne hors ligne après le premier chargement. Elle fonctionne sans compte ni serveur de traitement. [Ouvrir Unspoil](https://hsa2552.github.io/night-shift/) · [Recette et procédure de livraison](memoire/LIVRAISON.md#convergence-finale)
+<p align="center"><strong><a href="https://hsa2552.github.io/night-shift/">Ouvrir Unspoil</a></strong> · Application web du Night Shift 2026 à l’ENSAI</p>
 
-## Installation
+<p align="center">
+  <a href="https://github.com/Hsa2552/night-shift/actions/workflows/ci.yml"><img alt="État des tests sur main" src="https://github.com/Hsa2552/night-shift/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/Hsa2552/night-shift/actions/workflows/deploy-pages.yml"><img alt="État du déploiement GitHub Pages" src="https://github.com/Hsa2552/night-shift/actions/workflows/deploy-pages.yml/badge.svg?branch=main"></a>
+</p>
 
-Prérequis : [Node.js](https://nodejs.org/) 22.13 ou plus récent (version LTS recommandée).
+## Pourquoi Unspoil ?
 
-```bash
+Dans beaucoup d’annales, le corrigé apparaît juste sous la question ou dans une case cochée. Il suffit de faire défiler la page pour voir la réponse avant d’avoir cherché. Unspoil conserve la mise en page du PDF et masque les corrections qu’il repère. On peut ainsi travailler à son rythme avec le document d’origine.
+
+## Démonstration
+
+Le même **QCM synthétique de chimie** dans Unspoil. Les propositions restent lisibles, les marques de réponse des QCM détectés sont uniformisées et chaque question peut être révélée séparément. [PDF de démonstration](src/detection/samples/qcm-cases.pdf)
+
+| Réponses visibles | Corrections masquées | Première correction révélée |
+| :---: | :---: | :---: |
+| ![Les deux bonnes réponses sont cochées](memoire/captures/readme/original.png) | ![Les six cases ont la même apparence et les propositions restent lisibles](memoire/captures/readme/masques.png) | ![Les marques d’origine de la première question sont visibles, celles de la deuxième restent masquées](memoire/captures/readme/revelation.png) |
+
+<details>
+<summary>Voir le parcours complet en 9 secondes</summary>
+
+![Accueil, import couvert, masquage, révélation d’une correction puis remasquage](memoire/captures/readme/parcours.gif)
+
+</details>
+
+_Captures et GIF du build de [`b7ef36e`](https://github.com/Hsa2552/night-shift/commit/b7ef36e336c4d07cd1aafa8eab7be00b5a9b123b) dans Microsoft Edge, à partir du PDF synthétique du dépôt._ [Capture du lecteur en taille réelle](memoire/captures/readme/lecteur.png)
+
+## Fonctionnalités
+
+- Import local d’un PDF, couvert pendant l’analyse.
+- Masquage automatique des corrections repérées et révélation ou remasquage par bloc. Sur les QCM détectés, la neutralisation porte aussi sur les cases non cochées pour éviter d’indiquer la réponse par l’apparence du masque.
+- **Révélation progressive** quand la structure est trop incertaine. L’étudiant découvre alors le PDF à son rythme.
+- Navigation par page, zoom, thèmes clair et sombre et application installable.
+
+## Du PDF au masque
+
+Le moteur déterministe croise les indices de mise en page, les marqueurs de correction, les couleurs et la géométrie des cases. PDF.js fournit le texte, les objets natifs et le rendu raster. La fusion regroupe les régions par correction, puis le lecteur vérifie les coordonnées et la cohérence du résultat avant de retirer la couverture de sécurité.
+
+```mermaid
+flowchart TD
+    PDF["PDF importé"] --> EX["Extraction multimodale avec PDF.js"]
+    EX --> ANA["Analyse textuelle, géométrique, colorimétrique, vectorielle et raster"]
+    ANA --> FUS["Fusion des observations"]
+    FUS --> BL["Blocs de correction"]
+    BL --> CONT{"Contrôle de cohérence"}
+    CONT -->|Blocs exploitables| MAS["Masquage interactif"]
+    CONT -->|Structure incertaine| PROG["Révélation progressive"]
+    CONT -->|Sujet seul reconnu| SUJ["Lecture sans masque"]
+```
+
+**Architecture.** Interface React, application et moteur en TypeScript, build Vite, lecteur PDF.js et service worker Workbox. Toutes les étapes s’exécutent dans le navigateur. Le lecteur et le détecteur utilisent le même repère pour que les masques restent alignés au zoom. [Architecture du dépôt](memoire/ARCHITECTURE.md) · [Contrat de coordonnées](memoire/CONTRATS.md)
+
+Le sous-détecteur graphique natif analyse les objets des pages éligibles dans les blocs déjà établis. L’extension automatique des masques de figures, son balayage raster supplémentaire et le remplacement général de l’ordre de lecture par la segmentation adaptative restent expérimentaux. [Intégration graphique](src/detection/visual/graphic-corrections/README.md) · [Étude de géométrie](research/document-layout/README.md)
+
+## Méthodologie et résultats
+
+Les PDF sont identifiés par leur empreinte. Pour la validation, les régions d’énoncé et de correction sont annotées sur le rendu d’origine avant l’examen des prédictions. Les lots de développement et de validation sont distincts. Le benchmark mesure la couverture, le sur-masquage, la révélation indépendante et les indices géométriques sur les QCM. Le critère historique tolère une couverture à 95 % et un sur-masquage limité. Le critère strict exige la couverture intégrale, la préservation des énoncés annotés, la révélation indépendante des blocs annotés et l’absence d’indice mesuré. Un repli progressif ne compte pas comme réussite automatique.
+
+**Évaluation Edge de Salif sur [`ca93897`](https://github.com/Hsa2552/night-shift/commit/ca93897ba1424e7570ab7b9ae271d5df39c13e5a)**. Les partitions ci-dessous regroupent plusieurs types de documents.
+
+| Partition | Réussites au seuil historique | Réussites strictes | Replis progressifs |
+| --- | ---: | ---: | ---: |
+| Développement historique | 8/10 | 3/10 | 1/10 |
+| Diagnostic vectoriel public | 0/4 | 0/4 | 2/4 |
+| Validation indépendante complémentaire | 3/5 | 1/5 | 1/5 |
+| Réserve indépendante v1 | 1/5 | 1/5 | 1/5 |
+
+**QCM.** Sur le même SHA, le QCM de pratique d’Illinois PHYS214 (lot de développement complémentaire) compte 30/30 zones de réponse couvertes au seuil de 95 % et 30 blocs indépendants. Sur les six QCM ENSAI de développement, la convergence a conservé les mêmes masques et verdicts dans Edge. [Rapport de Salif](https://github.com/Hsa2552/night-shift/blob/957d56684ba55b2fe9e26c292427d581865591ae/memoire/validation-finale/resultats.md) · [Recette de convergence](memoire/QUALITE.md#v-28-0608-wb--recette-de-convergence)
+
+**Ablations et robustesse.** Les ablations isolent l’apport des couleurs natives, des cases typographiques et des marques. Sur un QCM synthétique, les variantes de marge, d’échelle et de décoration conservent les deux blocs. La rotation de 90° déclenche le repli. Ces variantes ne sont pas des observations indépendantes. [Protocole reproductible](src/detection/eval/CORPUS.md) · [Mesures et limites](https://github.com/Hsa2552/night-shift/blob/957d56684ba55b2fe9e26c292427d581865591ae/memoire/validation-finale/resultats.md#qcm-et-robustesse)
+
+## Confidentialité et usage hors ligne
+
+Les PDF sont traités sur l’appareil, sans envoi, serveur de traitement, compte ni LLM à l’exécution. Le service worker met en cache les ressources de l’application. Après un premier chargement en ligne et l’activation du cache, Unspoil peut être rouvert hors ligne pour analyser un PDF enregistré sur l’appareil. L’installation dépend du navigateur. [Recette hors ligne et installation](memoire/RECETTE.md#procédure-commune-de-vérification)
+
+## Installation et lancement
+
+Node.js 22.13 ou plus récent. La version utilisée par la CI est indiquée dans [`.nvmrc`](.nvmrc).
+
+```sh
 git clone https://github.com/Hsa2552/night-shift.git
 cd night-shift
 npm ci
+npm run dev       # Lancement local
+npm run build     # Production dans dist/
+npm run preview   # Prévisualisation du build
+npm run check     # Types, lint, formatage et tests
+npm test          # Tests seuls
 ```
 
-## Lancement
+[Déploiement, recette navigateur et mesures](memoire/RECETTE.md) · [Benchmark et annotations](src/detection/eval/CORPUS.md) · [Livraison et build de secours](memoire/LIVRAISON.md#convergence-finale)
 
-```bash
-npm run dev        # serveur de développement : http://localhost:5173
-npm run build      # build de production dans dist/
-npm run preview    # sert le build en local
-```
+## Limites et perspectives
 
-## Tests
+Un corrigé sans marque claire, une figure mêlant question et réponse ou un PDF scanné peuvent laisser une correction visible, masquer une partie de l’énoncé ou entraîner une révélation progressive. Même lorsque les cases sont neutralisées, un fond coloré peut trahir la réponse. Les résultats indépendants, établis sur de petits lots, donnent la mesure de ces limites.
 
-```bash
-npm run check      # types, lint, formatage et tests
-npm test           # tests seuls
-```
-
-Pour tester la distribution depuis un clone propre, installer les moteurs puis lancer la recette de production. Les builds de test restent dans `dev-dist/`.
-
-```sh
-npm ci
-npx playwright-core install chromium firefox webkit
-npm run test:distribution
-npm run test:distribution -- update
-```
-
-Pour mesurer séparément l'ouverture, l'extraction, trois rendus et la détection, passer des chemins locaux. Répéter un chemin pour mesurer plusieurs cycles dans la même session. Le rapport Chromium inclut le tas JavaScript et le nombre de workers PDF.js restants après fermeture. Sous Windows, définir `UNSPOIL_NATIVE_MEMORY=1` pour ajouter les octets privés par type de processus. `UNSPOIL_CHROMIUM_PATH` permet d'utiliser Edge à la place du Chromium fourni.
-
-```sh
-npm run test:distribution -- performance src/detection/samples/mixte.pdf src/detection/samples/fin.pdf
-```
-
-## Déploiement
-
-Publier le contenu de `dist/` sur un hébergement statique HTTPS à partir du commit que l'équipe souhaite tester. Utiliser le chemin de base `/` pour un domaine dédié.
-
-Pour GitHub Pages, le workflow `.github/workflows/deploy-pages.yml` construit le site sous `/night-shift/`. Un mainteneur choisit **GitHub Actions** comme source dans **Settings → Pages**, puis crée la variable d'Actions `DEPLOY_PAGES=true`. [Configuration de la source GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
-
-1. Quand le commit à distribuer est sur `main`, vérifier que l'exécution **Déploiement GitHub Pages** a réussi sur ce SHA. Si nécessaire, lancer le workflow manuellement en sélectionnant `main`.
-2. Récupérer l'URL du déploiement dans le job `deploy`. Le mainteneur vérifie la redirection HTTP vers HTTPS et active **Enforce HTTPS** si nécessaire. [HTTPS sur GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https)
-3. Ouvrir cette URL sur le téléphone et suivre la vérification ci-dessous depuis l'icône installée. Le serveur de prévisualisation sur le réseau local sert à contrôler l'affichage. L'essai d'installation utilise l'URL HTTPS.
-
-Lors d'une nouvelle publication, les fenêtres déjà ouvertes gardent la version qui a chargé leur lecteur PDF. Fermer toutes les fenêtres Unspoil, y compris les onglets du navigateur, puis rouvrir l'application. Une fois le nouveau service worker activé, ses fichiers sont disponibles hors ligne et les anciens fichiers devenus inutiles sont retirés du précache.
-
-**Solution de repli**. Avec l'accord du propriétaire, construire le même SHA avec `BASE_PATH=/` et déposer le dossier `dist/` par **Direct Upload** dans un projet Cloudflare Pages. Le site est alors servi à la racine d'une URL HTTPS `pages.dev`. Partager l'URL du déploiement qui correspond au SHA vérifié. [Documentation Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)
-
-Pour reproduire le même chemin en local, construire et prévisualiser avec `BASE_PATH` dans le même terminal.
-
-```sh
-BASE_PATH=/night-shift/ npm run build
-BASE_PATH=/night-shift/ npm run preview
-```
-
-```powershell
-$env:BASE_PATH = '/night-shift/'
-npm run build
-npm run preview
-```
-
-Ouvrir `http://localhost:4173/night-shift/`, en adaptant le port si Vite en affiche un autre.
-
-## Procédure commune de vérification
-
-Partir du même commit intégrant le lecteur, le détecteur et l'interface. Les PDF de [src/detection/samples](src/detection/samples) sont des exemples synthétiques créés pour les tests.
-
-1. **Sur ordinateur**, lancer `npm ci`, `npm run check`, `npm run build`, puis `npm run preview`. Ouvrir l'URL locale indiquée par Vite.
-2. **Sur téléphone**, transférer `couleur.pdf`, `sujet-seul.pdf` et `fin.pdf` sur l'appareil. Ouvrir l'URL HTTPS déployée. Sur Android, ouvrir le menu de Chrome et choisir **Ajouter à l'écran d'accueil → Installer** si l'option est proposée. Sur iPhone, ouvrir Safari, puis **Partager → Sur l'écran d'accueil → Ouvrir comme app web**. [Installation sur iPhone](https://support.apple.com/fr-ca/guide/iphone/iphea86e5236/ios)
-3. **Masques**. Importer `couleur.pdf`. La page s'ouvre couverte. Cliquer sur **Masquer les corrigés**, puis révéler et remasquer un bloc. Redimensionner la fenêtre ou tourner le téléphone et vérifier l'alignement. Avec `sujet-seul.pdf`, vérifier le message « Aucun corrigé n’a été détecté ».
-4. **Multipage**. Importer `fin.pdf`, activer la révélation progressive et déplacer le trait dans les deux sens. Vérifier que la page suivante reste couverte jusqu'au passage du trait. Si disponible, refaire le test avec un PDF autorisé de 50 pages ou plus, revenir au début puis remplacer le document.
-5. **Hors ligne**. Attendre le chargement du site et recharger une fois en ligne. Sur téléphone, ouvrir une fois l'app depuis l'icône installée. Activer le mode avion et couper le Wi-Fi. Fermer complètement l'app, rouvrir depuis l'icône, puis importer un autre PDF déjà enregistré dans **Fichiers**. Vérifier le masquage, le geste tactile et la rotation encore en mode avion.
-6. Reporter le SHA, l'appareil, le navigateur et les résultats dans [memoire/QUALITE.md](memoire/QUALITE.md). Pour un masque décalé, indiquer le PDF, la page et l'orientation.
-
-### Recette sur le build de l'équipe
-
-Depuis la racine du dépôt, remplacer `SHA_COMPLET` par le commit à tester. Une copie séparée et un port strict permettent d’identifier le serveur et le build utilisés.
-
-```sh
-git fetch origin
-git worktree add --detach ../unspoil-recette SHA_COMPLET
-cd ../unspoil-recette
-git rev-parse HEAD
-npm ci
-BASE_PATH=/night-shift/ npm run build
-BASE_PATH=/night-shift/ npm run preview -- --host 127.0.0.1 --port 4190 --strictPort
-```
-
-Dans PowerShell, définir `$env:BASE_PATH = '/night-shift/'` avant les deux dernières commandes. Dans un deuxième terminal ouvert dans la même copie, lancer la recette dans un profil Edge neuf. Le SHA figurant dans le HTML doit correspondre au SHA attendu, y compris après rechargement hors ligne.
-
-```sh
-node scripts/verify-real-pdfs.mjs http://127.0.0.1:4190/night-shift/ SHA_COMPLET "/chemin/vers/annale.pdf"
-```
-
-Le script vérifie l’ouverture couverte, les appels à l’analyseur colorimétrique dans le bundle par couverture V8, la révélation et le remasquage, le zoom, le rendu de la dernière page et la lecture progressive. Il vérifie aussi le premier import et l’analyse après un rechargement hors ligne. Pour une recette manuelle, lire `document.querySelector('meta[name="unspoil-build"]').content` dans la console. Refaire le build sur un arbre propre si la valeur porte le suffixe `-dirty`.
-
-Pour calculer les taux en navigateur, définir `UNSPOIL_RECETTE_VERITES` vers un dossier de fichiers `.geo.json` du benchmark portant le même nom de base que chaque PDF. La recette appelle `scoreGeo` sur les masques effectivement affichés. `UNSPOIL_RECETTE_SORTIE` permet de conserver les rectangles et les résultats dans un fichier local hors du dépôt. Utiliser le [benchmark de Hazem](src/detection/eval/CORPUS.md) pour le corpus indépendant et indiquer séparément les résultats du moteur sous Node et ceux du navigateur.
-
-## Limitations connues
-
-La détection dépend de conventions documentaires. Un document atypique ou un scan peut nécessiter la révélation progressive. Le lecteur réduit la résolution interne des bitmaps sur les très grandes pages pour maîtriser la mémoire.
-
-## Démo
-
-L’accueil contient « Exemple synthétique », un exercice de probabilités inventé pour essayer la révélation sans importer de fichier. La [recette navigateur et les captures Mako](memoire/DESIGN.md#reproduire-les-vérifications) sont disponibles dans la mémoire du projet.
-
-Le dossier des exemples contient `mixte.pdf`, `corrige-seul.pdf`, `sujet-seul.pdf` et `inconnu.pdf` pour montrer les quatre résultats possibles.
+La suite consisterait à annoter davantage d’annales de manière croisée, à réduire le sur-masquage des tableaux et figures mixtes et à évaluer les indices visuels qui échappent au score géométrique des QCM.
 
 ## Équipe
 
-Salif (lecteur PDF et PWA), Hazem (détection) et Wael (interface).
-
----
-
-Organisation interne du dépôt (règles des agents IA, mémoire du projet) : `AGENTS.md`, `CLAUDE.md` et `memoire/INDEX.md`.
+- **Wael** — interface et expérience utilisateur, perception native, géométrie documentaire, détection graphique et intégration.
+- **Hazem** — moteur algorithmique, classification, QCM, fusion des observations et gestion de l’incertitude.
+- **Salif** — infrastructure PDF, PWA, distribution, benchmark et validation indépendante.

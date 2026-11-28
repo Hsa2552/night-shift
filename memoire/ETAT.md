@@ -188,6 +188,12 @@
 - Critères : clic et remasquage dans le PDF, commandes latérales hors du document, état par CorrectionBlock, suivi permanent.
 - Maturité : parcours Edge après redimensionnement, zoom et rechargement hors ligne. Comparaison exacte des blocs et régions affichés sur six PDF du développement ou de démonstration. Navigation ciblée, concentration, plein écran, zoom à la hauteur, miniatures schématiques et raccourcis vérifiés dans Edge. Fichiers ENSAI-dev indisponibles sur ce poste.
 
+### T-WB-11 · README final pour le jury
+
+- Statut : en revue · Priorité : P1
+- Responsable : Wael · Agent : Codex · Branche : `docs/readme-final`
+- Maturité : captures de la recette ergonomique `b7ef36e` réalisées dans Edge sur un QCM synthétique. Résultats attribués au candidat `ca93897` et à la validation de Salif. Procédures techniques déplacées dans `RECETTE.md`.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._

@@ -129,3 +129,8 @@
 - Le moteur historique et le candidat avec raccordement graphique donnent les mêmes sorties publiques, ainsi que les mêmes blocs, masques et marqueurs sur les six ENSAI-dev. Les chiffres d’annotation ENSAI restent ceux de Hazem. Le QCM quatre pages 09e… passe la recette de commandes, le rechargement et le nouveau PDF hors ligne dans Edge.
 - Le balayage graphique raster de la phase 4.4 n’apporte aucune couverture supplémentaire avec les preuves disponibles et ajoute du travail à des pages déjà traitées. Le gel conserve le raccordement natif sans extension, les protections QCM et la segmentation historique.
 - Procédure de fusion humaine, synchronisation, Pages et archive locale dans `memoire/LIVRAISON.md`. Le SHA candidat complet et les résultats de la vérification finale sont publiés dans la PR #27.
+
+### 28/11 08:32 · README jury
+
+- Le README présente la proposition de valeur, les fonctions actives et les limites du moteur. Le comparatif et le GIF proviennent du build de production `b7ef36e` (Edge, QCM synthétique du dépôt), avec deux blocs réellement révélables. SHA et contexte documentés dans `RECETTE.md`.
+- Les agrégats publics de la validation de Salif sont référencés sur le SHA mesuré `ca93897`. Les procédures techniques du README précédent sont conservées dans `RECETTE.md`. Rendu GFM, images, ancres et badges vérifiés.
