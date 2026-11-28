@@ -1,3 +1,13 @@
 export { analyzeColorPage } from './colorDetector'
 export { readColorConvention } from './colorConvention'
-export type { ColorCandidate, ColorConvention, QcmCandidate, VisualPageResult } from './types'
+export { observePageInk } from './inkObservation'
+export type {
+  ChromaticInkObservation,
+  ColorCandidate,
+  ColorConvention,
+  ColorPageResult,
+  HueInk,
+  PageInkObservation,
+  TextInkObservation,
+  VisualPageResult,
+} from './types'

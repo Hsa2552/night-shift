@@ -77,12 +77,12 @@
 
 ### T-WB-3 · Détecteurs visuels déterministes
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/visual-detection`
 - Dépend de : raster et géométrie C1. Hazem compose les résultats dans le moteur.
-- Critères d'acceptation : détecteur couleur indépendant, analyse géométrique des groupes de QCM quand tous leurs marqueurs peuvent être neutralisés, bilan sur annales réelles et tests de régression.
-- Maturité : couleur testée en isolation avec le lecteur dans Edge et par tests unitaires. Analyse QCM en préparation.
-- Notes : PR #13. Journal `journal/wael.md`, vérification V-28-0118-WB.
+- Critères d'acceptation : relevé d'encre indépendant du rôle, candidat de correction colorée quand les indices le permettent, bilan sur de vraies annales et tests de régression.
+- Maturité : testée en isolation avec le lecteur PDF dans Edge et par tests unitaires, dont le cas des questions bleues et données/corrections noires. Intégration structurelle par Hazem.
+- Notes : PR #13. Vérifications V-28-0118-WB et V-28-0128-WB. Détecteur QCM développé par Hazem, relu en isolation par Wael (V-28-0129-WB).
 
 ## Terminées ou abandonnées
 

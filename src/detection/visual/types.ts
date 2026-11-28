@@ -21,18 +21,38 @@ export interface ColorConvention {
   hue: number
 }
 
-export interface QcmCandidate {
-  /** Every observed option marker, including empty ones, in canonical page coordinates. */
-  regions: PageRegion[]
-  layout: 'options' | 'grid'
-  filled: number
-  evidence: 'supported' | 'ambiguous'
+export interface HueInk {
+  /** Hue in degrees in [0, 360), irrespective of raster scale. */
+  hue: number
+  pixels: number
+}
+
+export interface TextInkObservation {
+  /** Index into the original PageData.textItems array. */
+  textIndex: number
+  region: PageRegion
+  colors: HueInk[]
+  neutralPixels: number
+}
+
+export interface ChromaticInkObservation extends HueInk {
+  region: PageRegion
+  /** Text fragments with matching raster ink intersecting this region. */
+  textIndices: number[]
+}
+
+export interface PageInkObservation {
+  text: TextInkObservation[]
+  regions: ChromaticInkObservation[]
+}
+
+export interface ColorPageResult extends VisualPageResult<ColorCandidate> {
+  /** Raw measurements from the same pass. Use these independently of any candidate's role. */
+  ink: PageInkObservation | null
 }
 
 export type ColorPageDetector = (
   page: PageData,
   raster: RasterData,
   convention?: ColorConvention,
-) => VisualPageResult<ColorCandidate>
-
-export type QcmPageDetector = (page: PageData, raster: RasterData) => VisualPageResult<QcmCandidate>
+) => ColorPageResult

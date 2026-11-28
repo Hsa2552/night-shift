@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PageData } from '../../shared/types'
-import { analyzeColorPage, readColorConvention } from './index'
+import { analyzeColorPage, observePageInk, readColorConvention } from './index'
 import { syntheticRaster } from './testRaster'
 
 const red = [206, 20, 38]
@@ -101,11 +101,60 @@ describe('visual color detector', () => {
       candidates: [],
       blocks: [],
       needsFallback: false,
+      ink: { regions: [], text: [] },
     })
     expect(analyzeColorPage(page, { ...raster, width: 2 })).toEqual({
       candidates: [],
       blocks: [],
       needsFallback: true,
+      ink: null,
     })
+  })
+
+  it('keeps colored questions visible and reports neutral ink for data and answers', () => {
+    const { raster, page, text } = fixture()
+    const blue = [18, 49, 246]
+    page.textItems = [
+      text('Les données initiales.', 20, 40),
+      text('0.80 est une proportion.', 20, 56),
+      text('1)', 20, 72, blue),
+      text('Calculer la probabilité.', 36, 72, blue),
+      text('La probabilité vaut 0.2.', 30, 87),
+      text('2)', 20, 103, blue),
+      text('Calculer la probabilité.', 36, 103, blue),
+      text('La probabilité vaut 0.4.', 30, 118),
+      text('3)', 20, 136, blue),
+      text('La question continue', 36, 136, blue),
+      text('sur une deuxième ligne.', 20, 150, blue),
+      text('La probabilité vaut 0.6.', 30, 168),
+    ]
+    const ink = observePageInk(page, raster)
+    expect(ink?.text.map(({ textIndex }) => textIndex)).toEqual(
+      page.textItems.map((_, index) => index),
+    )
+    for (const index of [0, 1, 4, 7, 11]) {
+      expect(ink?.text[index].neutralPixels).toBeGreaterThan(0)
+      expect(ink?.text[index].colors).toEqual([])
+    }
+    expect(ink?.text[3].neutralPixels).toBe(0)
+    expect(ink?.text[3].colors[0].hue).toBeGreaterThan(210)
+    expect(ink?.regions[0].textIndices).toEqual([2, 3])
+    expect(analyzeColorPage(page, raster)).toMatchObject({ blocks: [], ink })
+  })
+
+  it('samples all inks within a single text fragment and detects graphics without text', () => {
+    const { raster, page, fill } = fixture()
+    page.textItems = [{ text: 'mixed fragment', bbox: { x: 40, y: 45, width: 90, height: 10 } }]
+    fill(40, 47, 10, 5, red)
+    fill(72, 47, 11, 5, [18, 49, 246])
+    fill(109, 47, 12, 5, [100, 100, 100])
+    fill(55, 125, 40, 2, red)
+    const ink = observePageInk(page, raster)
+    expect(ink?.text[0].neutralPixels).toBe(60)
+    expect(ink?.text[0].colors.map(({ pixels }) => pixels).sort()).toEqual([50, 55])
+    expect(
+      ink?.regions.some(({ textIndices, pixels }) => !textIndices.length && pixels === 80),
+    ).toBe(true)
+    expect(observePageInk(page, { ...raster, width: 0 })).toBeNull()
   })
 })

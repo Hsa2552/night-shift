@@ -2,6 +2,7 @@ import type { RasterData } from '../../shared/types'
 import type { PixelBox } from './raster'
 
 const bins = 36
+export const neutralInk = 255
 
 export interface ChromaticComponent extends PixelBox {
   pixels: number
@@ -16,7 +17,7 @@ export function hueDistance(a: number, b: number): number {
   return Math.min(distance, 360 - distance)
 }
 
-/** Returns one byte per pixel. Zero is achromatic, 1…36 identify ten-degree hue bins. */
+/** One byte per pixel for background, neutral ink or a ten-degree hue bin. */
 export function chromaMap(raster: RasterData) {
   const pixels = new Uint8Array(raster.width * raster.height)
   const histogram = new Uint32Array(bins + 1)
@@ -30,7 +31,10 @@ export function chromaMap(raster: RasterData) {
     const min = Math.min(r, g, b)
     const delta = max - min
     // Absolute chroma rejects very faint antialiasing noise. Relative chroma rejects tinted gray.
-    if (delta < 34 || delta < max * 0.24 || min >= 216) continue
+    if (delta < 34 || delta < max * 0.24 || min >= 216) {
+      if (max <= 170) pixels[point] = neutralInk
+      continue
+    }
     const sector =
       max === r ? (g - b) / delta : max === g ? 2 + (b - r) / delta : 4 + (r - g) / delta
     const hue = (sector * 60 + 360) % 360

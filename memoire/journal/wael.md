@@ -54,3 +54,10 @@
 - Détecteur couleur disponible. Il combine les pixels chromatiques et les positions du texte, avec un paramètre facultatif pour une convention annoncée sur une autre page. C1 inchangé.
 - Vérifié : sept tests ciblés, mesure dans Edge sur quatre documents universitaires, dont une annale contenant des réponses rouges et un scan manuscrit sans couche texte. Sur Berkeley, la couleur seule laisse visibles un arbre de la correction et deux sélections jaunes. Voir V-28-0118-WB.
 - Suite : analyser les groupes de cases et la grille sur un QCM local, sans publier le document. Intégration du moteur à la charge de Hazem.
+
+### 28/11 01:29 · SESSION · T-WB-3 · Observation d'encre indépendante
+
+- Priorité ajustée par Wael : Hazem développe les QCM AMC. L’analyse couleur fournit désormais le relevé brut par fragment et composante chromatique, y compris les mesures neutres par fragment. Les masques restent une sortie distincte. Les exports et les observations ont été transmis dans la PR #13.
+- Vérifié dans Edge : Lyon 2, quatre pages, 23/23 fragments bleus et 7/7 échantillons noirs observés, aucun masque couleur sur les questions. Berkeley conserve les résultats du premier jalon. Voir V-28-0128-WB.
+- Audit QCM de la branche de Hazem sur le recueil ENSAI local : toutes les cases noircies couvertes, huit cases vides résiduelles susceptibles de donner un indice. Voir V-28-0129-WB. Les fichiers du moteur et les PDF restent hors de la PR.
+- Maturité : relevé testé en isolation, intégration structurelle confiée à Hazem.

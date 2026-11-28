@@ -203,6 +203,19 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - [MIT 16.30, corrigé manuscrit numérisé](https://ocw.mit.edu/courses/16-30-estimation-and-control-of-aerospace-systems-spring-2004/resources/final_solna/), p. 1 à 3. Aucun fragment textuel, aucun indice couleur ni masque. Les trois pages restent visibles dans le résultat isolé. Le moteur doit conserver son repli pour les pages sans texte. Temps : 4,8 à 5,6 ms.
 - Limites : échantillon de pages annotées par un seul lecteur. Les documents du diagnostic initial sont sur la machine de Salif. Aucune mesure de couverture des trois originaux, du moteur intégré ou sur téléphone.
 
+### V-28-0128-WB · Questions bleues et encre noire à Lyon 2
+
+- Protocole : `src/detection/visual/evaluate.mjs` dans Edge avec le lecteur PDF et Vite local. Les quatre pages de [Lyon 2, contrôle de statistique et probabilités 2024–2025](https://perso.univ-lyon2.fr/~rabdesse/Documents/UFR-SEG/LICENCE/L2/CCC1-2024-2025.pdf) sont mesurées à 612 × 792 pixels. Vérité couleur indépendante issue de la couleur PDF `#0012FF` (23 fragments, 9/5/5/4 par page) et de 7 rectangles neutres échantillonnés visuellement dans les données et les réponses. Le mode d’évaluation est décrit dans `src/detection/visual/README.md`.
+- Résultat brut : 23/23 fragments bleus appuyés par une observation à 235° et 7/7 zones neutres avec de l’encre neutre signalée. Les composantes des logos restent dans le relevé chromatique indépendamment de leur rôle.
+- Résultat du passage de masquage isolé : 0 masque sur les quatre pages (contre un bloc p. 1 dans le jalon précédent). Les énoncés et données initiales restent visibles. Les corrections noires restent visibles dans ce résultat isolé, sans comptage de toutes les corrections. Le repli est signalé p. 1 et 4. L’intégration doit utiliser les transitions chromatiques et la structure des exercices.
+- Temps : 15,8 à 38,4 ms par page sur un passage de l’évaluateur, analyse seule. Berkeley p. 2 à 4 revérifié après le changement : mêmes 5 réponses entièrement couvertes, 1 partielle, 2 visibles, 0 des 10 zones d’énoncé touchée. Aucune mesure sur téléphone, ni du moteur intégré avec le nouveau relevé.
+
+### V-28-0129-WB · Audit complémentaire des cases QCM
+
+- Protocole : branche de Hazem `7aa6daf` en copie temporaire, Edge local, recueil ENSAI de 28 pages disponible chez Wael. Vérité géométrique indépendante extraite des rectangles vectoriels noirs et blancs de 10,7 points de côté. Comparaison avec les régions de masquage retournées. Le PDF et ses annotations sont conservés localement. Cette évaluation porte sur le module de Hazem.
+- Résultat : 226/226 cases noircies entièrement couvertes, 0 partielle, 0 visible. Huit cases non noircies de propositions à masquer restent partiellement couvertes (2) ou visibles (6). Elles ne correspondent pas à une boîte reconnue dans le raster à ces positions. Ces différences donnent un indice indirect par élimination. Aucun comptage vérifié des énoncés masqués à tort sur ce document. Temps du moteur sur 28 pages : 2 041 ms lors du passage sans instrumentation supplémentaire, dont 913 ms pour les rasters.
+- Signalé à Hazem dans la PR #13. Aucun deuxième détecteur géométrique de QCM développé sur cette branche.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

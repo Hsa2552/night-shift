@@ -1,86 +1,61 @@
 import type { CorrectionBlock, PageData, RasterData } from '../../shared/types'
-import { chromaMap, chromaticComponents, hueGroups } from './chroma'
-import type { ChromaticComponent } from './chroma'
+import { hueDistance } from './chroma'
 import { pageColorDeclarations } from './colorConvention'
-import { bodyHeight, isDark, pageRegion, pixelBox, rasterScale } from './raster'
+import { belongsToColor, collectPageInk, overlap } from './inkObservation'
+import { pageRegion, pixelBox } from './raster'
 import type { PixelBox } from './raster'
 import type { ColorCandidate, ColorPageDetector } from './types'
 
 interface TextInk {
+  index: number
   bounds: PixelBox
   text: string
-  group: number
+  hue?: number
   neutral: boolean
   body: boolean
 }
 
 interface ColorObservation {
-  bounds: ChromaticComponent
+  bounds: PixelBox
   candidate: ColorCandidate
   line: boolean
   graphic: boolean
   marker: boolean
+  heading: boolean
   question?: TextInk
 }
 
 const correctionLabel =
   /^(?:correction|corrig[ée]|solution|r[ée]ponse|answer)(?:\s+(?:de\s+l[’']?exercice|[n°\d]))?\s*(?:[:.–-]|$)/iu
-const questionCue =
-  /\?|^(?:question\s+\d+|exercice\s+\d+|\d+[.)]|[a-z]\)|calculer\b|d[ée]terminer\b|justifier\b|expliquer\b|montrer\b|quelle?s?\b)/iu
+const questionHeading = /^(?:(?:question|exercice)\s+\d+\b|\d+(?:\.\d+)*[.)]|[a-z]\))(?=\s|$)/iu
+const questionCue = /\?|^(?:calculer|d[ée]terminer|justifier|expliquer|montrer|quelle?s?)\b/iu
 
-function overlap(a: PixelBox, b: PixelBox) {
-  const x = Math.min(a.right, b.right) - Math.max(a.left, b.left)
-  const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
-  return { x, y }
-}
+type CollectedInk = NonNullable<ReturnType<typeof collectPageInk>>
 
-function readTextInk(
-  page: PageData,
-  raster: RasterData,
-  scale: { x: number; y: number },
-  labels: Uint8Array,
-  count: number,
-  body: number,
-) {
+function readTextInk(page: PageData, { body, text: samples }: CollectedInk) {
   const items: TextInk[] = []
-  for (const item of page.textItems) {
+  for (const { bounds, ink } of samples) {
+    const item = page.textItems[ink.textIndex]
     const text = item.text.trim()
-    if (!text) continue
-    const bounds = pixelBox(item.bbox, raster, scale)
-    const colors = new Uint32Array(count + 1)
-    let dark = 0
-    for (let y = bounds.top; y < bounds.bottom; y += 1) {
-      for (let x = bounds.left; x < bounds.right; x += 1) {
-        const index = y * raster.width + x
-        const group = labels[index]
-        if (group) colors[group] += 1
-        else if (isDark(raster.rgba, index * 4)) dark += 1
-      }
-    }
-    let group = 0
-    for (let i = 1; i < colors.length; i += 1) {
-      if (colors[i] > colors[group]) group = i
-    }
-    const colored = colors[group]
-    if (colored < 3 || colored < dark * 0.6) group = 0
-    if (!group && dark < 3 && !correctionLabel.test(text) && !questionCue.test(text)) continue
+    const dominant = ink.colors.reduce<(typeof ink.colors)[number] | undefined>(
+      (best, color) => (!best || color.pixels > best.pixels ? color : best),
+      undefined,
+    )
+    const hue =
+      dominant && dominant.pixels >= 3 && dominant.pixels >= ink.neutralPixels * 0.6
+        ? dominant.hue
+        : undefined
+    if (hue === undefined && ink.neutralPixels < 3 && !correctionLabel.test(text)) continue
     items.push({
+      index: ink.textIndex,
       bounds,
       text,
-      group,
-      neutral: !group && dark >= 3,
+      hue,
+      neutral: hue === undefined && ink.neutralPixels >= 3,
       body: item.bbox.height <= body * 1.35,
     })
   }
   return items
-}
-
-function belongsToColor(a: PixelBox, b: PixelBox) {
-  const intersection = overlap(a, b)
-  return (
-    intersection.x >= Math.min(5, (b.right - b.left) * 0.4) &&
-    intersection.y >= Math.max(1, Math.min(a.bottom - a.top, b.bottom - b.top) * 0.32)
-  )
 }
 
 function aligned(a: PixelBox, b: PixelBox, line: number): boolean {
@@ -128,28 +103,27 @@ function between(a: PixelBox, b: PixelBox, line: number, neutral: TextInk[]) {
   )
 }
 
-function observe(
-  components: ChromaticComponent[],
+function classify(
+  { hue, regions }: CollectedInk['byHue'][number],
   items: TextInk[],
   page: PageData,
   raster: RasterData,
-  scale: { x: number; y: number },
-  hue: number,
-  group: number,
-  line: number,
+  { scale, line }: CollectedInk,
   declared: boolean,
   legend: PixelBox[],
 ) {
-  const own = items.filter((item) => item.group === group)
+  const own = new Map(items.filter((item) => item.hue === hue).map((item) => [item.index, item]))
   const neutral = items.filter((item) => item.neutral)
   const observations: ColorObservation[] = []
-  const minInk = Math.max(6, Math.round(line * line * 0.065))
 
-  for (const bounds of components) {
-    if (bounds.pixels < minInk || legend.some((box) => belongsToColor(bounds, box))) continue
-    const matching = own.filter((item) => belongsToColor(bounds, item.bounds))
+  for (const { bounds, ink: measured } of regions) {
+    if (legend.some((box) => belongsToColor(bounds, box))) continue
+    const matching = measured.textIndices.flatMap((index) => {
+      const item = own.get(index)
+      return item ? [item] : []
+    })
     const characters = matching.reduce((sum, item) => sum + (item.body ? item.text.length : 0), 0)
-    const density = bounds.pixels / ((bounds.right - bounds.left) * (bounds.bottom - bounds.top))
+    const density = measured.pixels / ((bounds.right - bounds.left) * (bounds.bottom - bounds.top))
     const solid =
       density > 0.55 &&
       (bounds.right - bounds.left) * (bounds.bottom - bounds.top) >
@@ -159,7 +133,16 @@ function observe(
       !solid &&
       (matching.some((item) => correctionLabel.test(item.text)) ||
         Boolean(preceding(items, bounds, line * 0.64, (item) => correctionLabel.test(item.text))))
-    const question = preceding(neutral, bounds, line, (item) => questionCue.test(item.text))
+    const question = preceding(
+      neutral,
+      bounds,
+      line,
+      ({ text }) => questionHeading.test(text) || questionCue.test(text),
+    )
+    const heading = matching.some(
+      ({ bounds: textBounds, text }) =>
+        textBounds.left <= bounds.left + line * 1.25 && questionHeading.test(text),
+    )
     const ink =
       matching.length === 0
         ? 'graphic'
@@ -182,11 +165,14 @@ function observe(
       line: isLine,
       graphic,
       marker,
+      heading,
       question,
     })
   }
 
   const lines = observations.filter((observation) => observation.line)
+  // An implicit color convention is unsafe when the same ink labels multiple questions.
+  const questionHue = lines.filter(({ heading }) => heading).length >= 2
   const anchors = new Set(
     lines.flatMap((observation) => (observation.question ? [observation.question] : [])),
   )
@@ -201,7 +187,11 @@ function observe(
       )
     if (
       observation.marker ||
-      (observation.line && observation.question && (hasNeighbor || anchors.size >= 2))
+      (!questionHue &&
+        !observation.heading &&
+        observation.line &&
+        observation.question &&
+        (hasNeighbor || anchors.size >= 2))
     ) {
       observation.candidate.evidence = 'supported'
     }
@@ -213,6 +203,7 @@ function observe(
   for (const observation of observations) {
     if (
       observation.candidate.evidence === 'supported' ||
+      (!declared && observation.heading) ||
       !(observation.line || observation.graphic)
     )
       continue
@@ -231,16 +222,11 @@ function observe(
 }
 
 export const analyzeColorPage: ColorPageDetector = (page, raster, convention) => {
-  const scale = rasterScale(page, raster)
-  if (!scale) return { candidates: [], blocks: [], needsFallback: true }
-  const { pixels, histogram } = chromaMap(raster)
-  const body = bodyHeight(page)
-  const line = Math.max(2, Math.min(65, body * scale.y))
-  const { hues, groups } = hueGroups(histogram, Math.max(12, Math.round(line * line * 0.16)))
-  if (!hues.length) return { candidates: [], blocks: [], needsFallback: false }
-  for (let index = 0; index < pixels.length; index += 1) pixels[index] = groups[pixels[index]]
-
-  const items = readTextInk(page, raster, scale, pixels, hues.length, body)
+  const collected = collectPageInk(page, raster)
+  if (!collected) return { candidates: [], blocks: [], needsFallback: true, ink: null }
+  const { scale, line, ink, byHue } = collected
+  if (!byHue.length) return { candidates: [], blocks: [], needsFallback: false, ink }
+  const items = readTextInk(page, collected)
   const declarations = pageColorDeclarations(page)
   const localHues = new Set(declarations.map(({ hue }) => hue))
   const declaredHue = convention?.hue ?? (localHues.size === 1 ? [...localHues][0] : undefined)
@@ -250,26 +236,14 @@ export const analyzeColorPage: ColorPageDetector = (page, raster, convention) =>
   const candidates: ColorCandidate[] = []
   const blocks: CorrectionBlock[] = []
   let needsFallback = false
-  for (const [index, hue] of hues.entries()) {
-    const difference = Math.abs(hue - (declaredHue ?? hue))
-    const components = chromaticComponents(
-      pixels,
-      raster.width,
-      raster.height,
-      index + 1,
-      Math.max(4, Math.min(38, Math.round(body * scale.x * 1.8))),
-      Math.max(1, Math.min(5, Math.round(line * 0.28))),
-    )
-    const { observations, neutral } = observe(
-      components,
+  for (const group of byHue) {
+    const { observations, neutral } = classify(
+      group,
       items,
       page,
       raster,
-      scale,
-      hue,
-      index + 1,
-      line,
-      declaredHue !== undefined && Math.min(difference, 360 - difference) <= 27,
+      collected,
+      declaredHue !== undefined && hueDistance(group.hue, declaredHue) <= 27,
       legend,
     )
     const supported = observations.filter((item) => item.candidate.evidence === 'supported')
@@ -314,5 +288,5 @@ export const analyzeColorPage: ColorPageDetector = (page, raster, convention) =>
       ).length >= 2
   }
 
-  return { candidates, blocks, needsFallback }
+  return { candidates, blocks, needsFallback, ink }
 }

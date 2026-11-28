@@ -64,9 +64,3 @@ export function bodyHeight(page: PageData): number {
     .sort((a, b) => a - b)
   return sizes[Math.floor(sizes.length / 2)] ?? 10
 }
-
-export function isDark(rgba: Uint8ClampedArray, offset: number): boolean {
-  return (
-    rgba[offset + 3] >= 100 && Math.max(rgba[offset], rgba[offset + 1], rgba[offset + 2]) <= 145
-  )
-}
