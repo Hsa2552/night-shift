@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useImperativeHandle, useState } from 'react'
+import type { CSSProperties, ReactNode, Ref } from 'react'
 import { Icon } from '../components/Icon'
 import type { CorrectionBlock, PageDimensions, PageRegion } from '../shared/types'
 import { useProgressiveReveal } from './useProgressiveReveal'
@@ -14,13 +14,16 @@ interface DocumentViewerProps {
   mode: ViewerMode
   renderPage: (page: PageDimensions) => ReactNode
   onRevealedCount?: (count: number) => void
+  ref?: Ref<DocumentViewerHandle>
+}
+
+export interface DocumentViewerHandle {
+  remaskAll(): void
 }
 
 interface BlockAction {
   id: string
   label: string
-  inline: PageRegion | undefined
-  compact: boolean
 }
 
 function maskPosition({ bbox }: PageRegion, page: PageDimensions): CSSProperties {
@@ -32,46 +35,30 @@ function maskPosition({ bbox }: PageRegion, page: PageDimensions): CSSProperties
   }
 }
 
-export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: DocumentViewerProps) {
+export function DocumentViewer({
+  pages,
+  mode,
+  renderPage,
+  onRevealedCount,
+  ref,
+}: DocumentViewerProps) {
   const [revealed, setRevealed] = useState(new Set<string>())
   const [previousKind, setPreviousKind] = useState(mode.kind)
-  const [width, setWidth] = useState(0)
-  const viewer = useRef<HTMLElement>(null)
-  const pendingFocus = useRef<string | null>(null)
   if (previousKind !== mode.kind) {
     setPreviousKind(mode.kind)
     if (revealed.size > 0) setRevealed(new Set())
   }
   const progressive = useProgressiveReveal(pages, mode.kind === 'progressive')
 
-  useEffect(() => {
-    const element = viewer.current
-    if (!element || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
-
-  useLayoutEffect(() => {
-    const id = pendingFocus.current
-    if (id === null) return
-    pendingFocus.current = null
-    const buttons = viewer.current?.querySelectorAll<HTMLButtonElement>('[data-block-action]')
-    Array.from(buttons ?? [])
-      .find((button) => button.dataset.blockAction === id)
-      ?.focus({
-        preventScroll: true,
-      })
-  }, [revealed])
+  useImperativeHandle(ref, () => ({ remaskAll: () => setRevealed(new Set()) }), [])
 
   useEffect(() => onRevealedCount?.(revealed.size), [onRevealedCount, revealed])
 
   const widestPage = pages.reduce((maximum, page) => Math.max(maximum, page.width), 0)
-  const scale = widestPage ? width / widestPage : 0
   const pageOrder = new Map(pages.map((page, index) => [page.pageIndex, index]))
   const masksByPage = new Map<
     number,
-    { region: PageRegion; action?: BlockAction; grouped: boolean; marker: boolean }[]
+    { region: PageRegion; key: string; grouped: boolean; marker: boolean }[]
   >()
   const actionsByPage = new Map<number, BlockAction[]>()
 
@@ -84,33 +71,22 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
       if (firstPage === pages.length) continue
 
       const grouped = block.regions.length > 1
-      // A region in a group of options must never receive a special affordance.
-      const candidate = grouped ? undefined : block.regions[0]
-      const inline =
-        candidate && candidate.bbox.width * scale >= 48 && candidate.bbox.height * scale >= 44
-          ? candidate
-          : undefined
-      const full = inline && inline.bbox.width * scale >= 172
-      const action = {
+      // Keep the same control mounted across zoom, resize and reveal transitions.
+      const list = actionsByPage.get(firstPage) ?? []
+      list.push({
         id: block.id,
         label: block.questionLabel ?? 'Bloc ' + (index + 1),
-        inline,
-        compact: !full,
-      }
+      })
+      actionsByPage.set(firstPage, list)
 
-      if (!inline || revealed.has(block.id)) {
-        const list = actionsByPage.get(firstPage) ?? []
-        list.push(action)
-        actionsByPage.set(firstPage, list)
-      }
       if (revealed.has(block.id)) continue
-      for (const region of block.regions) {
+      for (const [regionIndex, region] of block.regions.entries()) {
         const order = pageOrder.get(region.pageIndex)
         if (order === undefined) continue
         const masks = masksByPage.get(order) ?? []
         masks.push({
           region,
-          action: region === inline ? action : undefined,
+          key: `${block.id}:${regionIndex}`,
           grouped,
           marker: grouped && region.bbox.width <= 48 && region.bbox.height <= 48,
         })
@@ -120,7 +96,6 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
   }
 
   function toggleBlock(id: string) {
-    pendingFocus.current = id
     setRevealed((current) => {
       const next = new Set(current)
       if (next.has(id)) next.delete(id)
@@ -130,12 +105,7 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
   }
 
   return (
-    <section
-      ref={viewer}
-      className="pdf-viewer"
-      aria-label="Document PDF"
-      {...progressive.pointerEvents}
-    >
+    <section className="pdf-viewer" aria-label="Document PDF" {...progressive.pointerEvents}>
       {pages.map((page, index) => {
         const visible = progressive.visibleFraction(index)
         const actions = actionsByPage.get(index)
@@ -179,30 +149,16 @@ export function DocumentViewer({ pages, mode, renderPage, onRevealedCount }: Doc
                   style={{ top: 100 * visible + '%' }}
                 />
               )}
-              {masksByPage.get(index)?.map(({ region, action, grouped, marker }, maskIndex) => (
+              {masksByPage.get(index)?.map(({ region, key, grouped, marker }) => (
                 <div
-                  key={maskIndex}
+                  key={key}
                   className="pdf-viewer-mask pdf-viewer-region"
                   data-testid="correction-mask"
                   data-grouped-mask={grouped || undefined}
                   data-neutral-marker={marker || undefined}
-                  aria-hidden={action ? undefined : true}
+                  aria-hidden="true"
                   style={maskPosition(region, page)}
-                >
-                  {action && (
-                    <button
-                      type="button"
-                      className="mask-action"
-                      data-block-action={action.id}
-                      aria-label={'Révéler la correction — ' + action.label}
-                      title={'Révéler la correction — ' + action.label}
-                      onClick={() => toggleBlock(action.id)}
-                    >
-                      <Icon name="eye" size={16} />
-                      {!action.compact && <span>Révéler la correction</span>}
-                    </button>
-                  )}
-                </div>
+                />
               ))}
               {mode.kind === 'progressive' && progressive.activePage === index && (
                 <div

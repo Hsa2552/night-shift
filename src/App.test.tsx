@@ -309,4 +309,34 @@ describe('Unspoil', () => {
     expect(screen.getByRole('slider').getAttribute('aria-valuenow')).toBe('3')
     expect(screen.queryByTestId('correction-mask')).toBeNull()
   })
+
+  it('remasque globalement les blocs révélés sans relancer l’analyse', async () => {
+    const next = {
+      id: 'q2',
+      questionLabel: 'Question 2',
+      regions: [{ pageIndex: 0, bbox: { x: 40, y: 240, width: 250, height: 60 } }],
+    }
+    detect.mockResolvedValue({
+      kind: 'mixed',
+      blocks: [block, next],
+      warnings: [],
+      needsFallback: false,
+    })
+    await importDocument()
+    startAnalysis()
+    const first = await screen.findByRole('button', { name: 'Afficher le corrigé — Question 1' })
+    const second = screen.getByRole('button', { name: 'Afficher le corrigé — Question 2' })
+    const global = screen.getByRole<HTMLButtonElement>('button', { name: 'Masquer les corrigés' })
+    expect(global.disabled).toBe(true)
+    fireEvent.click(first)
+    fireEvent.click(second)
+    expect(screen.queryAllByTestId('correction-mask')).toHaveLength(0)
+    expect(global.disabled).toBe(false)
+    fireEvent.click(global)
+    expect(detect).toHaveBeenCalledOnce()
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(2)
+    expect(screen.getByText('0 / 2 corrections révélées')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Afficher le corrigé — Question 1' })).toBe(first)
+    expect(global.disabled).toBe(true)
+  })
 })
