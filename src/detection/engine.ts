@@ -10,12 +10,22 @@ import type {
   PageRegion,
   RasterData,
   Rect,
+  PageData,
 } from './contract.ts'
 import { hueDistance, inkOf, type Ink } from './color.ts'
+import { answerBoxes, findBoxes, locateSquare, type Box } from './boxes.ts'
+import {
+  fuseExternalColor,
+  registeredColorAnalyzer,
+  type ExternalColorAnalyzer,
+  type ExternalColorResult,
+} from './fusion.ts'
+import { analyzeColorPage, readColorConvention } from './visual/index.ts'
 import { buildPageInk, graphicBottom, graphicTop, type PageInk } from './graphics.ts'
 import { layoutPage, type Line, type PageLayout } from './layout.ts'
 import {
   findInlineCorrection,
+  fold,
   isCorrectionTitle,
   leadingGlyph,
   nextValue,
@@ -37,11 +47,17 @@ export const WARNINGS = {
   unsegmented: 'Corrigé détecté, mais son découpage par question est impossible.',
   uncovered: "Certaines questions n'ont pas de corrigé détecté.",
   color: 'Corrigés repérés uniquement par leur couleur : vérifiez le résultat.',
+  questionInk: 'Corrigés repérés par la couleur des questions : vérifiez le résultat.',
+  externalColor: 'Corrigés colorés ajoutés par le détecteur visuel : vérifiez le résultat.',
+  correctionHint:
+    'Le document semble contenir des corrigés qui n’ont pas pu être localisés : détection incertaine.',
   unplaced: "Une partie du texte n'a pas pu être localisée : des corrigés peuvent rester visibles.",
   noVisualCheck:
     "Aucun marqueur de corrigé, mais l'analyse visuelle de la page a échoué : détection incertaine.",
   suspicious:
     'Aucun marqueur de corrigé, mais certaines lignes pourraient être des réponses : détection incertaine.',
+  ambiguousColor: (pages: number[]) =>
+    `Encre colorée inexpliquée (page${pages.length > 1 ? 's' : ''} ${pages.join(', ')}) : des corrigés peuvent rester visibles, document couvert par prudence.`,
 } as const
 
 // --- Contexte de numérotation -------------------------------------------------
@@ -114,7 +130,9 @@ interface Draft {
 
 export async function detect(input: DetectionInput): Promise<DetectionResult> {
   const layouts = input.pages.map(layoutPage)
-  const flow = layouts.flatMap((p) => p.lines)
+  // En-têtes et pieds de page répétés (« Correction » en tête de chaque page) : hors du flux.
+  const furniture = runningHeaders(layouts)
+  const flow = layouts.flatMap((p) => p.lines.filter((l) => !furniture.has(l)))
   const textlessPages = layouts.filter((p) => !p.hasText).map((p) => p.pageIndex)
 
   if (flow.length === 0) {
@@ -123,17 +141,38 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
 
   // Rendus raster demandés au plus une fois par page ; un échec de rendu vaut « pas de raster ».
   const rasters = new Map<number, Promise<RasterData | null>>()
+  let rasterFailed = false
   const rasterOf = (pageIndex: number): Promise<RasterData | null> => {
     if (!input.getRaster) return Promise.resolve(null)
     let raster = rasters.get(pageIndex)
     if (!raster) {
-      raster = input.getRaster(pageIndex).catch(() => null)
+      raster = input.getRaster(pageIndex).catch(() => {
+        rasterFailed = true
+        return null
+      })
       rasters.set(pageIndex, raster)
     }
     return raster
   }
 
   const parsed = flow.map(parseLine)
+  // Un mot-clé de correction en minuscule qui continue une phrase non terminée de la ligne
+  // précédente (« … plusieurs bonnes ⏎ réponses. Les autres … ») n'est pas un marqueur.
+  parsed.forEach((p, i) => {
+    if (!p.c || p.q) return
+    const prev = flow[i - 1]
+    const startsLower = /^\p{Ll}/u.test(flow[i]!.text)
+    // Ligne précédente juste au-dessus sur la même page (indépendamment des zones : un
+    // en-tête court peut faire croire à une colonne), phrase non terminée.
+    const line = flow[i]!
+    const continues =
+      prev !== undefined &&
+      prev.pageIndex === line.pageIndex &&
+      line.bbox.y - (prev.bbox.y + prev.bbox.height) < line.bbox.height &&
+      line.bbox.y > prev.bbox.y &&
+      !/[.:;!?]\s*$/.test(prev.text)
+    if (startsLower && continues) p.c = null
+  })
   const isC = (i: number) => parsed[i]!.c !== null
   const isPureQ = (i: number) => parsed[i]!.q !== null && parsed[i]!.c === null
   const firstQ = parsed.findIndex((_, i) => isPureQ(i))
@@ -179,6 +218,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   let lastQRelX: number | undefined
   let segmentBaseline: number | undefined
   let continuityEvents = 0
+  let lastHier: string | null = null
   let qCount = 0
 
   const relX = (i: number) => flow[i]!.bbox.x - flow[i]!.area.x0
@@ -229,11 +269,16 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   const endsCorrection = (m: QuestionMarker, i: number): boolean => {
     if (lastQRelX !== undefined && relX(i) > lastQRelX + tol(i)) return false
     if (m.kind === 'part' || m.kind === 'exercise' || m.kind === 'question') return true
+    // Étiquette hiérarchique : termine la correction seulement si elle succède à la dernière
+    // question hiérarchique de l'énoncé (A.1 → A.2, A.5 → B.1) ; une question recopiée
+    // dans une section de corrigés (« II.a » à nouveau) ne la termine pas.
+    if (m.style === 'hier') return lastHier !== null && isHierSuccessor(lastHier, m.value)
     const expected = nextValue(lastInSeq.get(seqKey(ctx, m)) ?? '')
     return expected === m.value
   }
 
   const statementQuestion = (i: number, m: QuestionMarker) => {
+    if (m.style === 'hier') lastHier = m.value
     const key = seqKey(ctx, m)
     const expected = nextValue(lastInSeq.get(key) ?? '')
     if (expected === m.value) continuityEvents++
@@ -312,20 +357,106 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   mergeLabelOnlyBlocks(drafts, flow, parsed)
   drafts.push(...qcmDrafts(flow, parsed, modeAt, labelAt))
 
+  // QCM corrigés par noircissement de cases dessinées (raster) : un bloc par question,
+  // toutes les cases masquées à l'identique. Les blocs textuels ouverts par un simple titre
+  // (« Réponses : ») ou par une numérotation répétée, et qui contiennent des cases, sont
+  // remplacés par ces blocs ; une correction textuelle avec contenu est conservée.
+  const boxes = input.getRaster
+    ? await boxDrafts(input, flow, parsed, labelAt, rasterOf)
+    : { drafts: [], lines: new Set<number>() }
+  if (boxes.drafts.length > 0) {
+    for (let k = drafts.length - 1; k >= 0; k--) {
+      const d = drafts[k]!
+      if (d.custom || d.inlineX !== undefined) continue
+      const c = parsed[d.start]!.c
+      const contentBearing = c !== null && !c.headerOnly
+      let hostsBox = false
+      for (let i = d.start; i <= d.end && !hostsBox; i++) hostsBox = boxes.lines.has(i)
+      if (contentBearing || !hostsBox) continue
+      for (let i = d.start; i <= d.end; i++) modeAt[i] = 'statement'
+      drafts.splice(k, 1)
+    }
+    // Bloc de consignes sous un simple titre (« Réponses : ») : pas d'étiquette de question.
+    for (const d of drafts) if (parsed[d.start]!.c?.headerOnly) d.label = undefined
+    drafts.push(...boxes.drafts)
+  }
+
+  // Couleurs : encre de chaque ligne, dès que le rendu raster est disponible.
+  const inks = input.getRaster ? await lineInks(flow, layouts, rasterOf) : null
+
+  // Questions colorées servant d'ancres : si une teinte porte les questions numérotées, la
+  // correction de chaque question est ce qui suit sa question jusqu'à la question suivante.
+  // Cette structure, plus précise, remplace la segmentation textuelle (titre « Corrigé »,
+  // titres seuls) ; les blocs de cases de QCM sont conservés.
+  let byQuestionInk = false
+  let questionHue: number | null = null
+  if (inks) {
+    const anchoring = questionInkDrafts(flow, parsed, inks, labelAt)
+    const anchored = anchoring.drafts
+    questionHue = anchoring.hue
+    if (anchored.length > 0) {
+      byQuestionInk = true
+      for (let k = drafts.length - 1; k >= 0; k--) {
+        if (drafts[k]!.custom) continue
+        const d = drafts.splice(k, 1)[0]!
+        for (let i = d.start; i <= d.end; i++) modeAt[i] = 'statement'
+      }
+      for (const d of anchored) {
+        drafts.push(d)
+        for (let i = d.start; i <= d.end; i++) modeAt[i] = 'correction'
+      }
+    }
+  }
+
   // Sans aucun marqueur textuel : les corrigés se distinguent-ils par leur couleur ?
   let byColor = false
   let visualCheckFailed = false
-  if (drafts.length === 0 && input.getRaster) {
-    const inks = await lineInks(layouts, rasterOf)
+  if (drafts.length === 0 && inks) {
     for (const layout of layouts) {
       if (layout.lines.length > 0 && !(await rasterOf(layout.pageIndex))) visualCheckFailed = true
     }
-    const colorBlocks = colorDrafts(flow, parsed, inks, modeAt, labelAt)
+  }
+  // Conventions locales : l'inférence par couleur porte sur les unités (section × page) que
+  // les autres détecteurs n'expliquent pas, et non sur tout le document. Un document hybride
+  // (QCM à cases + exercices rédigés en couleur) n'est pas réglé par la seule présence des
+  // cases. Sans aucun bloc, toutes les lignes d'énoncé sont éligibles, comme auparavant.
+  const eligible = drafts.length === 0 ? null : unexplainedLines(flow, parsed, drafts, labelAt)
+  if (inks && !byQuestionInk && (eligible === null || eligible.size > 0)) {
+    const colorBlocks = colorDrafts(flow, parsed, inks, modeAt, labelAt, eligible)
     if (colorBlocks.length > 0) {
       byColor = true
       drafts.push(...colorBlocks)
       for (const d of colorBlocks) for (let i = d.start; i <= d.end; i++) modeAt[i] = 'correction'
     }
+  }
+  // Énoncés recopiés dans un corrigé : une ligne dont tout le texte figure déjà dans des lignes
+  // visibles plus haut ne révèle rien ; en suite d'au moins deux lignes, elle reste visible
+  // et le bloc est découpé autour.
+  const restated = restatedLines(flow, drafts, modeAt)
+  if (restated.size > 0) {
+    const split: Draft[] = []
+    for (const d of drafts) {
+      if (d.custom) {
+        split.push(d)
+        continue
+      }
+      let segStart = -1
+      for (let i = d.start; i <= d.end + 1; i++) {
+        const inSegment = i <= d.end && !restated.has(i)
+        if (inSegment && segStart < 0) segStart = i
+        if (!inSegment && segStart >= 0) {
+          split.push({
+            ...d,
+            start: segStart,
+            end: i - 1,
+            ...(segStart === d.start ? {} : { inlineX: undefined }),
+          })
+          segStart = -1
+        }
+      }
+    }
+    drafts.splice(0, drafts.length, ...split)
+    for (const i of restated) modeAt[i] = 'statement'
   }
   drafts.sort((a, b) => a.start - b.start)
 
@@ -351,8 +482,9 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       }
       return false
     })
-    kind = correctionFromStart || !hasStatement ? 'correction_only' : 'mixed'
+    kind = (correctionFromStart && !byQuestionInk) || !hasStatement ? 'correction_only' : 'mixed'
     if (byColor) warnings.push(WARNINGS.color)
+    if (byQuestionInk) warnings.push(WARNINGS.questionInk)
     if (kind === 'correction_only' && drafts.length === 1 && !drafts[0]!.label) {
       warnings.push(WARNINGS.unsegmented)
       needsFallback = true
@@ -368,13 +500,21 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     qCount >= 2 &&
     continuityEvents >= 1 &&
     !suspiciousFont(flow, parsed) &&
-    !visualCheckFailed
+    !visualCheckFailed &&
+    !correctionHint(layouts, flow, parsed)
   ) {
     kind = 'statement_only'
   } else if (qCount >= 2 && continuityEvents >= 1) {
-    // Sans vérification visuelle (corrigés en couleur), on n'affirme pas « aucun corrigé ».
+    // Indices de corrigés non localisés (police, titre, tournures de réponse) ou pas de
+    // vérification visuelle : on n'affirme pas « aucun corrigé », on s'abstient.
     kind = 'unknown'
-    warnings.push(visualCheckFailed ? WARNINGS.noVisualCheck : WARNINGS.suspicious)
+    warnings.push(
+      visualCheckFailed
+        ? WARNINGS.noVisualCheck
+        : correctionHint(layouts, flow, parsed)
+          ? WARNINGS.correctionHint
+          : WARNINGS.suspicious,
+    )
     needsFallback = true
   } else {
     kind = 'unknown'
@@ -429,6 +569,61 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       regions: b.regions,
     }))
 
+  // Détecteur colorimétrique externe (s'il est enregistré) : fusion sans union aveugle.
+  const registered = registeredColorAnalyzer()
+  const analyzer = registered === 'default' ? defaultColorAnalyzer(input.pages) : registered
+  if (analyzer && input.getRaster) {
+    const results: ExternalColorResult[] = []
+    for (const page of input.pages) {
+      if (!flow.some((l) => l.pageIndex === page.pageIndex)) continue
+      const raster = await rasterOf(page.pageIndex)
+      if (!raster) continue
+      try {
+        results.push(analyzer(page, raster))
+      } catch {
+        results.push({ candidates: [], blocks: [], needsFallback: true })
+      }
+    }
+    const protectedLines = flow
+      .filter((_, i) => parsed[i]!.q !== null && modeAt[i] !== 'correction')
+      .map((l) => ({ pageIndex: l.pageIndex, bbox: l.bbox }))
+    const outcome = fuseExternalColor(results, {
+      protectedLines,
+      ownRegions: blocks.flatMap((b) => b.regions),
+      questionHue,
+      firstQuestion: (() => {
+        const i = flow.findIndex((_, k) => {
+          const q = parsed[k]!.q
+          return q !== null && q.kind !== 'part' && q.kind !== 'exercise'
+        })
+        return i < 0 ? null : { pageIndex: flow[i]!.pageIndex, y: flow[i]!.bbox.y }
+      })(),
+      labelAt: (pageIndex, y) => {
+        let found: string | undefined
+        flow.forEach((l, i) => {
+          if (l.pageIndex === pageIndex && l.bbox.y <= y) found = labelAt[i] ?? found
+        })
+        return found
+      },
+    })
+    for (const b of outcome.added) {
+      blocks.push({ ...b, id: `c${blocks.length + 1}` })
+    }
+    if (outcome.added.length > 0) {
+      warnings.push(WARNINGS.externalColor)
+      if (kind === 'statement_only' || kind === 'unknown') kind = 'mixed'
+    }
+    // Contrôle final : un signal colorimétrique que ni les masques du moteur, ni les questions,
+    // ni la teinte des questions n'expliquent rend le document ambigu, quel que soit son type :
+    // « mixte » ne prouve pas que toutes les corrections ont été trouvées (document hybride).
+    if (outcome.externalFallback && kind !== 'unknown') {
+      const pages = [...new Set(outcome.audit.unexplained.map((r) => r.pageIndex + 1))]
+      kind = 'unknown'
+      needsFallback = true
+      warnings.push(pages.length > 0 ? WARNINGS.ambiguousColor(pages) : WARNINGS.suspicious)
+    }
+  }
+
   if (textlessPages.length > 0) {
     const human = textlessPages.map((p) => p + 1)
     needsFallback = true
@@ -460,6 +655,14 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     warnings.push(WARNINGS.unplaced)
     needsFallback = true
     if (kind === 'statement_only') kind = 'unknown'
+  }
+
+  // Rendu raster demandé mais en échec : cases noircies, couleurs et figures sont invisibles
+  // au détecteur. Pas de masquage partiel trompeur : document entièrement couvert (repli).
+  if (rasterFailed && kind !== 'unknown') {
+    kind = 'unknown'
+    needsFallback = true
+    if (!warnings.includes(WARNINGS.noVisualCheck)) warnings.push(WARNINGS.noVisualCheck)
   }
 
   return { kind, blocks, warnings, needsFallback }
@@ -722,6 +925,16 @@ function lineRegions(d: Draft, flow: Line[]): BoundedRegion[] {
     } else {
       y1 = area.y1
     }
+    // Garantie : la région couvre au moins les lignes du groupe, même si la zone calculée
+    // par la mise en page est plus étroite (faux colonnage dû à des formules éclatées).
+    let gx0 = area.x0
+    let gx1 = area.x1
+    for (let k = i; k <= j; k++) {
+      y0 = Math.min(y0, flow[k]!.bbox.y)
+      y1 = Math.max(y1, bottomOf(flow[k]!))
+      gx0 = Math.min(gx0, flow[k]!.bbox.x)
+      gx1 = Math.max(gx1, flow[k]!.bbox.x + flow[k]!.bbox.width)
+    }
     if (i === d.start && d.inlineX !== undefined) {
       // Première ligne : seulement la partie à droite du marqueur.
       const x = Math.max(area.x0, d.inlineX - pad)
@@ -751,7 +964,7 @@ function lineRegions(d: Draft, flow: Line[]): BoundedRegion[] {
       regions.push({
         region: {
           pageIndex: first.pageIndex,
-          bbox: { x: area.x0, y: y0, width: area.x1 - area.x0, height: y1 - y0 },
+          bbox: { x: gx0, y: y0, width: gx1 - gx0, height: y1 - y0 },
         },
         next: bounded,
         prev: above,
@@ -783,18 +996,260 @@ function hasUncoveredLeaf(
 
 /** Encre de chaque ligne du flux, en demandant le rendu de chaque page une seule fois. */
 async function lineInks(
+  flow: Line[],
   layouts: PageLayout[],
   rasterOf: (pageIndex: number) => Promise<RasterData | null>,
 ): Promise<Ink[]> {
   const inks: Ink[] = []
-  for (const layout of layouts) {
-    if (layout.lines.length === 0) continue
-    const raster = await rasterOf(layout.pageIndex)
-    for (const line of layout.lines) {
-      inks.push(raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' })
-    }
+  for (const line of flow) {
+    const layout = layouts.find((l) => l.pageIndex === line.pageIndex)!
+    const raster = await rasterOf(line.pageIndex)
+    inks.push(raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' })
   }
   return inks
+}
+
+/**
+ * Lignes répétées à l'identique (chiffres ignorés), au même endroit, en haut ou en bas d'au
+ * moins deux pages et de 40 % des pages : en-têtes et pieds de page. Jamais un numéro de question.
+ */
+function runningHeaders(layouts: PageLayout[]): Set<Line> {
+  const pages = layouts.filter((p) => p.lines.length > 0)
+  const out = new Set<Line>()
+  if (pages.length < 2) return out
+  const groups = new Map<string, { line: Line; rel: number }[]>()
+  for (const p of pages) {
+    for (const line of p.lines) {
+      const top = line.bbox.y / p.height
+      const bottom = (line.bbox.y + line.bbox.height) / p.height
+      if (top > 0.15 && bottom < 0.9) continue
+      if (parseQuestion(line.text)) continue
+      const key = fold(line.text).replace(/\d+/g, '#').replace(/\s+/g, ' ').trim()
+      if (key.length === 0) continue
+      const list = groups.get(key) ?? []
+      list.push({ line, rel: top })
+      groups.set(key, list)
+    }
+  }
+  for (const list of groups.values()) {
+    const distinctPages = new Set(list.map((e) => e.line.pageIndex)).size
+    const rels = list.map((e) => e.rel)
+    const sameSpot = Math.max(...rels) - Math.min(...rels) <= 0.02
+    if (distinctPages >= 2 && distinctPages >= 0.4 * pages.length && sameSpot) {
+      for (const e of list) out.add(e.line)
+    }
+  }
+  return out
+}
+
+/** Blocs de cases de QCM (voir boxes.ts), regroupées par question et par session. */
+async function boxDrafts(
+  input: DetectionInput,
+  flow: Line[],
+  parsed: Parsed[],
+  labelAt: (string | undefined)[],
+  rasterOf: (pageIndex: number) => Promise<RasterData | null>,
+): Promise<{ drafts: Draft[]; lines: Set<number> }> {
+  const all: Box[] = []
+  for (const page of input.pages) {
+    if (!flow.some((l) => l.pageIndex === page.pageIndex)) continue
+    const raster = await rasterOf(page.pageIndex)
+    if (raster) all.push(...findBoxes(raster, page))
+  }
+  const kept = answerBoxes(all)
+  if (kept.length === 0) return { drafts: [], lines: new Set() }
+
+  // Ligne de chaque case : même hauteur (ou, à défaut, la ligne juste au-dessus).
+  const lineOfBox = kept.map((box) => {
+    const cy = box.bbox.y + box.bbox.height / 2
+    let best = -1
+    let bestScore = Infinity
+    flow.forEach((l, i) => {
+      if (l.pageIndex !== box.pageIndex) return
+      const ly = l.bbox.y + l.bbox.height / 2
+      const dy = Math.abs(ly - cy)
+      if (dy > Math.max(l.bbox.height, box.bbox.height) * 0.75) return
+      const dx = Math.max(
+        0,
+        l.bbox.x - (box.bbox.x + box.bbox.width),
+        box.bbox.x - (l.bbox.x + l.bbox.width),
+      )
+      const score = dy + dx
+      if (score < bestScore) {
+        bestScore = score
+        best = i
+      }
+    })
+    if (best < 0) {
+      flow.forEach((l, i) => {
+        if (l.pageIndex !== box.pageIndex || l.bbox.y >= cy) return
+        if (best < 0 || l.bbox.y > flow[best]!.bbox.y) best = i
+      })
+    }
+    return best
+  })
+  const hosting = new Set(lineOfBox.filter((i) => i >= 0))
+
+  // Emplacements de cases déduits du texte : la lettre d'une proposition reste extractible,
+  // même sous une case noire. Une case que le raster n'a pas reconnue (contour trop pâle
+  // selon le moteur de rendu) est ainsi masquée comme les autres, sans indice par élimination.
+  const slots: { line: number; cx: number; cy: number }[] = []
+  const letterAt = (line: Line, idx: number) => {
+    const x0 = line.charX[idx] ?? line.bbox.x
+    const next = line.charX[idx + 1] ?? x0 + 0.6 * line.fontSize
+    return {
+      cx: (x0 + Math.min(next, x0 + 0.8 * line.fontSize)) / 2,
+      cy: line.bbox.y + line.bbox.height / 2,
+    }
+  }
+  // 1. Suites verticales A, B, C… en début de ligne, dont une ligne au moins porte une case.
+  const leading = (i: number) => /^([A-Z])(?=\s)/.exec(flow[i]!.text)?.[1]
+  for (let i = 0; i < flow.length;) {
+    if (!leading(i)) {
+      i++
+      continue
+    }
+    let j = i
+    while (
+      j + 1 < flow.length &&
+      flow[j + 1]!.pageIndex === flow[i]!.pageIndex &&
+      leading(j + 1)?.charCodeAt(0) === leading(j)!.charCodeAt(0) + 1
+    ) {
+      j++
+    }
+    let hostsBox = false
+    for (let k = i; k <= j; k++) hostsBox ||= hosting.has(k)
+    if (j > i && hostsBox)
+      for (let k = i; k <= j; k++) slots.push({ line: k, ...letterAt(flow[k]!, 0) })
+    i = j + 1
+  }
+  // 2. Lignes portant des cases (grilles, propositions horizontales) : lettres isolées qui
+  //    forment la suite A, B, C… (une variable « X » ou « Y » ne prolonge pas la suite).
+  for (const li of [...hosting]) {
+    const line = flow[li]!
+    let expected = 65
+    for (const m of line.text.matchAll(/(?<=^|\s)([A-Z])(?=\s|$)/g)) {
+      if (m[1]!.charCodeAt(0) !== expected) continue
+      slots.push({ line: li, ...letterAt(line, m.index) })
+      expected++
+    }
+  }
+  for (const slot of slots) hosting.add(slot.line)
+
+  // Instance de question de chaque ligne ; une ligne de grille « Question k : A B C »
+  // (numéro et cases sur la même ligne) rejoint la question k de la session en cours.
+  const instanceOf: number[] = []
+  const lastByLabel = new Map<string, number>()
+  let current = -1
+  flow.forEach((_, i) => {
+    const q = parsed[i]!.q
+    if (q && q.kind !== 'letter') {
+      const label = labelAt[i] ?? ''
+      if (hosting.has(i) && lastByLabel.has(label)) current = lastByLabel.get(label)!
+      else {
+        current = i
+        lastByLabel.set(label, i)
+      }
+    }
+    instanceOf[i] = current
+  })
+
+  // Masques identiques : même carré pour toutes les cases, quel que soit leur état.
+  // Taille commune par classe de taille (cases de taille voisine, à 1,5 point près) : une case
+  // pleine et une case vide d'une même série reçoivent exactement le même carré.
+  const sizeOf = (b: Box) => Math.max(b.bbox.width, b.bbox.height)
+  const sideOf = (b: Box) =>
+    Math.max(...kept.filter((o) => Math.abs(sizeOf(o) - sizeOf(b)) <= 1.5).map(sizeOf)) + 3
+  const groups = new Map<number, PageRegion[]>()
+  kept.forEach((box, k) => {
+    const line = lineOfBox[k]!
+    const instance = line >= 0 ? (instanceOf[line] ?? -1) : -1
+    const cx = box.bbox.x + box.bbox.width / 2
+    const cy = box.bbox.y + box.bbox.height / 2
+    const side = sideOf(box)
+    const list = groups.get(instance) ?? []
+    list.push({
+      pageIndex: box.pageIndex,
+      bbox: { x: cx - side / 2, y: cy - side / 2, width: side, height: side },
+    })
+    groups.set(instance, list)
+  })
+  // Emplacements sans case reconnue : même carré que la case la plus proche de la page.
+  for (const slot of slots) {
+    const page = flow[slot.line]!.pageIndex
+    const onPage = kept.filter((b) => b.pageIndex === page)
+    if (onPage.length === 0) continue
+    const dist = (b: Box) =>
+      Math.hypot(b.bbox.x + b.bbox.width / 2 - slot.cx, b.bbox.y + b.bbox.height / 2 - slot.cy)
+    const nearest = onPage.reduce((a, b) => (dist(b) < dist(a) ? b : a))
+    const side = sideOf(nearest)
+    if (dist(nearest) < side / 2) continue // case déjà reconnue
+    // Recentrage sur la case dessinée (le centre de la ligne de texte peut être décalé).
+    const raster = await rasterOf(page)
+    const pageData = input.pages.find((pd) => pd.pageIndex === page)
+    const located =
+      raster && pageData ? locateSquare(raster, pageData, slot.cx, slot.cy, sizeOf(nearest)) : null
+    const at = located ?? slot
+    if (
+      located &&
+      kept.some(
+        (b) =>
+          b.pageIndex === page &&
+          Math.hypot(b.bbox.x + b.bbox.width / 2 - at.cx, b.bbox.y + b.bbox.height / 2 - at.cy) <
+            side / 2,
+      )
+    )
+      continue
+    const instance = instanceOf[slot.line] ?? -1
+    const list = groups.get(instance) ?? []
+    list.push({
+      pageIndex: page,
+      bbox: { x: at.cx - side / 2, y: at.cy - side / 2, width: side, height: side },
+    })
+    groups.set(instance, list)
+  }
+  // Cohérence géométrique des groupes : dans une colonne (ou une rangée) régulière de cases
+  // d'une même question, un emplacement manquant entre deux cases reconnues est une case que
+  // le raster n'a pas vue (contour pâle, sans lettre extractible). Interpolation seulement,
+  // jamais au-delà des extrémités ; jamais sur une ligne de question.
+  for (const [instance, regions] of groups) {
+    if (instance < 0) continue
+    for (const gap of regularGaps(regions)) {
+      const onQuestion = flow.some(
+        (l, i) =>
+          parsed[i]!.q !== null &&
+          parsed[i]!.q!.kind !== 'letter' &&
+          l.pageIndex === gap.pageIndex &&
+          gap.cx >= l.bbox.x &&
+          gap.cx <= l.bbox.x + l.bbox.width &&
+          gap.cy >= l.bbox.y &&
+          gap.cy <= l.bbox.y + l.bbox.height,
+      )
+      if (onQuestion) continue
+      const raster = await rasterOf(gap.pageIndex)
+      const pageData = input.pages.find((pd) => pd.pageIndex === gap.pageIndex)
+      const located =
+        raster && pageData ? locateSquare(raster, pageData, gap.cx, gap.cy, gap.side - 3) : null
+      const at =
+        located && Math.hypot(located.cx - gap.cx, located.cy - gap.cy) < gap.side / 2
+          ? located
+          : gap
+      regions.push({
+        pageIndex: gap.pageIndex,
+        bbox: {
+          x: at.cx - gap.side / 2,
+          y: at.cy - gap.side / 2,
+          width: gap.side,
+          height: gap.side,
+        },
+      })
+    }
+  }
+  const drafts: Draft[] = [...groups.entries()].map(([instance, regions]) => {
+    const anchor = instance >= 0 ? instance : Math.max(0, lineOfBox[0]!)
+    return { start: anchor, end: anchor, label: labelAt[anchor], grouped: false, custom: regions }
+  })
+  return { drafts, lines: hosting }
 }
 
 /**
@@ -808,6 +1263,7 @@ function colorDrafts(
   inks: Ink[],
   modeAt: string[],
   labelAt: (string | undefined)[],
+  eligible: Set<number> | null = null,
 ): Draft[] {
   const sizes = flow.map((l) => l.fontSize).sort((a, b) => a - b)
   const bodySize = sizes[Math.floor(sizes.length / 2)]!
@@ -817,6 +1273,7 @@ function colorDrafts(
   const clusters: { hue: number; lines: number[] }[] = []
   inks.forEach((ink, i) => {
     if (ink.kind !== 'color' || modeAt[i] !== 'statement' || isHeading(i)) return
+    if (eligible && !eligible.has(i)) return
     const cluster = clusters.find((c) => hueDistance(c.hue, ink.hue) <= 20)
     if (cluster) cluster.lines.push(i)
     else clusters.push({ hue: ink.hue, lines: [i] })
@@ -858,6 +1315,160 @@ function colorDrafts(
     i = j + 1
   }
   return drafts
+}
+
+const normTokens = (text: string) =>
+  text
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .split(' ')
+    .filter(Boolean)
+
+const grams4 = (tokens: string[]) => {
+  const out: string[] = []
+  for (let i = 0; i + 4 <= tokens.length; i++) out.push(tokens.slice(i, i + 4).join(' '))
+  return out
+}
+
+/**
+ * Lignes masquées dont tous les 4-grammes de mots (au moins deux) figurent déjà dans des lignes
+ * visibles situées avant elles : énoncé recopié dans un corrigé. Seules les suites d'au moins
+ * deux telles lignes consécutives d'un même bloc sont retenues. Par construction, ces lignes
+ * ne révèlent aucun texte absent de la partie visible.
+ */
+function restatedLines(flow: Line[], drafts: Draft[], modeAt: string[]): Set<number> {
+  const masked = new Map<number, Draft>()
+  for (const d of drafts) {
+    if (d.custom) continue
+    for (let i = d.start; i <= d.end; i++)
+      if (!(i === d.start && d.inlineX !== undefined)) masked.set(i, d)
+  }
+  if (masked.size === 0) return new Set()
+  const visible = new Set<string>()
+  const candidate: boolean[] = []
+  flow.forEach((line, i) => {
+    const grams = grams4(normTokens(line.text))
+    if (masked.has(i)) candidate[i] = grams.length >= 2 && grams.every((g) => visible.has(g))
+    else if (modeAt[i] !== 'correction') for (const g of grams) visible.add(g)
+  })
+  const out = new Set<number>()
+  for (let i = 0; i < flow.length;) {
+    if (!candidate[i]) {
+      i++
+      continue
+    }
+    let j = i
+    while (candidate[j + 1] && masked.get(j + 1) === masked.get(i)) j++
+    if (j > i) for (let k = i; k <= j; k++) out.add(k)
+    i = j + 1
+  }
+  return out
+}
+
+/**
+ * Emplacements manquants d'une suite régulière de masques carrés (même page, même colonne ou
+ * même rangée, à 2 points près) : entre deux masques consécutifs distants de m pas (m ≥ 2, à
+ * 15 % près), les m − 1 positions intermédiaires. Le pas est le plus petit écart de la suite.
+ */
+function regularGaps(
+  regions: PageRegion[],
+): { pageIndex: number; cx: number; cy: number; side: number }[] {
+  const squares = regions
+    .filter((r) => Math.abs(r.bbox.width - r.bbox.height) < 0.5)
+    .map((r) => ({
+      pageIndex: r.pageIndex,
+      cx: r.bbox.x + r.bbox.width / 2,
+      cy: r.bbox.y + r.bbox.height / 2,
+      side: r.bbox.width,
+    }))
+  const gaps: { pageIndex: number; cx: number; cy: number; side: number }[] = []
+  for (const axis of ['cy', 'cx'] as const) {
+    const across = axis === 'cy' ? 'cx' : 'cy'
+    const used = new Set<number>()
+    squares.forEach((s, k) => {
+      if (used.has(k)) return
+      const run = squares
+        .map((o, n) => ({ o, n }))
+        .filter(
+          ({ o }) =>
+            o.pageIndex === s.pageIndex &&
+            Math.abs(o[across] - s[across]) <= 2 &&
+            Math.abs(o.side - s.side) < 0.5,
+        )
+      for (const { n } of run) used.add(n)
+      if (run.length < 3) return
+      const pos = run.map(({ o }) => o[axis]).sort((a, b) => a - b)
+      const deltas = pos
+        .slice(1)
+        .map((p, i) => p - pos[i]!)
+        .filter((d) => d > s.side)
+      if (deltas.length === 0) return
+      const step = Math.min(...deltas)
+      for (let i = 1; i < pos.length; i++) {
+        const d = pos[i]! - pos[i - 1]!
+        const m = Math.round(d / step)
+        if (m < 2 || m > 4 || Math.abs(d - m * step) > 0.15 * step) continue
+        for (let j = 1; j < m; j++) {
+          const p = pos[i - 1]! + (j * d) / m
+          gaps.push({
+            pageIndex: s.pageIndex,
+            side: s.side,
+            cx: axis === 'cx' ? p : s.cx,
+            cy: axis === 'cy' ? p : s.cy,
+          })
+        }
+      }
+    })
+  }
+  return gaps
+}
+
+/**
+ * Lignes des unités (suite de lignes entre deux titres de section, sur une même page) qu'aucun
+ * bloc n'explique : aucune ligne de l'unité n'est masquée, aucune case de QCM n'est sur la
+ * page, et au moins une question de l'unité n'a de correction nulle part (son libellé n'est
+ * celui d'aucun bloc ; une question corrigée en fin de document est donc expliquée).
+ */
+function unexplainedLines(
+  flow: Line[],
+  parsed: Parsed[],
+  drafts: Draft[],
+  labelAt: (string | undefined)[],
+): Set<number> {
+  const sectionOf: number[] = []
+  let section = 0
+  flow.forEach((_, i) => {
+    const q = parsed[i]!.q
+    if (q && (q.kind === 'part' || q.kind === 'exercise')) section++
+    sectionOf.push(section)
+  })
+  const unit = (i: number) => `${sectionOf[i]}:${flow[i]!.pageIndex}`
+  const explained = new Set<string>()
+  const boxPages = new Set<number>()
+  const answered = new Set<string>()
+  for (const d of drafts) {
+    // Une case de QCM répond à la question de sa page (déjà exclue) : seul un bloc de texte
+    // corrige une question ailleurs (corrigé en fin de document).
+    if (d.custom) for (const r of d.custom) boxPages.add(r.pageIndex)
+    else {
+      if (d.label) answered.add(d.label)
+      for (let i = d.start; i <= d.end; i++) explained.add(unit(i))
+    }
+  }
+  const open = new Set<string>()
+  flow.forEach((line, i) => {
+    const q = parsed[i]!.q
+    if (!q || q.kind === 'part' || q.kind === 'exercise') return
+    if (explained.has(unit(i)) || boxPages.has(line.pageIndex)) return
+    const label = labelAt[i]
+    if (!label || !answered.has(label)) open.add(unit(i))
+  })
+  const lines = new Set<number>()
+  flow.forEach((_, i) => {
+    if (open.has(unit(i))) lines.add(i)
+  })
+  return lines
 }
 
 // --- Prudence avant d'annoncer « aucun corrigé » -------------------------------------
@@ -923,4 +1534,140 @@ function sanitize(
       bbox: { x: left, y: top, width: right - left, height: bottom - top },
     },
   ]
+}
+
+// --- Questions colorées servant d'ancres ------------------------------------------------
+
+/**
+ * Une teinte est l'encre des questions si elle porte la plupart des questions numérotées
+ * (au moins 2 et 60 %) et presque uniquement des questions et leurs lignes de suite. Aucune
+ * couleur n'est supposée a priori : le rôle est déduit de la numérotation et de la géométrie.
+ * Chaque question (ligne numérotée et suite de même teinte) ouvre un bloc qui court jusqu'à
+ * la question suivante, un intitulé d'exercice ou une ligne de séparation. Les données qui
+ * précèdent la première question restent visibles.
+ */
+function questionInkDrafts(
+  flow: Line[],
+  parsed: Parsed[],
+  inks: Ink[],
+  labelAt: (string | undefined)[],
+): { drafts: Draft[]; hue: number | null } {
+  const isQuestion = (i: number) => {
+    const q = parsed[i]!.q
+    return q !== null && q.kind !== 'part' && q.kind !== 'exercise'
+  }
+  const hueOf = (i: number) => {
+    const ink = inks[i]
+    return ink && ink.kind === 'color' ? ink.hue : null
+  }
+  const questions = flow.map((_, i) => i).filter(isQuestion)
+  if (questions.length < 2) return { drafts: [], hue: null }
+  // Teinte majoritaire des questions numérotées.
+  let best: { hue: number; count: number } | null = null
+  for (const i of questions) {
+    const h = hueOf(i)
+    if (h === null) continue
+    const count = questions.filter((k) => {
+      const hk = hueOf(k)
+      return hk !== null && hueDistance(hk, h) <= 20
+    }).length
+    if (!best || count > best.count) best = { hue: h, count }
+  }
+  if (!best || best.count < 2 || best.count < 0.6 * questions.length)
+    return { drafts: [], hue: null }
+  const inHue = (i: number) => {
+    const h = hueOf(i)
+    return h !== null && hueDistance(h, best!.hue) <= 20
+  }
+  // Presque toutes les lignes de cette teinte sont des questions ou leur suite immédiate.
+  const hueLines = flow.map((_, i) => i).filter(inHue)
+  const explained = hueLines.filter((i) => isQuestion(i) || (i > 0 && inHue(i - 1))).length
+  if (explained < 0.9 * hueLines.length) return { drafts: [], hue: null }
+
+  // Ligne de séparation décorative (« ***** °°° ***** », « ------ ») ; un symbole isolé
+  // d'une formule (« √ », une accolade) n'en est pas une.
+  const isSeparator = (i: number) => /^[\s*°·•_=~\-–—]{5,}$/u.test(flow[i]!.text)
+  const isHeading = (i: number) => {
+    const q = parsed[i]!.q
+    return q !== null && (q.kind === 'part' || q.kind === 'exercise')
+  }
+  const drafts: Draft[] = []
+  for (let k = 0; k < flow.length; k++) {
+    if (!(isQuestion(k) && inHue(k))) continue
+    // Fin de la question : lignes suivantes de la même teinte, jusqu'à la ligne qui clôt la
+    // question par « ? » ; un intertitre coloré qui suit (« Comparaison de deux moyennes : »)
+    // appartient à la correction. En cas de doute, masquer plutôt que laisser fuir.
+    let i = k
+    while (
+      i + 1 < flow.length &&
+      inHue(i + 1) &&
+      !isQuestion(i + 1) &&
+      !/\?\s*:?\s*$/u.test(flow[i]!.text)
+    )
+      i++
+    const start = i + 1
+    let end = start - 1
+    for (let j = start; j < flow.length; j++) {
+      if ((isQuestion(j) && inHue(j)) || isHeading(j) || isSeparator(j)) break
+      end = j
+    }
+    if (end >= start) drafts.push({ start, end, label: labelAt[k], grouped: false })
+    k = i
+  }
+  return drafts.length >= 2 ? { drafts, hue: best.hue } : { drafts: [], hue: null }
+}
+
+// --- Indices de corrigés non localisés ----------------------------------------------------
+
+/** Tournures qui ouvrent typiquement une réponse rédigée (français et anglais). */
+const ANSWER_CUE =
+  /^(?:on a\b|donc\b|d['’]où\b|ainsi\b|par conséquent\b|la réponse\b|réponse\b|il suffit\b|c['’]est\b|therefore\b|hence\b|thus\b|we have\b|we get\b|the answer\b)/iu
+
+/**
+ * Vrai si le document annonce un corrigé (titre, en-tête ou pied de page, y compris les
+ * lignes répétées retirées du flux) ou si des tournures de réponse suivent au moins deux
+ * questions différentes (trois lignes au moins). Sert à refuser « sujet seul ».
+ */
+function correctionHint(layouts: PageLayout[], flow: Line[], parsed: Parsed[]): boolean {
+  // Titre (avant la première question de la première page), en-tête ou pied de page.
+  const firstQuestion = flow.findIndex((_, i) => parsed[i]!.q !== null)
+  const titleZone = flow.slice(0, firstQuestion < 0 ? 5 : firstQuestion)
+  const bands = layouts.flatMap((p) =>
+    p.lines.filter((l) => l.bbox.y < 0.08 * p.height || l.bbox.y > 0.9 * p.height),
+  )
+  const announces = [...titleZone, ...bands].some((l) => isCorrectionTitle(l.text))
+  if (announces) return true
+  let span = -1
+  let cues = 0
+  const spans = new Set<number>()
+  flow.forEach((line, i) => {
+    if (parsed[i]!.q) {
+      span = i
+      return
+    }
+    if (span >= 0 && ANSWER_CUE.test(line.text.trim())) {
+      cues++
+      spans.add(span)
+    }
+  })
+  return cues >= 3 && spans.size >= 2
+}
+
+/** Détecteur colorimétrique de Wael, avec la convention de couleur annoncée dans le document. */
+function defaultColorAnalyzer(pages: PageData[]): ExternalColorAnalyzer {
+  const convention = readColorConvention(pages)
+  return (page, raster) => analyzeColorPage(page, raster, convention)
+}
+
+/**
+ * Successeur hiérarchique : au premier composant différent, la valeur est la suivante
+ * (1 → 2, b → c, ii → iii, a → b) et les composants suivants repartent au début (1, a, i).
+ */
+function isHierSuccessor(previous: string, value: string): boolean {
+  const a = previous.split('.')
+  const b = value.split('.')
+  const k = b.findIndex((part, i) => part !== a[i])
+  if (k < 0) return false
+  if (a[k] === undefined || nextValue(a[k]!) !== b[k]) return false
+  return b.slice(k + 1).every((part) => part === '1' || part === 'a' || part === 'i')
 }

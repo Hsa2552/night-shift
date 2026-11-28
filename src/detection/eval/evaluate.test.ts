@@ -19,8 +19,10 @@ import { describe, expect, it } from 'vitest'
 import { readPageText } from '../../pdf/read-text.ts'
 import type { DetectionInput, PageData, RasterData } from '../contract.ts'
 import { detectCorrections } from '../index.ts'
+import { answerBoxes, findBoxes } from '../boxes.ts'
+import { inkOf } from '../color.ts'
 import { layoutPage } from '../layout.ts'
-import { coverage, evaluate, type Truth, type TruthElement } from './metrics.ts'
+import { coverage, evaluate, truthFromRoles, type Truth, type TruthElement } from './metrics.ts'
 
 const dir = process.env.UNSPOIL_EVAL_DIR
 
@@ -83,30 +85,71 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
     let overmasked = 0
     let kindOk = 0
     let evaluated = 0
+    let docsWithCorrections = 0
+    let docsLeaking = 0
+    let docsLeakingShown = 0
+    let docsOvermasked = 0
+    let fallbacks = 0
     for (const f of files) {
       const path = join(dir!, f)
       const input = await load(path)
       if (lines.length === 0) lines.push(`Raster : ${input.raster ? 'oui' : 'non (texte seul)'}`)
       const result = await detectCorrections(input)
+      if (process.env.UNSPOIL_EVAL_BOXES && input.getRaster) {
+        // Diagnostic : cases de QCM trouvées dans le raster, page par page.
+        for (const page of input.pages) {
+          const boxes = findBoxes(await input.getRaster(page.pageIndex), page)
+          const kept = new Set(answerBoxes(boxes))
+          lines.push(
+            `   ${f} p${page.pageIndex + 1} : ${boxes.length} cases (pleines ${boxes.filter((b) => b.filled).length}) ; ` +
+              boxes
+                .map(
+                  (b) =>
+                    `${b.filled ? '■' : '□'}${b.char ?? '?'}${kept.has(b) ? '' : '×'}@${Math.round(b.bbox.x)},${Math.round(b.bbox.y)}/${b.bbox.width.toFixed(1)}`,
+                )
+                .join(' '),
+          )
+        }
+      }
       const truthPath = path.replace(/\.pdf$/i, '.verite.json')
+      const rolesPath = path.replace(/\.pdf$/i, '.roles.txt')
+      // Unités d'annotation : les lignes reconstruites, numérotées dans l'ordre de lecture.
+      const units = input.pages.flatMap((page) =>
+        layoutPage(page).lines.map((l) => ({
+          pageIndex: page.pageIndex,
+          text: l.text,
+          bbox: l.bbox,
+          font: l.fontNames.join('+'),
+        })),
+      )
+      if (!existsSync(truthPath) && existsSync(rolesPath)) {
+        const truth = truthFromRoles(readFileSync(rolesPath, 'utf8'), units)
+        // Éléments supplémentaires annotés hors lignes (cases de QCM relevées dans les
+        // opérations vectorielles du PDF, par exemple) : `x.cases.json`.
+        const extraPath = path.replace(/\.pdf$/i, '.cases.json')
+        if (existsSync(extraPath)) {
+          truth.elements.push(...(JSON.parse(readFileSync(extraPath, 'utf8')) as TruthElement[]))
+        }
+        writeFileSync(truthPath, JSON.stringify(truth, null, 1))
+      }
       if (!existsSync(truthPath)) {
-        // Fichier à annoter : une entrée par ligne reconstruite, rôle deviné.
+        // Listing à annoter. Sans UNSPOIL_EVAL_GUESS, aucun rôle deviné : annotation à l'aveugle.
         const regions = result.blocks.flatMap((b) => b.regions)
-        const elements = input.pages.flatMap((page) =>
-          layoutPage(page).lines.map((l) => ({
-            pageIndex: page.pageIndex,
-            role: coverage(l.bbox, page.pageIndex, regions) > 0.5 ? 'c' : 'q',
-            text: l.text,
-            bbox: l.bbox,
-          })),
-        )
-        writeFileSync(
-          path.replace(/\.pdf$/i, '.a-annoter.json'),
-          JSON.stringify({ kind: result.kind, elements }, null, 1),
-        )
-        lines.push(
-          `${f} : ${result.kind}, ${result.blocks.length} blocs (sans vérité, fichier à annoter écrit)`,
-        )
+        const guess = process.env.UNSPOIL_EVAL_GUESS === '1'
+        // Encre de chaque ligne (aide à l'annotation : couleur des questions, des corrections).
+        const inks: string[] = []
+        for (const u of units) {
+          const page = input.pages[u.pageIndex]!
+          const r = input.getRaster ? await input.getRaster(u.pageIndex) : null
+          const ink = r ? inkOf(r, page.width, page.height, u.bbox) : null
+          inks.push(!ink ? '' : ink.kind === 'color' ? `teinte${Math.round(ink.hue)}` : ink.kind)
+        }
+        const listing = units.map((u, i) => {
+          const g = guess ? (coverage(u.bbox, u.pageIndex, regions) > 0.5 ? 'c' : 'q') + '\t' : ''
+          return `${g}${i}\tp${u.pageIndex + 1}\tx${Math.round(u.bbox.x)}\t${u.text}\t${u.font}\t${inks[i]}`
+        })
+        writeFileSync(path.replace(/\.pdf$/i, '.lignes.txt'), listing.join('\n'))
+        lines.push(`${f} : ${units.length} lignes, sans vérité (listing à annoter écrit)`)
         continue
       }
       if (process.env.UNSPOIL_EVAL_VERBOSE) {
@@ -118,6 +161,24 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
         }
       }
       const truth = JSON.parse(readFileSync(truthPath, 'utf8')) as Truth
+      if (process.env.UNSPOIL_EVAL_TRACE && f.startsWith(process.env.UNSPOIL_EVAL_TRACE)) {
+        // Trace ligne par ligne : zone, rôle annoté, bloc couvrant (diagnostic local).
+        const trace = input.pages.flatMap((page) =>
+          layoutPage(page).lines.map((l) => {
+            const block = result.blocks.find((b) =>
+              b.regions.some((r) => coverage(l.bbox, page.pageIndex, [r]) > 0.5),
+            )
+            const role = truth.elements.find(
+              (e) =>
+                e.pageIndex === page.pageIndex &&
+                Math.abs(e.bbox.y - l.bbox.y) < 0.5 &&
+                Math.abs(e.bbox.x - l.bbox.x) < 0.5,
+            )?.role
+            return `${role ?? '?'}\t${block?.id ?? '-'}\t${l.area.id}\tp${page.pageIndex + 1}\t${l.text.slice(0, 70)}`
+          }),
+        )
+        writeFileSync(path.replace(/\.pdf$/i, '.trace.txt'), trace.join('\n'))
+      }
       const ev = evaluate(truth, result)
       evaluated++
       corrections += ev.corrections
@@ -125,10 +186,21 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
       questions += ev.questions
       overmasked += ev.overmasked.length
       if (ev.kindOk) kindOk++
+      if (ev.corrections > 0) docsWithCorrections++
+      if (ev.leaked.length > 0) docsLeaking++
+      // Un document « unknown » est entièrement couvert par l'interface : rien n'y est affiché.
+      if (ev.leaked.length > 0 && result.kind !== 'unknown') docsLeakingShown++
+      if (ev.overmasked.length > 0) docsOvermasked++
+      if (result.needsFallback) fallbacks++
       lines.push(
         `${ev.kindOk ? 'OK ' : 'KO '} ${f} : attendu ${ev.expectedKind}, obtenu ${ev.kind} ; ` +
           `corrections visibles ${ev.leaked.length}/${ev.corrections} ; ` +
-          `énoncés masqués ${ev.overmasked.length}/${ev.questions}`,
+          `énoncés masqués ${ev.overmasked.length}/${ev.questions}` +
+          (ev.blocks.total > 0
+            ? ` ; blocs entièrement masqués ${ev.blocks.fullyMasked}/${ev.blocks.total}, ` +
+              `révélables indépendamment ${ev.blocks.independent}/${ev.blocks.total}`
+            : '') +
+          (result.needsFallback ? ' ; repli proposé' : ''),
       )
       for (const e of ev.leaked) lines.push(`     visible : ${short(e)}`)
       for (const e of ev.overmasked) lines.push(`     masqué  : ${short(e)}`)
@@ -136,6 +208,9 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
     lines.push(
       `TOTAL ${evaluated} documents évalués : type correct ${kindOk}/${evaluated} ; ` +
         `corrections visibles ${leaked}/${corrections} ; énoncés masqués ${overmasked}/${questions}`,
+      `DOCUMENTS : avec au moins une correction visible ${docsLeaking}/${docsWithCorrections} ` +
+        `(affichée hors repli complet : ${docsLeakingShown}) ; ` +
+        `avec au moins un énoncé masqué ${docsOvermasked}/${evaluated} ; repli proposé ${fallbacks}/${evaluated}`,
     )
     const report = lines.join('\n')
     writeFileSync(join(dir!, 'rapport-evaluation.txt'), report)

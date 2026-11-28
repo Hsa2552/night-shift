@@ -39,6 +39,19 @@
 - **Décision** : réaliser une PWA de masquage des corrections dans le PDF original, avec détection déterministe et révélation progressive en secours. Les PDF restent sur l'appareil.
 - **Responsables** : Salif pour le lecteur PDF et la PWA, Hazem pour la détection, Wael pour le lecteur côté interface et les interactions.
 
+### D-28-0315-HZ · Observations vectorielles attendues par le moteur · `[PROPOSÉ]`
+
+- Proposé par : Hazem (Claude Code), pour Wael (couche vectorielle) et Salif (lecteur, C1).
+- Besoin : des observations indépendantes du moteur de rendu. L'écart Node/Edge (Savoie 101/101 sous Node, 51/101 dans Edge, V-28-0211-WB) et les cases au contour pâle viennent du raster ; les opérateurs PDF donnent la même réponse partout.
+- Forme proposée, par page, repère canonique C1, sans attribution de rôle :
+  - `squares: { bbox: Rect; filled: boolean; stroke: boolean; rgb?: [number, number, number] }[]` : carrés et rectangles quasi carrés dessinés (cases de QCM, grilles) ;
+  - `textColors: { textIndex: number; rgb: [number, number, number] }[]` : couleur de remplissage déclarée de chaque fragment de `PageData.textItems` ;
+  - `rules: { bbox: Rect; orientation: 'h' | 'v' }[]` : traits et séparateurs ;
+  - `images: { bbox: Rect }[]` : images matricielles (manuscrit numérisé, captures).
+- Usage par le moteur : `squares` complète puis remplace `findBoxes` (raster) pour les cases ; `textColors` remplace l'échantillonnage du raster pour l'encre des lignes ; `images` sans texte deviennent des zones non analysables (contrôle final de cohérence) ; le raster reste le repli.
+- Transport, deux options : (a) champ facultatif `getVectors?(pageIndex)` dans `DetectionInput` : **modification de C1, accord humain nécessaire** ; (b) enregistrement comme l'analyseur colorimétrique (`registerVectorSource`) sans toucher C1, mais état global par document. Recommandation : (a), plus sûre en cas de documents ouverts successivement.
+- Alternative écartée : refaire l'extraction vectorielle dans le moteur (doublon du travail de Wael, consigne contraire).
+
 ### D-28-0319-WB · Perception hybride des documents · `[PROPOSÉ]`
 
 - Proposée par Wael (Codex) au premier jalon vectoriel. Voir V-28-0319-WB et PR #16.
