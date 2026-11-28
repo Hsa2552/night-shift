@@ -422,6 +422,19 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Node avec le chargeur v2 produit 6 réussites sur 10, dont 2 strictes, et 1 abstention. Il couvre 2 059/2 072 unités de correction et touche 317/1 304 unités d'énoncé. Le profil de rendu diffère du benchmark Node historique, donc l'écart de score Node entre les deux références mélange les changements de moteur et de chargeur.
 - La recette refuse une empreinte d'annotation discordante avant d'évaluer le PDF. À 03:22, la PR #15 était toujours ouverte, le dépôt public et Pages désactivé. Aucune mesure d'un SHA publié ni validation sur téléphone physique.
 
+### V-28-0358-WB · Rattachement des couleurs natives au texte C1
+
+- Protocole. PDF.js 6.5.438 dans Edge. Référence PyMuPDF `rawdict` restreinte aux fragments localisés de façon unique. Comparaison avec `observePageInk` sur le raster, teintes à 15°. Huit documents hors partitions réservées, dont les deux ENSAI de diagnostic.
+- Résultats. 9 958 fragments sur 10 470 ont une couleur résolue. Les 9 936 de ces fragments vérifiables correspondent exactement à la référence, dont deux bicolores. 204 fragments ambigus et 308 sans association. Sur Lyon 2, 61 des 75 fragments bleus sont associés, contre 75 observés dans le raster. Sur Berkeley, 135 des 135 fragments chromatiques concordent côté natif et 134 côté raster, qui relève aussi une teinte sur 46 fragments neutres de référence. Le scan MIT ne fournit aucun fragment.
+- Temps natif médian par page textuelle de 8,3 à 14,7 ms selon le document, hors extraction initiale du texte. Limites et commandes dans `research/pdf-vector/NATIVE-TEXT.md`. Aucune mesure de couverture des corrections ou de raccordement à l’application.
+
+### V-28-0407-WB · Précision des cellules de glyphes et placements d’images
+
+- Protocole. Edge et PDF.js 6.5.438. Boîtes de Virginia Tech p. 15 annotées depuis le rendu. Placements du scan MIT comparés à `get_image_info()` de PyMuPDF.
+- Virginia Tech, 20/20 coches avec un recouvrement selon les cellules de glyphes. P. 15, 15/15 cadres à IoU 0,50 et 11/15 à 0,60, avec les 7 coches dans les deux cas. À 0,50, médiane IoU 0,608. Le raster avait 11/15 cadres à 0,60 et traite les 7 coches comme vides. Washington p. 1 expose les trois fonds verts qui couvrent les cases attendues.
+- Scan MIT, 37/37 placements à IoU 0,90, médiane 1,000. Règles, trajectoires et surlignages testés sur contrôles synthétiques. La géométrie et les relations n’attribuent aucun rôle. Aucun test de couverture des corrections avant raccordement C1.
+- Passage après synchronisation `aac0adf`. Latence médiane native par page de 6,9 à 14,0 ms par document textuel et 38,5 ms pour le scan. La rasterisation et son analyse sont mesurées à part dans le rapport de laboratoire.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
