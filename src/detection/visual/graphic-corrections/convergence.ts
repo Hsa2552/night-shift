@@ -1,4 +1,4 @@
-import type { CorrectionBlock, DetectionInput, PageRegion, RasterData } from '../../../shared/types'
+import type { CorrectionBlock, DetectionInput, PageRegion } from '../../../shared/types'
 import { contains } from './geometry'
 import { detectGraphicCorrections, type GraphicAnchor } from './index'
 
@@ -9,7 +9,6 @@ export async function fuseGraphicCorrections(
   questions: GraphicAnchor[],
   protectedRegions: PageRegion[],
   customPages: ReadonlySet<number>,
-  rasters: ReadonlyMap<number, Promise<RasterData | null>>,
 ) {
   if (!getVectors) return
   for (const page of pages) {
@@ -32,7 +31,6 @@ export async function fuseGraphicCorrections(
     const result = detectGraphicCorrections({
       page,
       vectors,
-      raster: (await rasters.get(pageIndex)) ?? undefined,
       anchors: questions.filter(({ region }) => region.pageIndex === pageIndex),
       existingBlocks,
       protectedRegions,

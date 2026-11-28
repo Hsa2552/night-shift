@@ -713,7 +713,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     })
     const graphics = await import('./visual/graphic-corrections/convergence.ts').catch(() => null)
     await graphics
-      ?.fuseGraphicCorrections(input, blocks, questions, protectedRegions, customPages, rasters)
+      ?.fuseGraphicCorrections(input, blocks, questions, protectedRegions, customPages)
       .catch(() => {
         // L'analyse optionnelle ne doit pas invalider les masques du moteur historique.
       })

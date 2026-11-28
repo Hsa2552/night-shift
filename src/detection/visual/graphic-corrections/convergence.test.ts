@@ -63,7 +63,6 @@ describe('convergence graphique', () => {
       [],
       [],
       new Set([0]),
-      new Map(),
     )
     expect(getVectors).not.toHaveBeenCalled()
   })
