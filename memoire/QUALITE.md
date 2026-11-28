@@ -414,6 +414,7 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Protocole. Edge et PDF.js 6.5.438. Boîtes de Virginia Tech p. 15 annotées depuis le rendu. Placements du scan MIT comparés à `get_image_info()` de PyMuPDF.
 - Virginia Tech, 20/20 coches avec un recouvrement selon les cellules de glyphes. P. 15, 15/15 cadres à IoU 0,50 et 11/15 à 0,60, avec les 7 coches dans les deux cas. À 0,50, médiane IoU 0,608. Le raster avait 11/15 cadres à 0,60 et traite les 7 coches comme vides. Washington p. 1 expose les trois fonds verts qui couvrent les cases attendues.
 - Scan MIT, 37/37 placements à IoU 0,90, médiane 1,000. Règles, trajectoires et surlignages testés sur contrôles synthétiques. La géométrie et les relations n’attribuent aucun rôle. Aucun test de couverture des corrections avant raccordement C1.
+- Passage après synchronisation `aac0adf`. Latence médiane native par page de 6,9 à 14,0 ms par document textuel et 38,5 ms pour le scan. La rasterisation et son analyse sont mesurées à part dans le rapport de laboratoire.
 
 ## Modèles
 
