@@ -12,7 +12,8 @@ import {
   type Point,
 } from './geometry'
 import { placeGlyphs, type FontMetrics, type GlyphCursor, type PositionedGlyph } from './glyph-run'
-import type { NativeSymbol } from './native-page'
+import { recordImages, recordPath, type NativeGraphics } from './graphics'
+import type { BackgroundRelation, MarkRelation, NativeSymbol } from './symbol-relations'
 import type { TextColorObservation } from './text-colors'
 
 export type Visibility = 'paint-command' | 'clipped' | 'invisible' | 'unresolved'
@@ -96,6 +97,9 @@ export interface VectorPageObservation extends PageDimensions {
   images: number
   textColors?: TextColorObservation[]
   glyphSymbols?: NativeSymbol[]
+  markRelations?: MarkRelation[]
+  backgroundRelations?: BackgroundRelation[]
+  graphics?: NativeGraphics
 }
 
 interface GraphicState {
@@ -209,6 +213,9 @@ export function readVectorOperators(
     unsupportedPathEncoding: 0,
     images: 0,
   }
+  const graphics: NativeGraphics | undefined = capture
+    ? { images: [], rules: [], paths: [] }
+    : undefined
   let state: GraphicState = {
     transform: viewport,
     clip: { x: 0, y: 0, width: page.width, height: page.height },
@@ -254,11 +261,22 @@ export function readVectorOperators(
       state.signedSize = size
     }
   }
+  const graphicContext = (operatorIndex: number) => ({
+    transform: state.transform,
+    pageIndex: page.pageIndex,
+    operatorIndex,
+    visibility: (bounds: Rect, alpha: number) =>
+      visibility(state, bounds, alpha, markedContent.includes(true)),
+  })
 
   for (const [operatorIndex, op] of list.fnArray.entries()) {
     const entry = list.argsArray[operatorIndex]
     const args: unknown[] = Array.isArray(entry) ? entry : []
-    if (imageOps.has(op)) output.images++
+    if (imageOps.has(op)) {
+      output.images++
+      if (graphics)
+        recordImages(graphics, graphicContext(operatorIndex), op, args, state.fillOpacity)
+    }
     switch (op) {
       case OPS.save:
         save()
@@ -370,6 +388,19 @@ export function readVectorOperators(
           })
         }
         if (unresolvedPath && (fill || stroke || pendingClip)) output.unresolvedPaths++
+        if (graphics && (fill || stroke)) {
+          recordPath(graphics, graphicContext(operatorIndex), {
+            paths: args[1],
+            bounds: args[2],
+            rectangles: decoded.rectangles,
+            compound: unresolvedPath,
+            strokeWidth: state.lineWidth,
+            fill: fill ? state.fill : undefined,
+            stroke: stroke ? state.stroke : undefined,
+            fillOpacity: fill && state.fill !== 'transparent' ? state.fillOpacity : 0,
+            strokeOpacity: stroke && state.stroke !== 'transparent' ? state.strokeOpacity : 0,
+          })
+        }
         if (pendingClip) {
           clip(
             decoded.complete && decoded.rectangles.length === 1 ? decoded.rectangles[0] : undefined,
@@ -486,7 +517,7 @@ export function readVectorOperators(
       }
     }
   }
-  return output
+  return graphics ? { ...output, graphics } : output
 }
 
 type VectorPageSource = Pick<PDFPageProxy, 'pageNumber' | 'getViewport' | 'getOperatorList'>

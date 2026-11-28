@@ -41,6 +41,8 @@ try {
       '/src/detection/visual/vector/native-page.ts',
       '/src/detection/visual/vector/glyph-run.ts',
       '/src/detection/visual/vector/text-colors.ts',
+      '/src/detection/visual/vector/symbol-relations.ts',
+      '/src/detection/visual/vector/graphics.ts',
       '/src/pdf/read-text.ts',
     )
   const fingerprints = {}

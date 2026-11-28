@@ -14,6 +14,7 @@ from pathlib import Path
 import json
 
 import pymupdf as fitz
+from score import score
 
 IGNORED = re.compile(r"[\s\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]")
 
@@ -110,8 +111,23 @@ def agrees(reference_hues, reported_hues):
 def evaluate(path, report):
     counts = Counter()
     timings = [[], [], []]
+    image_reference = []
+    image_placements = []
+
+    def image_record(page_index, bbox):
+        return dict(pageIndex=page_index, bbox=list(bbox), state="placement")
+
     with fitz.open(path) as pdf:
         for page, observation in zip(pdf, report["pages"], strict=True):
+            for kind, objects in (observation.get("graphics") or {}).items():
+                counts[f"graphics_{kind}"] += len(objects)
+            if "graphics" in observation:
+                for image in page.get_image_info():
+                    box = fitz.Rect(image["bbox"]) * page.rotation_matrix
+                    image_reference.append(image_record(page.number, [box.x0, box.y0, box.width, box.height]))
+                for image in observation["graphics"]["images"]:
+                    box = image["region"]["bbox"]
+                    image_placements.append(image_record(page.number, [box[k] for k in ("x", "y", "width", "height")]))
             refs = raw_lines(page)
             by_item = {i["textIndex"]: i for i in observation["textColors"]}
             raster = {i["textIndex"]: i["colors"] for i in observation.get("rasterInk") or []}
@@ -155,6 +171,8 @@ def evaluate(path, report):
     return {
         "page_count": len(report["pages"]),
         **counts,
+        **({"image_geometry": score(image_reference, image_placements, 0.90)}
+           if image_reference or image_placements else {}),
         **{
             name: {"sum": round(sum(sample), 1), "median_page": round(median(sample), 1)}
             for name, sample in zip(("native_ms", "render_ms", "raster_ms"), timings, strict=True)
@@ -162,16 +180,51 @@ def evaluate(path, report):
     }
 
 
+def score_glyphs(truth, report, iou):
+    pages = set(truth["pages"])
+
+    def record(bbox, page_index, state):
+        return dict(
+            bbox=[bbox[k] for k in ("x", "y", "width", "height")],
+            pageIndex=page_index,
+            state=state,
+        )
+
+    reference = [record(e["bbox"], e["pageIndex"], e["state"]) for e in truth["elements"]]
+    observed = []
+    for page in report["pages"]:
+        if page["pageIndex"] not in pages:
+            continue
+        overlap = {
+            r["frame"]["symbolIndex"] for r in page["markRelations"]
+            if r["kind"] == "overlap" and r["frame"]["kind"] == "glyph"
+        }
+        for index, glyph in enumerate(page["glyphSymbols"]):
+            if glyph["kind"] not in {"empty-square", "filled-square", "marked-square"}:
+                continue
+            if glyph["visibility"] != "paint-command":
+                continue
+            region = glyph["region"]
+            state = "marked" if index in overlap else glyph["kind"].split("-")[0]
+            observed.append(record(region["bbox"], region["pageIndex"], state))
+    return score(reference, observed, iou)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("trace", type=Path)
     parser.add_argument("pdf", type=Path, nargs="+")
+    parser.add_argument("--glyph-truth", type=Path)
+    parser.add_argument("--glyph-iou", type=float, default=0.60)
     args = parser.parse_args()
     trace = json.loads(args.trace.read_bytes())
     documents = {d["sha256"]: d for d in trace["documents"]}
     for path in args.pdf:
         sha = hashlib.sha256(path.read_bytes()).hexdigest()
         print(json.dumps({"sha256": sha, **evaluate(path, documents[sha])}))
+    if args.glyph_truth:
+        truth = json.loads(args.glyph_truth.read_bytes())
+        print(json.dumps({"glyphs": score_glyphs(truth, documents[truth["sha256"]], args.glyph_iou)}))
 
 
 if __name__ == "__main__":

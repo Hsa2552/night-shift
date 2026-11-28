@@ -23,6 +23,11 @@ const strip = /[\s\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/gu
 const normalizeGlyph = (text: string) => text.normalize('NFKD').replace(strip, '')
 const dot = ([x, y]: Point, [a, b]: Point) => x * a + y * b
 
+export function parseRgb(color: string | null | undefined): NativeRgb | undefined {
+  if (!color || !/^#[0-9a-f]{6}$/iu.test(color)) return
+  return [1, 3, 5].map((at) => Number.parseInt(color.slice(at, at + 2), 16)) as NativeRgb
+}
+
 function normalizedText(text: string) {
   let value = ''
   let at = 0
@@ -39,16 +44,16 @@ function normalizedText(text: string) {
 export function nativeGlyphColor(glyph: NativeGlyph): NativeRgb | undefined {
   if (glyph.visibility !== 'paint-command') return
   const { fill, stroke, mode, fillOpacity, strokeOpacity } = glyph.paint
+  if ((mode & 3) === 3) return
   const inks = []
   if ((mode & 3) !== 1 && fill !== 'transparent' && fillOpacity > 0)
     inks.push([fill, fillOpacity] as const)
   if ((mode & 3) !== 0 && stroke !== 'transparent' && strokeOpacity > 0)
     inks.push([stroke, strokeOpacity] as const)
   const color = inks[0]?.[0]?.toLowerCase()
-  if (!color?.match(/^#[0-9a-f]{6}$/u)) return
   if (inks.some(([candidate, opacity]) => candidate?.toLowerCase() !== color || opacity < 0.98))
     return
-  return [1, 3, 5].map((at) => Number.parseInt(color.slice(at, at + 2), 16)) as NativeRgb
+  return parseRgb(color)
 }
 
 interface PositionedToken {

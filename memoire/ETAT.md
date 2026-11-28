@@ -111,10 +111,10 @@
 
 ### T-WB-6 · Couleurs natives et glyphes
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/perception-textuelle-native`
 - Dépend de : repère C1 et tableau de fragments fourni par le lecteur. Salif raccorde le canal au lecteur. Hazem exploite les observations.
-- Maturité : association texte et couleurs testée en isolation dans Edge et PDF.js Node. Localisation des glyphes à mesurer et compléter. Voir `research/pdf-vector/NATIVE-TEXT.md`.
+- Maturité : association des couleurs, glyphes, relations et géométrie graphique testées en isolation. Comparaison Edge sur huit PDF, tests PDF.js Node et résultats dans `research/pdf-vector/NATIVE-TEXT.md`. PR #20. Raccordement et validation moteur à faire dans les branches responsables.
 
 ## Terminées ou abandonnées
 

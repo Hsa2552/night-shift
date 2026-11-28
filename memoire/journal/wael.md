@@ -83,3 +83,7 @@
 
 - Branche dédiée depuis `da87ece`, après fusion de la PR #16. Rattachement par géométrie et séquence Unicode avec provenance et plages multicolores. Publication du jalon pour Hazem et Salif. Voir V-28-0358-WB.
 - À suivre dans ce périmètre. Localisation et mesure des symboles, relations avec les marques et fonds. Le raccordement du lecteur et le regroupement documentaire demeurent dans leurs branches respectives.
+
+### 28/11 04:07 · SESSION · T-WB-6 · Glyphes et géométrie des tracés
+
+- PR #20 complétée avec les cellules de glyphes, leurs relations de recouvrement et de voisinage, les fonds colorés, les placements image, les traits et les surlignages. Vérifié sur Virginia Tech, Washington et MIT, puis documenté dans V-28-0407-WB. Les boîtes glyphes sont des estimations et les rôles restent à attribuer dans le moteur.

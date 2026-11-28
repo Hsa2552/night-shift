@@ -273,6 +273,12 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Résultats. 9 958 fragments sur 10 470 ont une couleur résolue. Les 9 936 de ces fragments vérifiables correspondent exactement à la référence, dont deux bicolores. 204 fragments ambigus et 308 sans association. Sur Lyon 2, 61 des 75 fragments bleus sont associés, contre 75 observés dans le raster. Sur Berkeley, 135 des 135 fragments chromatiques concordent côté natif et 134 côté raster, qui relève aussi une teinte sur 46 fragments neutres de référence. Le scan MIT ne fournit aucun fragment.
 - Temps natif médian par page textuelle de 8,3 à 14,7 ms selon le document, hors extraction initiale du texte. Limites et commandes dans `research/pdf-vector/NATIVE-TEXT.md`. Aucune mesure de couverture des corrections ou de raccordement à l’application.
 
+### V-28-0407-WB · Précision des cellules de glyphes et placements d’images
+
+- Protocole. Edge et PDF.js 6.5.438. Boîtes de Virginia Tech p. 15 annotées depuis le rendu. Placements du scan MIT comparés à `get_image_info()` de PyMuPDF.
+- Virginia Tech, 20/20 coches avec un recouvrement selon les cellules de glyphes. P. 15, 15/15 cadres à IoU 0,50 et 11/15 à 0,60, avec les 7 coches dans les deux cas. À 0,50, médiane IoU 0,608. Le raster avait 11/15 cadres à 0,60 et traite les 7 coches comme vides. Washington p. 1 expose les trois fonds verts qui couvrent les cases attendues.
+- Scan MIT, 37/37 placements à IoU 0,90, médiane 1,000. Règles, trajectoires et surlignages testés sur contrôles synthétiques. La géométrie et les relations n’attribuent aucun rôle. Aucun test de couverture des corrections avant raccordement C1.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

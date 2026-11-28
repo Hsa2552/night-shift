@@ -29,7 +29,8 @@ export async function measure(bytes: Uint8Array<ArrayBuffer>, nativeText = false
         const viewport = page.getViewport({ scale: 1 })
         const textItems = await readPageText(page, viewport.transform, document.isPureXfa)
         const start = performance.now()
-        const { glyphSymbols, textColors } = await observeNativePage(page, textItems)
+        const { glyphSymbols, textColors, markRelations, backgroundRelations, graphics } =
+          await observeNativePage(page, textItems)
         const ms = performance.now() - start
         const canvas = window.document.createElement('canvas')
         const rasterScale = Math.min(
@@ -56,6 +57,9 @@ export async function measure(bytes: Uint8Array<ArrayBuffer>, nativeText = false
           textItems,
           textColors,
           glyphSymbols,
+          markRelations,
+          backgroundRelations,
+          graphics,
           ms,
           renderMs,
           rasterMs: performance.now() - rasterStart,
