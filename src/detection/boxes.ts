@@ -19,6 +19,55 @@ export interface Box {
   glyph?: boolean
   /** Case tirée des opérateurs du PDF (C1 v1.1) : état natif conservé, y compris « ambiguous ». */
   native?: NativeSquare['nativeState']
+  /** Marque native qui désigne cette case (coche, croix superposée, aplat derrière la case). */
+  cue?: Rect
+}
+
+/** Relations natives utiles (sous-ensemble de l'observation de Wael, C1 v1.1). */
+export interface NativeMarks {
+  glyphSymbols?: { region: { pageIndex: number; bbox: Rect } }[]
+  markRelations?: {
+    frame: { region: { pageIndex: number; bbox: Rect } }
+    markIndex: number
+    kind: 'overlap' | 'nearby'
+  }[]
+  backgroundRelations?: {
+    frame: { region: { pageIndex: number; bbox: Rect } }
+    region: { pageIndex: number; bbox: Rect }
+  }[]
+}
+
+const centerIn = (a: Rect, b: Rect) => {
+  const cx = a.x + a.width / 2
+  const cy = a.y + a.height / 2
+  return cx >= b.x && cx <= b.x + b.width && cy >= b.y && cy <= b.y + b.height
+}
+
+/**
+ * Cases désignées par une marque native : coche ou croix superposée (`markRelations`, relation
+ * « overlap »), aplat coloré derrière la case (`backgroundRelations`). Une telle case est la
+ * réponse marquée (pleine) ; la région de la marque est gardée dans `cue` pour que toutes les
+ * cases de la page reçoivent le même masque (aucun indice par la forme du masque).
+ */
+export function markBoxes(boxes: Box[], marks: NativeMarks | undefined, pageIndex: number): Box[] {
+  if (!marks) return boxes
+  const cues: { frame: Rect; cue: Rect }[] = []
+  for (const r of marks.markRelations ?? []) {
+    if (r.kind !== 'overlap' || r.frame.region.pageIndex !== pageIndex) continue
+    const mark = marks.glyphSymbols?.[r.markIndex]
+    if (mark) cues.push({ frame: r.frame.region.bbox, cue: mark.region.bbox })
+  }
+  for (const r of marks.backgroundRelations ?? []) {
+    if (r.frame.region.pageIndex === pageIndex)
+      cues.push({ frame: r.frame.region.bbox, cue: r.region.bbox })
+  }
+  if (cues.length === 0) return boxes
+  return boxes.map((b) => {
+    if (b.pageIndex !== pageIndex) return b
+    const hit = cues.find((c) => centerIn(c.frame, b.bbox) || centerIn(b.bbox, c.frame))
+    if (!hit) return b
+    return { ...b, filled: true, density: Math.max(b.density, 0.85), cue: hit.cue }
+  })
 }
 
 /** Encre : seuil large, pour suivre les contours fins anticrénelés. Noir : remplissage. */
@@ -70,9 +119,40 @@ export function withNativeBoxes(
     const i = (py * W + px) * 4
     return 0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!
   }
+  // Glyphes typographiques (sans tracé) : la cellule de police est plus haute que le carré
+  // dessiné. Le carré est cherché dans le raster (côté = largeur de la cellule) ; à défaut, sa
+  // position dans la cellule est apprise des autres glyphes de même taille de la page.
+  const cellKey = (r: Rect) => `${r.width.toFixed(1)}x${r.height.toFixed(1)}`
+  const located = new Map<NativeSquare, { cx: number; cy: number }>()
+  const offsets = new Map<string, { dx: number; dy: number }[]>()
+  for (const square of squares) {
+    if (square.region.pageIndex !== page.pageIndex || square.paint.length > 0) continue
+    const c = square.region.bbox
+    const side = Math.min(c.width, c.height)
+    const at = locateSquare(raster, page, c.x + c.width / 2, c.y + c.height / 2, side)
+    if (!at) continue
+    located.set(square, at)
+    const list = offsets.get(cellKey(c)) ?? []
+    list.push({ dx: at.cx - (c.x + c.width / 2), dy: at.cy - (c.y + c.height / 2) })
+    offsets.set(cellKey(c), list)
+  }
+  const median = (values: number[]) => [...values].sort((a, b) => a - b)[values.length >> 1]!
   for (const square of squares) {
     if (square.region.pageIndex !== page.pageIndex) continue
-    const b = square.region.bbox
+    let b = square.region.bbox
+    if (square.paint.length === 0) {
+      const side = Math.min(b.width, b.height)
+      let at = located.get(square)
+      const learned = offsets.get(cellKey(b))
+      if (!at && learned) {
+        at = {
+          cx: b.x + b.width / 2 + median(learned.map((o) => o.dx)),
+          cy: b.y + b.height / 2 + median(learned.map((o) => o.dy)),
+        }
+      }
+      if (!at) continue
+      b = { x: at.cx - side / 2, y: at.cy - side / 2, width: side, height: side }
+    }
     const cx = b.x + b.width / 2
     const cy = b.y + b.height / 2
     const twin = out.find(
@@ -81,7 +161,10 @@ export function withNativeBoxes(
         Math.abs(o.bbox.y + o.bbox.height / 2 - cy) < b.height / 3,
     )
     if (twin) {
+      // Géométrie native retenue (exacte, indépendante du rendu) : une case du raster fusionnée
+      // avec sa coche serait plus grande et décentrée, et son masque se distinguerait.
       twin.native = square.nativeState
+      twin.bbox = { ...b }
       continue
     }
     // Visibilité : le contour n'est pas blanc (au moins 60 % des points du liseré, seuil 245 et

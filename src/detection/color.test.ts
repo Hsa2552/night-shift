@@ -222,3 +222,65 @@ describe('questions colorées servant d’ancres (couleur des questions, correct
     expect(result.warnings).toContain(WARNINGS.color)
   })
 })
+
+describe('couleurs natives du texte (C1 v1.1) prioritaires sur le raster', () => {
+  const lines = [
+    'Exercice 1',
+    '1) Calculer la dérivée de f.',
+    'La dérivée vaut deux fois x.',
+    'On en déduit le sens de variation.',
+    '2) Calculer la primitive de f.',
+    'Une primitive est x au cube sur trois.',
+  ]
+  const isAnswer = (t: string) => /^(La dérivée|On en déduit|Une primitive)/.test(t)
+  /** Observation native : chaque fragment déclaré d'une seule couleur. */
+  const vectorsWith = (page: PageData, rgbOf: (text: string) => [number, number, number]) => ({
+    pageIndex: 0,
+    width: page.width,
+    height: page.height,
+    rectangles: [],
+    textPaint: [],
+    unresolvedPaths: 0,
+    unsupportedPathEncoding: 0,
+    images: 0,
+    textColors: page.textItems.map((item, textIndex) => ({
+      textIndex,
+      status: 'matched' as const,
+      ranges: [
+        {
+          start: 0,
+          end: item.text.length,
+          rgb: rgbOf(item.text),
+          operatorIndices: [0],
+          evidence: 'text-and-geometry' as const,
+        },
+      ],
+    })),
+  })
+
+  it('texte noir sur fond coloré (raster « coloré ») : pas une convention de couleur', async () => {
+    const page = fakePage(0, lines)
+    const raster = fakeRaster(page, (item) => (isAnswer(item.text) ? RED : undefined))
+    const rasterOnly = await detectCorrections({ pages: [page], getRaster: async () => raster })
+    expect(rasterOnly.blocks.length).toBeGreaterThan(0) // le raster seul y voit des réponses rouges
+    const withNative = await detectCorrections({
+      pages: [page],
+      getRaster: async () => raster,
+      getVectors: async () => vectorsWith(page, () => [0, 0, 0]) as never,
+    })
+    expect(withNative.blocks).toEqual([])
+  })
+
+  it('réponses déclarées rouges : masquées, questions visibles', async () => {
+    const page = fakePage(0, lines)
+    const raster = fakeRaster(page, (item) => (isAnswer(item.text) ? RED : undefined))
+    const result = await detectCorrections({
+      pages: [page],
+      getRaster: async () => raster,
+      getVectors: async () =>
+        vectorsWith(page, (t) => (isAnswer(t) ? [200, 30, 30] : [0, 0, 0])) as never,
+    })
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.length).toBe(2)
+  })
+})
