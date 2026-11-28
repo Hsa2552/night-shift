@@ -95,6 +95,26 @@
 - Résultat : avec raster, type correct 14/15, corrections hors blocs 6/109 (les 6 cases de `qcm-cases.pdf`, perdues par Q-27-2330-HZ ; le document est classé `unknown` et reste entièrement couvert dans l'interface), énoncés masqués 1/65. Texte seul : 12/15, 18/109, 0/65. Edge : les 15 documents ont le comportement attendu (blocs, libellés, avertissements, repli)
 - Limites : corpus synthétique créé par l'équipe ; aucune vraie annale ; téléphone et Safari non testés par moi
 
+### V-28-0115-HZ · QCM corrigés par cases noircies (annales ENSAI « DOC-corrige »), P0
+
+- Par : Hazem (Claude Code) · Branche `feat/detection-generalisation`
+- Cause de l'échec initial : cases dessinées (rectangles vectoriels) invisibles au texte extrait ; titre « Correction » répété en tête de chaque page pris pour une correction ; « réponses. » en début de ligne pris pour un marqueur ; numérotation relancée par la seconde session avalée dans une correction.
+- Méthode (`src/detection/boxes.ts`, `engine.ts`) : composantes connexes du raster (deux seuils d'encre), case pleine = carré dense, case vide = contour carré à centre clair ; taille de référence prise sur les cases vides ; grilles d'identification exclues (chiffre sous la case) ; emplacements complétés par le texte (suites A, B, C… des propositions et des grilles) et recentrés sur la case dessinée ; un bloc par question et par session (propositions + ligne de la grille) ; même carré blanc pour toutes les cases d'une série ; en-têtes répétés ignorés ; raster en échec = document entièrement couvert.
+- Vérité terrain indépendante : opérations vectorielles du PDF (carrés remplis noirs ou blancs). DOC-corrige (1) : **46 cases noircies** (8, 14, 8, 16 par page ; 23 dans les questions, les mêmes 23 dans les grilles) et 74 vides, 80 cases d'identification. Le chiffre de 26 transmis par l'équipe n'a pas pu être reproduit.
+- Résultats (cases de réponse visibles / lignes d'énoncé masquées) : 12 annales DOC-corrige distinctes, 6 de développement : 0/602 et 55/476 ; **6 de test jamais ouvertes avant l'évaluation : 1/1012 et 213/1499**, type correct 6/6. Edge avec l'interface : DOC-corrige (1), 120 masques identiques de 14 pt, aucune case noire visible, grille d'identification visible, révélation de « Question 1 » : 6 masques en page 1 et 6 en page 2 retirés, seconde session intacte.
+- Limites : une seule convention d'établissement (AMC, ENSAI) ; sur-masquage de 14 % des lignes en test (lettres des propositions dans les cases, marge de sécurité de 1,5 point, consignes) ; non testé sur téléphone ni Safari. PDF ENSAI hors dépôt (droits de diffusion non établis).
+
+### V-28-0120-HZ · Correction d'un défaut de protocole des tests Edge
+
+- Constat : un serveur `vite preview` lancé depuis la copie d'intégration locale n'était pas arrêté par mon script ; les tests Edge suivants ont été servis par ce build-là. **V-28-0005-HZ (phase 2) a donc porté sur le build de la copie d'intégration (`feat/detection-robustesse` + interface de Wael, fusion locale), pas sur la branche à jour.**
+- Correctif : script de test qui refuse de démarrer si le port est occupé et arrête le serveur par son port ; tous les résultats Edge de V-28-0115-HZ ont été refaits après correction, port vérifié libre.
+
+### V-28-0125-HZ · Généralisation, corpus réels (phase 3, état intermédiaire)
+
+- Protocole : `src/detection/eval/CORPUS.md` ; dev général 10 annales, test général 12 annales d'autres établissements (annotées à l'aveugle, figées le 28/11 00:28).
+- Résultats (corrections visibles / énoncés masqués) : dev 968/2002 et 281/1266 au départ, puis 398/2002 et 661/1266 ; test 691/3348 et 621/2004 au départ, puis 685/3348 et 629/2004, type correct 8/12 puis 10/12.
+- Point ouvert : sur le test, documents avec au moins une correction visible 4/9 au départ, 7/9 maintenant ; le détail du test n'est pas consulté pour régler le détecteur, analyse à mener sur le dev. Familles identifiées sur le dev : corrigés sans marqueur (questions puis réponses, retraits), numérotations « A.1. », « VII.1 », « C.I.1. », extraction dégradée (lettres perdues), recueils en deux colonnes.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné

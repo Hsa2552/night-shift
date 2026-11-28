@@ -31,22 +31,31 @@ export interface Evaluation {
 }
 
 /** Part de la surface de `bbox` couverte par les régions de la même page (échantillonnage). */
-export function coverage(bbox: Rect, pageIndex: number, regions: PageRegion[]): number {
+export function coverage(
+  bbox: Rect,
+  pageIndex: number,
+  regions: PageRegion[],
+  ignore: Rect[] = [],
+): number {
   const onPage = regions.filter((r) => r.pageIndex === pageIndex).map((r) => r.bbox)
   if (onPage.length === 0 || bbox.width <= 0 || bbox.height <= 0) return 0
+  const inRect = (x: number, y: number, r: Rect) =>
+    x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height
   const nx = Math.max(2, Math.ceil(bbox.width / 2))
   const ny = Math.max(2, Math.ceil(bbox.height / 2))
   let inside = 0
+  let total = 0
   for (let i = 0; i < nx; i++) {
     for (let j = 0; j < ny; j++) {
       const x = bbox.x + ((i + 0.5) * bbox.width) / nx
       const y = bbox.y + ((j + 0.5) * bbox.height) / ny
-      if (onPage.some((r) => x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height)) {
-        inside++
-      }
+      // Les points qui tombent dans une correction annotée ne comptent pas.
+      if (ignore.some((r) => inRect(x, y, r))) continue
+      total++
+      if (onPage.some((r) => inRect(x, y, r))) inside++
     }
   }
-  return inside / (nx * ny)
+  return total === 0 ? 0 : inside / total
 }
 
 /** Seuils : une correction est cachée si au moins 95 % de sa surface est couverte ;
@@ -88,7 +97,12 @@ export function evaluate(truth: Truth, result: DetectionResult): Evaluation {
     corrections: corrections.length,
     leaked: corrections.filter((e) => covered(e, regions) < LEAK_THRESHOLD),
     questions: questions.length,
-    overmasked: questions.filter((e) => covered(e, regions) > OVERMASK_THRESHOLD),
+    // Sur-masquage : la partie d'un énoncé qui recouvre une correction annotée (lettre d'une
+    // proposition imprimée dans sa case, par exemple) doit être masquée et ne compte pas.
+    overmasked: questions.filter((e) => {
+      const inside = corrections.filter((c) => c.pageIndex === e.pageIndex).map((c) => c.bbox)
+      return coverage(e.bbox, e.pageIndex, regions, inside) > OVERMASK_THRESHOLD
+    }),
   }
 }
 

@@ -12,10 +12,12 @@ import type {
   Rect,
 } from './contract.ts'
 import { hueDistance, inkOf, type Ink } from './color.ts'
+import { answerBoxes, findBoxes, locateSquare, type Box } from './boxes.ts'
 import { buildPageInk, graphicBottom, graphicTop, type PageInk } from './graphics.ts'
 import { layoutPage, type Line, type PageLayout } from './layout.ts'
 import {
   findInlineCorrection,
+  fold,
   isCorrectionTitle,
   leadingGlyph,
   nextValue,
@@ -114,7 +116,9 @@ interface Draft {
 
 export async function detect(input: DetectionInput): Promise<DetectionResult> {
   const layouts = input.pages.map(layoutPage)
-  const flow = layouts.flatMap((p) => p.lines)
+  // En-têtes et pieds de page répétés (« Correction » en tête de chaque page) : hors du flux.
+  const furniture = runningHeaders(layouts)
+  const flow = layouts.flatMap((p) => p.lines.filter((l) => !furniture.has(l)))
   const textlessPages = layouts.filter((p) => !p.hasText).map((p) => p.pageIndex)
 
   if (flow.length === 0) {
@@ -123,17 +127,38 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
 
   // Rendus raster demandés au plus une fois par page ; un échec de rendu vaut « pas de raster ».
   const rasters = new Map<number, Promise<RasterData | null>>()
+  let rasterFailed = false
   const rasterOf = (pageIndex: number): Promise<RasterData | null> => {
     if (!input.getRaster) return Promise.resolve(null)
     let raster = rasters.get(pageIndex)
     if (!raster) {
-      raster = input.getRaster(pageIndex).catch(() => null)
+      raster = input.getRaster(pageIndex).catch(() => {
+        rasterFailed = true
+        return null
+      })
       rasters.set(pageIndex, raster)
     }
     return raster
   }
 
   const parsed = flow.map(parseLine)
+  // Un mot-clé de correction en minuscule qui continue une phrase non terminée de la ligne
+  // précédente (« … plusieurs bonnes ⏎ réponses. Les autres … ») n'est pas un marqueur.
+  parsed.forEach((p, i) => {
+    if (!p.c || p.q) return
+    const prev = flow[i - 1]
+    const startsLower = /^\p{Ll}/u.test(flow[i]!.text)
+    // Ligne précédente juste au-dessus sur la même page (indépendamment des zones : un
+    // en-tête court peut faire croire à une colonne), phrase non terminée.
+    const line = flow[i]!
+    const continues =
+      prev !== undefined &&
+      prev.pageIndex === line.pageIndex &&
+      line.bbox.y - (prev.bbox.y + prev.bbox.height) < line.bbox.height &&
+      line.bbox.y > prev.bbox.y &&
+      !/[.:;!?]\s*$/.test(prev.text)
+    if (startsLower && continues) p.c = null
+  })
   const isC = (i: number) => parsed[i]!.c !== null
   const isPureQ = (i: number) => parsed[i]!.q !== null && parsed[i]!.c === null
   const firstQ = parsed.findIndex((_, i) => isPureQ(i))
@@ -312,11 +337,35 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   mergeLabelOnlyBlocks(drafts, flow, parsed)
   drafts.push(...qcmDrafts(flow, parsed, modeAt, labelAt))
 
+  // QCM corrigés par noircissement de cases dessinées (raster) : un bloc par question,
+  // toutes les cases masquées à l'identique. Les blocs textuels ouverts par un simple titre
+  // (« Réponses : ») ou par une numérotation répétée, et qui contiennent des cases, sont
+  // remplacés par ces blocs ; une correction textuelle avec contenu est conservée.
+  const boxes = input.getRaster
+    ? await boxDrafts(input, flow, parsed, labelAt, rasterOf)
+    : { drafts: [], lines: new Set<number>() }
+  if (boxes.drafts.length > 0) {
+    for (let k = drafts.length - 1; k >= 0; k--) {
+      const d = drafts[k]!
+      if (d.custom || d.inlineX !== undefined) continue
+      const c = parsed[d.start]!.c
+      const contentBearing = c !== null && !c.headerOnly
+      let hostsBox = false
+      for (let i = d.start; i <= d.end && !hostsBox; i++) hostsBox = boxes.lines.has(i)
+      if (contentBearing || !hostsBox) continue
+      for (let i = d.start; i <= d.end; i++) modeAt[i] = 'statement'
+      drafts.splice(k, 1)
+    }
+    // Bloc de consignes sous un simple titre (« Réponses : ») : pas d'étiquette de question.
+    for (const d of drafts) if (parsed[d.start]!.c?.headerOnly) d.label = undefined
+    drafts.push(...boxes.drafts)
+  }
+
   // Sans aucun marqueur textuel : les corrigés se distinguent-ils par leur couleur ?
   let byColor = false
   let visualCheckFailed = false
   if (drafts.length === 0 && input.getRaster) {
-    const inks = await lineInks(layouts, rasterOf)
+    const inks = await lineInks(flow, layouts, rasterOf)
     for (const layout of layouts) {
       if (layout.lines.length > 0 && !(await rasterOf(layout.pageIndex))) visualCheckFailed = true
     }
@@ -460,6 +509,14 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     warnings.push(WARNINGS.unplaced)
     needsFallback = true
     if (kind === 'statement_only') kind = 'unknown'
+  }
+
+  // Rendu raster demandé mais en échec : cases noircies, couleurs et figures sont invisibles
+  // au détecteur. Pas de masquage partiel trompeur : document entièrement couvert (repli).
+  if (rasterFailed && kind !== 'unknown') {
+    kind = 'unknown'
+    needsFallback = true
+    if (!warnings.includes(WARNINGS.noVisualCheck)) warnings.push(WARNINGS.noVisualCheck)
   }
 
   return { kind, blocks, warnings, needsFallback }
@@ -793,18 +850,223 @@ function hasUncoveredLeaf(
 
 /** Encre de chaque ligne du flux, en demandant le rendu de chaque page une seule fois. */
 async function lineInks(
+  flow: Line[],
   layouts: PageLayout[],
   rasterOf: (pageIndex: number) => Promise<RasterData | null>,
 ): Promise<Ink[]> {
   const inks: Ink[] = []
-  for (const layout of layouts) {
-    if (layout.lines.length === 0) continue
-    const raster = await rasterOf(layout.pageIndex)
-    for (const line of layout.lines) {
-      inks.push(raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' })
-    }
+  for (const line of flow) {
+    const layout = layouts.find((l) => l.pageIndex === line.pageIndex)!
+    const raster = await rasterOf(line.pageIndex)
+    inks.push(raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' })
   }
   return inks
+}
+
+/**
+ * Lignes répétées à l'identique (chiffres ignorés), au même endroit, en haut ou en bas d'au
+ * moins deux pages et de 40 % des pages : en-têtes et pieds de page. Jamais un numéro de question.
+ */
+function runningHeaders(layouts: PageLayout[]): Set<Line> {
+  const pages = layouts.filter((p) => p.lines.length > 0)
+  const out = new Set<Line>()
+  if (pages.length < 2) return out
+  const groups = new Map<string, { line: Line; rel: number }[]>()
+  for (const p of pages) {
+    for (const line of p.lines) {
+      const top = line.bbox.y / p.height
+      const bottom = (line.bbox.y + line.bbox.height) / p.height
+      if (top > 0.15 && bottom < 0.9) continue
+      if (parseQuestion(line.text)) continue
+      const key = fold(line.text).replace(/\d+/g, '#').replace(/\s+/g, ' ').trim()
+      if (key.length === 0) continue
+      const list = groups.get(key) ?? []
+      list.push({ line, rel: top })
+      groups.set(key, list)
+    }
+  }
+  for (const list of groups.values()) {
+    const distinctPages = new Set(list.map((e) => e.line.pageIndex)).size
+    const rels = list.map((e) => e.rel)
+    const sameSpot = Math.max(...rels) - Math.min(...rels) <= 0.02
+    if (distinctPages >= 2 && distinctPages >= 0.4 * pages.length && sameSpot) {
+      for (const e of list) out.add(e.line)
+    }
+  }
+  return out
+}
+
+/** Blocs de cases de QCM (voir boxes.ts), regroupées par question et par session. */
+async function boxDrafts(
+  input: DetectionInput,
+  flow: Line[],
+  parsed: Parsed[],
+  labelAt: (string | undefined)[],
+  rasterOf: (pageIndex: number) => Promise<RasterData | null>,
+): Promise<{ drafts: Draft[]; lines: Set<number> }> {
+  const all: Box[] = []
+  for (const page of input.pages) {
+    if (!flow.some((l) => l.pageIndex === page.pageIndex)) continue
+    const raster = await rasterOf(page.pageIndex)
+    if (raster) all.push(...findBoxes(raster, page))
+  }
+  const kept = answerBoxes(all)
+  if (kept.length === 0) return { drafts: [], lines: new Set() }
+
+  // Ligne de chaque case : même hauteur (ou, à défaut, la ligne juste au-dessus).
+  const lineOfBox = kept.map((box) => {
+    const cy = box.bbox.y + box.bbox.height / 2
+    let best = -1
+    let bestScore = Infinity
+    flow.forEach((l, i) => {
+      if (l.pageIndex !== box.pageIndex) return
+      const ly = l.bbox.y + l.bbox.height / 2
+      const dy = Math.abs(ly - cy)
+      if (dy > Math.max(l.bbox.height, box.bbox.height) * 0.75) return
+      const dx = Math.max(
+        0,
+        l.bbox.x - (box.bbox.x + box.bbox.width),
+        box.bbox.x - (l.bbox.x + l.bbox.width),
+      )
+      const score = dy + dx
+      if (score < bestScore) {
+        bestScore = score
+        best = i
+      }
+    })
+    if (best < 0) {
+      flow.forEach((l, i) => {
+        if (l.pageIndex !== box.pageIndex || l.bbox.y >= cy) return
+        if (best < 0 || l.bbox.y > flow[best]!.bbox.y) best = i
+      })
+    }
+    return best
+  })
+  const hosting = new Set(lineOfBox.filter((i) => i >= 0))
+
+  // Emplacements de cases déduits du texte : la lettre d'une proposition reste extractible,
+  // même sous une case noire. Une case que le raster n'a pas reconnue (contour trop pâle
+  // selon le moteur de rendu) est ainsi masquée comme les autres, sans indice par élimination.
+  const slots: { line: number; cx: number; cy: number }[] = []
+  const letterAt = (line: Line, idx: number) => {
+    const x0 = line.charX[idx] ?? line.bbox.x
+    const next = line.charX[idx + 1] ?? x0 + 0.6 * line.fontSize
+    return {
+      cx: (x0 + Math.min(next, x0 + 0.8 * line.fontSize)) / 2,
+      cy: line.bbox.y + line.bbox.height / 2,
+    }
+  }
+  // 1. Suites verticales A, B, C… en début de ligne, dont une ligne au moins porte une case.
+  const leading = (i: number) => /^([A-Z])(?=\s)/.exec(flow[i]!.text)?.[1]
+  for (let i = 0; i < flow.length;) {
+    if (!leading(i)) {
+      i++
+      continue
+    }
+    let j = i
+    while (
+      j + 1 < flow.length &&
+      flow[j + 1]!.pageIndex === flow[i]!.pageIndex &&
+      leading(j + 1)?.charCodeAt(0) === leading(j)!.charCodeAt(0) + 1
+    ) {
+      j++
+    }
+    let hostsBox = false
+    for (let k = i; k <= j; k++) hostsBox ||= hosting.has(k)
+    if (j > i && hostsBox)
+      for (let k = i; k <= j; k++) slots.push({ line: k, ...letterAt(flow[k]!, 0) })
+    i = j + 1
+  }
+  // 2. Lignes portant des cases (grilles, propositions horizontales) : lettres isolées qui
+  //    forment la suite A, B, C… (une variable « X » ou « Y » ne prolonge pas la suite).
+  for (const li of [...hosting]) {
+    const line = flow[li]!
+    let expected = 65
+    for (const m of line.text.matchAll(/(?<=^|\s)([A-Z])(?=\s|$)/g)) {
+      if (m[1]!.charCodeAt(0) !== expected) continue
+      slots.push({ line: li, ...letterAt(line, m.index) })
+      expected++
+    }
+  }
+  for (const slot of slots) hosting.add(slot.line)
+
+  // Instance de question de chaque ligne ; une ligne de grille « Question k : A B C »
+  // (numéro et cases sur la même ligne) rejoint la question k de la session en cours.
+  const instanceOf: number[] = []
+  const lastByLabel = new Map<string, number>()
+  let current = -1
+  flow.forEach((_, i) => {
+    const q = parsed[i]!.q
+    if (q && q.kind !== 'letter') {
+      const label = labelAt[i] ?? ''
+      if (hosting.has(i) && lastByLabel.has(label)) current = lastByLabel.get(label)!
+      else {
+        current = i
+        lastByLabel.set(label, i)
+      }
+    }
+    instanceOf[i] = current
+  })
+
+  // Masques identiques : même carré pour toutes les cases, quel que soit leur état.
+  // Taille commune par classe de taille (cases de taille voisine, à 1,5 point près) : une case
+  // pleine et une case vide d'une même série reçoivent exactement le même carré.
+  const sizeOf = (b: Box) => Math.max(b.bbox.width, b.bbox.height)
+  const sideOf = (b: Box) =>
+    Math.max(...kept.filter((o) => Math.abs(sizeOf(o) - sizeOf(b)) <= 1.5).map(sizeOf)) + 3
+  const groups = new Map<number, PageRegion[]>()
+  kept.forEach((box, k) => {
+    const line = lineOfBox[k]!
+    const instance = line >= 0 ? (instanceOf[line] ?? -1) : -1
+    const cx = box.bbox.x + box.bbox.width / 2
+    const cy = box.bbox.y + box.bbox.height / 2
+    const side = sideOf(box)
+    const list = groups.get(instance) ?? []
+    list.push({
+      pageIndex: box.pageIndex,
+      bbox: { x: cx - side / 2, y: cy - side / 2, width: side, height: side },
+    })
+    groups.set(instance, list)
+  })
+  // Emplacements sans case reconnue : même carré que la case la plus proche de la page.
+  for (const slot of slots) {
+    const page = flow[slot.line]!.pageIndex
+    const onPage = kept.filter((b) => b.pageIndex === page)
+    if (onPage.length === 0) continue
+    const dist = (b: Box) =>
+      Math.hypot(b.bbox.x + b.bbox.width / 2 - slot.cx, b.bbox.y + b.bbox.height / 2 - slot.cy)
+    const nearest = onPage.reduce((a, b) => (dist(b) < dist(a) ? b : a))
+    const side = sideOf(nearest)
+    if (dist(nearest) < side / 2) continue // case déjà reconnue
+    // Recentrage sur la case dessinée (le centre de la ligne de texte peut être décalé).
+    const raster = await rasterOf(page)
+    const pageData = input.pages.find((pd) => pd.pageIndex === page)
+    const located =
+      raster && pageData ? locateSquare(raster, pageData, slot.cx, slot.cy, sizeOf(nearest)) : null
+    const at = located ?? slot
+    if (
+      located &&
+      kept.some(
+        (b) =>
+          b.pageIndex === page &&
+          Math.hypot(b.bbox.x + b.bbox.width / 2 - at.cx, b.bbox.y + b.bbox.height / 2 - at.cy) <
+            side / 2,
+      )
+    )
+      continue
+    const instance = instanceOf[slot.line] ?? -1
+    const list = groups.get(instance) ?? []
+    list.push({
+      pageIndex: page,
+      bbox: { x: at.cx - side / 2, y: at.cy - side / 2, width: side, height: side },
+    })
+    groups.set(instance, list)
+  }
+  const drafts: Draft[] = [...groups.entries()].map(([instance, regions]) => {
+    const anchor = instance >= 0 ? instance : Math.max(0, lineOfBox[0]!)
+    return { start: anchor, end: anchor, label: labelAt[anchor], grouped: false, custom: regions }
+  })
+  return { drafts, lines: hosting }
 }
 
 /**

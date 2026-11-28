@@ -69,3 +69,11 @@
 - Vérifié : `npm run check` (126 tests), `npm run build`, évaluation et Edge : `QUALITE.md` V-28-0005-HZ.
 - PR : #10 (`feat/detection-robustesse`), ouverte par l'équipe ; je ne la fusionne pas.
 - Suite : plan de phase 3 présenté à l'équipe ; aucune modification de phase 3 avant validation.
+
+### 28/11 01:25 · SESSION · T-HZ-3 généralisation et P0 QCM ENSAI · Claude Code
+
+- Corpus réel : 22 annales publiques (manifeste `src/detection/eval/corpus.tsv`, annotations par plages), 12 annales ENSAI DOC-corrige locales (hors dépôt).
+- P0 DOC-corrige : détection des cases noircies, masques identiques, sessions séparées, en-têtes répétés ignorés ; vérifié dans Edge. Voir `QUALITE.md` V-28-0115-HZ.
+- Erreur de protocole corrigée (serveur de test orphelin) : V-28-0120-HZ.
+- Pour Wael : aucune évolution de C1 ni du visualiseur nécessaire (un bloc = plusieurs petits rectangles) ; à noter, les pages éloignées ne sont pas dessinées tant qu'on n'y fait pas défiler (normal, mais les captures pleine page les montrent blanches).
+- Suite : familles d'erreurs du dev général (V-28-0125-HZ), calibration du repli.

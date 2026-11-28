@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest'
 import { readPageText } from '../../pdf/read-text.ts'
 import type { DetectionInput, PageData, RasterData } from '../contract.ts'
 import { detectCorrections } from '../index.ts'
+import { answerBoxes, findBoxes } from '../boxes.ts'
 import { layoutPage } from '../layout.ts'
 import { coverage, evaluate, truthFromRoles, type Truth, type TruthElement } from './metrics.ts'
 
@@ -93,6 +94,22 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
       const input = await load(path)
       if (lines.length === 0) lines.push(`Raster : ${input.raster ? 'oui' : 'non (texte seul)'}`)
       const result = await detectCorrections(input)
+      if (process.env.UNSPOIL_EVAL_BOXES && input.getRaster) {
+        // Diagnostic : cases de QCM trouvées dans le raster, page par page.
+        for (const page of input.pages) {
+          const boxes = findBoxes(await input.getRaster(page.pageIndex), page)
+          const kept = new Set(answerBoxes(boxes))
+          lines.push(
+            `   ${f} p${page.pageIndex + 1} : ${boxes.length} cases (pleines ${boxes.filter((b) => b.filled).length}) ; ` +
+              boxes
+                .map(
+                  (b) =>
+                    `${b.filled ? '■' : '□'}${b.char ?? '?'}${kept.has(b) ? '' : '×'}@${Math.round(b.bbox.x)},${Math.round(b.bbox.y)}/${b.bbox.width.toFixed(1)}`,
+                )
+                .join(' '),
+          )
+        }
+      }
       const truthPath = path.replace(/\.pdf$/i, '.verite.json')
       const rolesPath = path.replace(/\.pdf$/i, '.roles.txt')
       // Unités d'annotation : les lignes reconstruites, numérotées dans l'ordre de lecture.
@@ -105,10 +122,14 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
         })),
       )
       if (!existsSync(truthPath) && existsSync(rolesPath)) {
-        writeFileSync(
-          truthPath,
-          JSON.stringify(truthFromRoles(readFileSync(rolesPath, 'utf8'), units), null, 1),
-        )
+        const truth = truthFromRoles(readFileSync(rolesPath, 'utf8'), units)
+        // Éléments supplémentaires annotés hors lignes (cases de QCM relevées dans les
+        // opérations vectorielles du PDF, par exemple) : `x.cases.json`.
+        const extraPath = path.replace(/\.pdf$/i, '.cases.json')
+        if (existsSync(extraPath)) {
+          truth.elements.push(...(JSON.parse(readFileSync(extraPath, 'utf8')) as TruthElement[]))
+        }
+        writeFileSync(truthPath, JSON.stringify(truth, null, 1))
       }
       if (!existsSync(truthPath)) {
         // Listing à annoter. Sans UNSPOIL_EVAL_GUESS, aucun rôle deviné : annotation à l'aveugle.
