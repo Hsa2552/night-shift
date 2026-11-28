@@ -3,6 +3,7 @@
 // de leur taille exacte, de la police et de la mise en page. Le texte extrait ne les voit pas.
 
 import type { PageData, RasterData, Rect } from './contract.ts'
+import type { NativeSquare } from './visual/vector/cases.ts'
 
 export interface Box {
   pageIndex: number
@@ -16,11 +17,15 @@ export interface Box {
   /** La forme est le dessin d'un glyphe du texte (lettre d'un mot, puce, guillemet…) et non
    * une case : décidé sur le texte extrait, identique d'un moteur de rendu à l'autre. */
   glyph?: boolean
+  /** Case tirée des opérateurs du PDF (C1 v1.1) : état natif conservé, y compris « ambiguous ». */
+  native?: NativeSquare['nativeState']
 }
 
 /** Encre : seuil large, pour suivre les contours fins anticrénelés. Noir : remplissage. */
 const INK = 215
 const BLACK = 140
+/** Pixel non blanc : confirme qu'une case native est effectivement peinte. */
+const VISIBLE = 245
 
 /**
  * Cases candidates d'une page : carrés pleins (densité forte) et contours carrés à centre clair.
@@ -40,6 +45,97 @@ export function findBoxes(raster: RasterData, page: PageData): Box[] {
     if (!twin) merged.push(box)
   }
   return merged
+}
+
+/**
+ * Cases natives (opérateurs du PDF, via `nativeSquares`) ajoutées aux cases du raster. Les
+ * opérateurs ne dépendent pas du moteur de rendu ; le raster confirme la visibilité (encre sur
+ * le contour ou dans la case), comme l'exige C1 v1.1. Une case native déjà vue par le raster
+ * n'est pas dupliquée (son état natif est noté). L'état « ambiguous » est conservé et l'état
+ * plein / vide retenu est alors celui du raster.
+ */
+export function withNativeBoxes(
+  rasterBoxes: Box[],
+  squares: readonly NativeSquare[],
+  raster: RasterData,
+  page: PageData,
+): Box[] {
+  const out = [...rasterBoxes]
+  const { width: W, height: H, rgba } = raster
+  const sx = W / page.width
+  const sy = H / page.height
+  const lum = (x: number, y: number) => {
+    const px = Math.min(W - 1, Math.max(0, Math.round(x * sx)))
+    const py = Math.min(H - 1, Math.max(0, Math.round(y * sy)))
+    const i = (py * W + px) * 4
+    return 0.299 * rgba[i]! + 0.587 * rgba[i + 1]! + 0.114 * rgba[i + 2]!
+  }
+  for (const square of squares) {
+    if (square.region.pageIndex !== page.pageIndex) continue
+    const b = square.region.bbox
+    const cx = b.x + b.width / 2
+    const cy = b.y + b.height / 2
+    const twin = out.find(
+      (o) =>
+        Math.abs(o.bbox.x + o.bbox.width / 2 - cx) < b.width / 3 &&
+        Math.abs(o.bbox.y + o.bbox.height / 2 - cy) < b.height / 3,
+    )
+    if (twin) {
+      twin.native = square.nativeState
+      continue
+    }
+    // Visibilité : le contour n'est pas blanc (au moins 60 % des points du liseré, seuil 245 et
+    // non 215 : l'opérateur prouve déjà le dessin ; une case pâle reste visible à l'œil).
+    let edge = 0
+    let dark = 0
+    const n = 12
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n
+      for (const [x, y] of [
+        [b.x + t * b.width, b.y],
+        [b.x + t * b.width, b.y + b.height],
+        [b.x, b.y + t * b.height],
+        [b.x + b.width, b.y + t * b.height],
+      ] as const) {
+        edge++
+        const near = Math.min(lum(x, y), lum(x + 0.5, y + 0.5), lum(x - 0.5, y - 0.5))
+        if (near < VISIBLE) dark++
+      }
+    }
+    if (dark / edge < 0.6) continue
+    // Remplissage observé au centre (60 % du côté).
+    let inner = 0
+    let blackInner = 0
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 6; j++) {
+        inner++
+        if (
+          lum(
+            b.x + (0.2 + (0.6 * (i + 0.5)) / 6) * b.width,
+            b.y + (0.2 + (0.6 * (j + 0.5)) / 6) * b.height,
+          ) < BLACK
+        )
+          blackInner++
+      }
+    }
+    const density = blackInner / inner
+    const filled =
+      square.nativeState === 'filled'
+        ? true
+        : square.nativeState === 'empty'
+          ? false
+          : density >= 0.75
+    const under = charUnder(page, b)
+    out.push({
+      pageIndex: page.pageIndex,
+      bbox: { ...b },
+      filled,
+      density: filled ? Math.max(density, 0.85) : density,
+      ...(under ? { char: under.char } : {}),
+      native: square.nativeState,
+    })
+  }
+  return out
 }
 
 function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Box[] {

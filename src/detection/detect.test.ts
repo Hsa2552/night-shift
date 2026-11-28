@@ -625,3 +625,29 @@ describe('énoncés recopiés dans le corrigé', () => {
     expect(after.slice(4).every((b) => b !== null)).toBe(true)
   })
 })
+
+describe('consigne de notation dans la zone de titre', () => {
+  const questions = [
+    '1. Write a function that returns the length of a string.',
+    '2. Explain why the loop below never terminates.',
+    '3. Give the complexity of the sorting algorithm.',
+  ]
+
+  it('« Solutions … may get partial credit » : pas un indice de corrigé, sujet seul', async () => {
+    const result = await run(
+      fakePage(0, [
+        'CS 101 Midterm Examination',
+        'Solutions that violate any specified restrictions may get partial credit.',
+        ...questions,
+      ]),
+    )
+    expect(result.kind).toBe('statement_only')
+  })
+
+  it('« Solutions of the midterm » en titre : corrigé annoncé, jamais « sujet seul »', async () => {
+    const result = await run(
+      fakePage(0, ['CS 101 Midterm Examination', 'Solutions of the midterm', ...questions]),
+    )
+    expect(result.kind).not.toBe('statement_only')
+  })
+})
