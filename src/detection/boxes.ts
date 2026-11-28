@@ -60,11 +60,14 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
   // Taille plausible d'une case : entre 4 et 30 points de côté.
   const minSide = Math.max(4, Math.round(4 * s))
   const maxSide = Math.round(30 * s)
-  const seen = new Uint8Array(W * H)
+  // Numéro de composante de chaque pixel (0 : non visité).
+  const seen = new Int32Array(W * H)
+  let label = 0
   const stack: number[] = []
   const boxes: Box[] = []
   for (let start = 0; start < W * H; start++) {
     if (!dark[start] || seen[start]) continue
+    label++
     // Composante connexe (4-connexité), avec abandon dès qu'elle dépasse la taille maximale.
     let x0 = W
     let y0 = H
@@ -73,7 +76,7 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
     let count = 0
     let tooBig = false
     stack.push(start)
-    seen[start] = 1
+    seen[start] = label
     while (stack.length > 0) {
       const p = stack.pop()!
       const x = p % W
@@ -87,7 +90,7 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       for (const q of [p - 1, p + 1, p - W, p + W]) {
         if (q < 0 || q >= W * H || seen[q] || !dark[q]) continue
         if ((q === p - 1 && x === 0) || (q === p + 1 && x === W - 1)) continue
-        seen[q] = 1
+        seen[q] = label
         stack.push(q)
       }
     }
@@ -134,12 +137,15 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       const ix1 = x1 - Math.round(w * 0.3)
       const iy0 = y0 + Math.round(h * 0.3)
       const iy1 = y1 - Math.round(h * 0.3)
+      // Centre clair : seuls les pixels de la forme elle-même comptent. La lettre imprimée dans
+      // une case (non reliée au contour) n'en fait pas une case pleine, quel que soit le rendu
+      // de sa police (plus sombre dans Edge).
       let inner = 0
       let innerDark = 0
       for (let y = iy0; y <= iy1; y++) {
         for (let x = ix0; x <= ix1; x++) {
           inner++
-          if (black[y * W + x]) innerDark++
+          if (black[y * W + x] && seen[y * W + x] === label) innerDark++
         }
       }
       if (inner > 0 && innerDark / inner > 0.5) continue

@@ -409,3 +409,23 @@ describe('glyphes rendus comme des carrés (rendu des polices du navigateur) : p
     expect(answerBoxes(findBoxes(raster, page))).toEqual([])
   })
 })
+
+describe('lettre sombre imprimée dans une case vide (rendu des polices du navigateur)', () => {
+  it('la case reste reconnue comme vide : le centre est jugé sur le contour seul', () => {
+    const p = new QcmPage(0)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1))
+    // Lettres peintes en noir (et non en gris) : elles remplissent le centre des cases vides.
+    const page: PageData = { pageIndex: 0, ...A4, textItems: p.items }
+    const raster = fakeRaster(page)
+    for (const s of p.shapes) box(raster, s.x, s.y, s.side, s.filled)
+    const found = findBoxes(raster, page)
+    const empty = p.shapes.filter((s) => !s.filled)
+    for (const s of empty) {
+      const hit = found.find(
+        (b) => Math.abs(b.bbox.x - s.x) < 2 && Math.abs(b.bbox.y - s.y) < 2 && !b.filled,
+      )
+      expect(hit).toBeDefined()
+    }
+  })
+})
