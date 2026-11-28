@@ -94,3 +94,13 @@
 - Non vérifié : ces commits dans Edge (seulement sous Node) ; aucun gain mesuré sur le test.
 - PR : toujours à ouvrir par l'équipe : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation
 - Suite : sur-masquage de Bordeaux, labri sans marqueur, sujets seuls de sources indépendantes.
+
+### 28/11 03:15 · SESSION · T-HZ-3 phase 4, premier jalon · Claude Code
+
+- Intégration : PR #14 (Wael, `fix/recette-production`) fusionnée dans `feat/detection-generalisation` (`8cebd09`, sans conflit). PR #15 (Salif) pas encore fusionnée dans main : main non intégrée ; aucun conflit prévu (vérifié par `git merge-tree` avec #14 et #15). SHA commun de référence proposé : `65d8543` (moteur), après intégration de main dès la fusion de #15.
+- Fait : M1 conventions locales, M2 contrôle final de la fusion, M3 cases manquantes par régularité, M4 énoncés recopiés. Détail, mesures et résultats négatifs : `QUALITE.md` V-28-0310-HZ. Interface vectorielle proposée : `DECISIONS.md` D-28-0315-HZ.
+- Vérifié : 189 tests ; dev 8/10, fuite 0 %, énoncés masqués 29,7 % → 23,8 % ; ensai-dev inchangé. Test et ensai-test non lancés (protocole).
+- Pour Salif : (1) l'application se replie si `needsFallback` est vrai même quand `kind` vaut `mixed` ; le benchmark ne compte que `kind === 'unknown'` comme abstention : à distinguer (résultat brut / comportement de l'application) ; (2) la vérité ENSAI de mon benchmark ne contient que les cases : l'encre rouge rédigée des hybrides n'y est pas mesurée (la vérité de Wael, V-28-0211-WB, l'inclut) ; (3) version candidate à évaluer sur test : `65d8543`.
+- Pour Wael : M2 utilise ton `needsFallback` et tes candidats pour tous les types de document ; un logo répété (même rectangle sur deux pages) et l'encre placée avant la première question sont considérés comme expliqués. `observePageInk` n'est toujours pas utilisé : l'encre des lignes vient de `color.ts` ; la couche vectorielle (D-28-0315-HZ) permettrait de supprimer cet échantillonnage.
+- PR globale vers main : toujours à ouvrir par l'équipe (`gh` absent) : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation
+- Suite : intégrer main après #15 ; vérification Edge des quatre mécanismes ; famille « corrigé titré sans marqueur » (labri) ; observations vectorielles si l'interface est acceptée.
