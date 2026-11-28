@@ -77,3 +77,11 @@
 - Erreur de protocole corrigée (serveur de test orphelin) : V-28-0120-HZ.
 - Pour Wael : aucune évolution de C1 ni du visualiseur nécessaire (un bloc = plusieurs petits rectangles) ; à noter, les pages éloignées ne sont pas dessinées tant qu'on n'y fait pas défiler (normal, mais les captures pleine page les montrent blanches).
 - Suite : familles d'erreurs du dev général (V-28-0125-HZ), calibration du repli.
+
+### 28/11 02:00 · SESSION · T-HZ-3 BUG-001, fusion visuelle, benchmark · Claude Code
+
+- BUG-001 résolu (V-28-0200-HZ) ; détecteur de Wael intégré par défaut via `fusion.ts` (V-28-0205-HZ) ; « sujet seul » refusé sur indices de corrigé (titre, pied de page, tournures de réponse) ; benchmark `npm run benchmark:*` et workflow manuel.
+- main intégrée (`329d297`, PR #11, #12, #13) : conflits de mémoire résolus en gardant les deux versions.
+- PR : non ouverte par l'agent (`gh` absent, accès à l'identifiant Git refusé) ; lien à ouvrir par l'équipe.
+- Pour Wael : sur BUG-001, `analyzeColorPage` propose un bloc sur une question bleue (page 1) ; la fusion le rejette. `observePageInk` n'est pas encore utilisé par le moteur (l'encre par ligne vient de `color.ts`).
+- Suite : familles du dev (extraction dégradée, numérotations « A.1. » et « VII.1 », corrigés en fin avec énoncés recopiés).

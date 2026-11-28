@@ -124,6 +124,25 @@
 - Annale externe : [MIT 18.05, examen final 2022](https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/mit18_05_s22_exam_final.pdf), 23 pages, ouverte puis analysée localement. Le détecteur a renvoyé un bloc. La vérification porte sur le parcours, sans mesure d’exactitude du bloc.
 - Contrastes calculés : 6,75:1 pour le texte secondaire clair, 8,44:1 en sombre, au moins 4,93:1 aux arrêts du bouton dégradé, 9,23:1 pour la commande dans les masques. L’émulation tactile ne valide pas Safari ni un téléphone physique.
 
+### V-28-0200-HZ · BUG-001 (Lyon 2 L2 CCC1, questions colorées, corrections neutres) résolu
+
+- Par : Hazem (Claude Code) · Commits `d386998` (méthode), `e839b26` (intégration du détecteur de Wael), branche `feat/detection-generalisation` à jour de main (`329d297`)
+- Cause : aucune correction marquée ; seul le titre « Corrigé » était reconnu, d'où tout le document masqué (ou, avant la phase 3, « Aucun corrigé n'a été détecté »).
+- Méthode générique : une teinte qui porte au moins 60 % des questions numérotées et presque uniquement des questions et leurs lignes de suite devient l'encre des questions (aucune couleur supposée) ; chaque question ouvre un bloc jusqu'à la question suivante, un intitulé d'exercice ou un séparateur décoratif ; données avant les questions visibles ; blocs multipages. Fusion avec `analyzeColorPage` de Wael : régions sur une question ou sur la teinte des questions rejetées.
+- Résultats (vérité humaine, blocs annotés) : 17/17 blocs entièrement masqués et révélables indépendamment, 0/38 ligne d'énoncé ou de données masquée, type `mixed`. Autre annale de même convention (`lyon2-stat-ccc1`, dev) : 130 → 3 corrections visibles sur 152, 0/46 énoncé masqué. Dans Edge avec l'interface Mako de main : 18 régions (17 blocs, 4.2 sur deux pages), questions bleues, données et définition de F(x) visibles.
+- Limites : convention vérifiée sur deux annales du même auteur ; tests synthétiques avec d'autres teintes ; non testé sur téléphone.
+
+### V-28-0205-HZ · Benchmark automatique et intégration du détecteur de Wael
+
+- Par : Hazem (Claude Code) · Commit `e839b26`
+- Commande : `npm run benchmark:dev` / `:test` (téléchargement, SHA-256, vrai lecteur et détecteur, rapports Markdown et JSON avec commit, version du corpus, familles, régressions). Partition test téléchargée depuis un cache vide : 12/12 PDF, 36 s.
+- Résultats (unités = lignes ou cases ; réussite = aucune correction incomplète, au plus 5 % d'énoncé masqué, pas d'abstention) :
+  - dev (11, dont BUG-001) : réussite 3/10 mesurables, abstention 1, taux de fuite 13,1 %, énoncés masqués 50,7 % ;
+  - test (12, totaux seulement) : réussite 1/12, abstention 1, fuite 20,5 %, énoncés masqués 31,4 % ; famille « sujet seul » : 0/3 réussite, 36 % d'énoncés masqués (non analysé sur le test, à étudier sur le dev) ;
+  - ENSAI dev : fuite 0 %, énoncés masqués 13,0 % ; ENSAI test : fuite 0,1 %, énoncés masqués 14,5 %.
+- Intégration du détecteur colorimétrique de Wael par défaut : aucune régression sur les quatre partitions (comparaison automatique du benchmark).
+- Limites : vérités dev et test annotées par Hazem seul (pas de second annotateur) ; vérités ENSAI automatiques (opérations vectorielles) ; workflow GitHub `benchmark.yml` non exécuté (à valider par l'équipe).
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
