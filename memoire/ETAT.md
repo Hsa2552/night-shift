@@ -144,6 +144,13 @@
 - Maturité : laboratoire Python et prototype PDF.js testés en isolation sur PDF réels et contrôles synthétiques. Approche hybride proposée. Raccordement au moteur et évaluation indépendante à réaliser après revue.
 - Notes : PR #16, `research/pdf-vector/` et V-28-0319-WB. La PR #15 conditionne séparément la synchronisation de la recette de phase 3.
 
+### T-WB-6 · Couleurs natives et glyphes
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/perception-textuelle-native`
+- Dépend de : repère C1 et tableau de fragments fourni par le lecteur. Salif raccorde le canal au lecteur. Hazem exploite les observations.
+- Maturité : association des couleurs, glyphes, relations et géométrie graphique testées en isolation. Comparaison Edge sur huit PDF, tests PDF.js Node et résultats dans `research/pdf-vector/NATIVE-TEXT.md`. PR #20. Raccordement et validation moteur à faire dans les branches responsables.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._
