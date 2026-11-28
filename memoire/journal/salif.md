@@ -74,3 +74,7 @@
 - Vérité réservée gelée avant toute prédiction, avec empreintes locales et engagement dans `QUALITE.md`. Les seules mesures publiées sont agrégées. Le test des indices de forme dans les groupes QCM est distinct de la couverture historique.
 - Contrôle Savoie dans Edge : les cinq rasters témoin sont identiques à ceux de production, même sans polices système. Basculer `disableFontFace` reproduit exactement la sortie Node du détecteur. Mesure par le navigateur de production conservée pour les résultats produit.
 - Les deux rapports sur `9615001` concordent avec l'empreinte du build et rendent la perte de parité mesurable. La recette Edge hors ligne passe. Pages et la validation physique restent dépendantes de l'activation par le propriétaire. Voir V-28-0322-S.
+
+### 28/11 · SESSION · T-S-7 commandes de révélation · Codex
+
+- Diagnostic et correctif sur `fix/commandes-revelation`. La commande individuelle reste dans le même pied de page. Le bouton global remasque les régions révélées sans relancer le détecteur. Voir V-28-0359-S pour les essais réels et la validation de Pages.

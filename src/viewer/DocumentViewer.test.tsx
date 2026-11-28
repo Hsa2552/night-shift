@@ -106,6 +106,44 @@ describe('lecteur', () => {
     expect(lastMask.style.width).toBe('40%')
   })
 
+  it('garde la même commande accessible après un changement de largeur et une révélation', () => {
+    let resize: ((width: number) => void) | undefined
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resize = (width) =>
+            callback(
+              [{ contentRect: new DOMRect(0, 0, width, 400) }] as ResizeObserverEntry[],
+              this as ResizeObserver,
+            )
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+    try {
+      render(
+        <DocumentViewer
+          pages={pages}
+          mode={{ kind: 'automatic', blocks }}
+          renderPage={renderPage}
+        />,
+      )
+      const action = screen.getByRole('button', { name: 'Afficher le corrigé — Question 2' })
+      action.focus()
+      act(() => resize?.(1000))
+      expect(screen.getByRole('button', { name: 'Afficher le corrigé — Question 2' })).toBe(action)
+      fireEvent.click(action)
+      expect(screen.getByRole('button', { name: 'Remasquer le corrigé — Question 2' })).toBe(action)
+      expect(document.activeElement).toBe(action)
+      expect(screen.getAllByTestId('correction-mask')).toHaveLength(3)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('déplace la frontière entre des pages de tailles différentes et remasque en remontant', async () => {
     render(<DocumentViewer pages={pages} mode={{ kind: 'progressive' }} renderPage={renderPage} />)
     const first = screen.getByRole('region', { name: 'Page 1' })

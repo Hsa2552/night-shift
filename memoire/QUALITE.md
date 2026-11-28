@@ -416,6 +416,13 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Scan MIT, 37/37 placements à IoU 0,90, médiane 1,000. Règles, trajectoires et surlignages testés sur contrôles synthétiques. La géométrie et les relations n’attribuent aucun rôle. Aucun test de couverture des corrections avant raccordement C1.
 - Passage après synchronisation `aac0adf`. Latence médiane native par page de 6,9 à 14,0 ms par document textuel et 38,5 ms pour le scan. La rasterisation et son analyse sont mesurées à part dans le rapport de laboratoire.
 
+### V-28-0359-S · Commandes de révélation et disponibilité du site HTTPS
+
+- Protocole — Build local de production `da87ece` pour la reproduction, puis `npm run build` sur la branche de correctif. Edge sous Windows, 1440 × 900 et 390 × 844, zoom 150 %, défilement rapide entre première et dernière page. Liège MATH0013 (8 pages, 6 blocs), corrigé de Toulouse (6 pages, 27 blocs dont 95 régions groupées), Lyon 2 (aucun masque sur ce build) et QCM synthétique `qcm-cases.pdf` (2 blocs groupés, 6 régions).
+- Avant — Toulouse passe de 5 à 4 puis 5 commandes intégrées aux masques après redimensionnement et zoom. Une commande est démontée puis remontée en pied de page. La commande s'y déplaçait aussi lors de la révélation d'un bloc intégré. La barre supérieure reste visible dans les essais, mais « Masquer les corrigés » reste désactivé lorsque des blocs sont révélés, car l'état automatique suffisait à le désactiver.
+- Après — Aucun nœud de commande remplacé au changement de largeur ou de zoom. Chaque bloc garde une commande en pied de sa première page. Les masques groupés se révèlent et se remasquent ensemble. « Masquer les corrigés » remasque les blocs déjà révélés sans nouvelle analyse. Les bascules vers la lecture progressive repartent de pages couvertes. Importations, remplacement et analyse hors ligne vérifiés. `node scripts/verify-viewer-controls.mjs <URL locale> assert <PDF> <PDF> …` reproduit la recette.
+- Distribution — Pages est en service, HTTPS imposé, déploiement `da87ece` confirmé par GitHub Actions. Le SHA-256 du module JavaScript public correspond au build local propre. Dans Edge en émulation tactile, après précache initial, rechargement, import et analyse réussissent hors ligne sur l'URL HTTPS. Installation et essais sur appareils physiques restent à effectuer. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46099507179)
+
 ### V-28-0428-WB · Géométrie adaptative et séparation des lignes
 
 - Protocole. Vrai `layoutPage` et reconstructions sur les mêmes fragments PDF.js. Cinq pages de quatre PDF publics, 81 lignes annotées sur le rendu. Cinq cas synthétiques et cinq transformations, sans accès aux partitions réservées.

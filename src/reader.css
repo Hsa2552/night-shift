@@ -328,36 +328,6 @@
   box-shadow: inset 0 0 0 1px #acbdd9;
 }
 
-.mask-action {
-  display: inline-flex;
-  min-width: 44px;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 0.48rem;
-  padding-inline: 0.55rem;
-  border: 1px solid #b9cae8;
-  border-radius: 6px;
-  background: #f0f5fe;
-  color: #263f7b;
-  font-size: 0.72rem;
-  font-weight: 680;
-  white-space: nowrap;
-  pointer-events: auto;
-  cursor: pointer;
-  transition:
-    background var(--ease),
-    border-color var(--ease);
-}
-.mask-action:hover {
-  background: #e5efff;
-  border-color: #8aa8d9;
-}
-.mask-action:focus-visible {
-  outline-offset: -3px;
-  outline-color: #335ccd;
-}
-
 .pdf-viewer-actions {
   display: flex;
   flex-wrap: wrap;
