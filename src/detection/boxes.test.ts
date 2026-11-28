@@ -620,3 +620,29 @@ describe('QCM marqués par des relations natives (coches, aplats)', () => {
     }
   })
 })
+
+describe('case cochée d’une croix tapée (« x » dans la case)', () => {
+  it('la case portant un « x » est la réponse : toutes les cases masquées à l’identique', async () => {
+    const p = new QcmPage(0)
+    p.text('Question 1 Le k-means utilise la distance euclidienne.')
+    p.options(OPTS(1, 'AB').map((o) => ({ ...o, correct: false })))
+    p.text('Question 2 La CAH demande de fixer le nombre de groupes.')
+    p.options(OPTS(2, 'AB').map((o) => ({ ...o, correct: false })))
+    p.text('Question 3 La partition optimale minimise l’inertie intra-classe.')
+    p.options(OPTS(3, 'AB').map((o) => ({ ...o, correct: false })))
+    // Lettres d'options retirées ; une croix « x » tapée au centre de la case cochée.
+    p.items = p.items.filter((it) => it.text.length > 1)
+    const crossed = [p.shapes[1]!, p.shapes[2]!, p.shapes[5]!]
+    for (const s of crossed) p.items.push(fakeItem('x', s.x + 3, s.y + 2, 7))
+    const { page, raster } = p.build()
+    const result = await run([{ page, raster }])
+    expect(result.kind).toBe('mixed')
+    for (const s of p.shapes) {
+      const cx = s.x + s.side / 2
+      const cy = s.y + s.side / 2
+      expect(regions(result).some((g) => inside(g.bbox, cx, cy))).toBe(true)
+    }
+    const sides = new Set(regions(result).map((g) => g.bbox.width.toFixed(1)))
+    expect(sides.size).toBe(1)
+  })
+})

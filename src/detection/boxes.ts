@@ -165,6 +165,16 @@ export function withNativeBoxes(
       // avec sa coche serait plus grande et décentrée, et son masque se distinguerait.
       twin.native = square.nativeState
       twin.bbox = { ...b }
+      // Le raster n'avait vu que le glyphe dessiné dans la case (croix « x ») : la case tracée
+      // le remplace, et la lettre devient son contenu.
+      if (twin.glyph && square.paint.length > 0) {
+        const under = charUnder(page, b)
+        twin.glyph = false
+        twin.filled = square.nativeState === 'filled'
+        twin.density = twin.filled ? 1 : 0
+        if (under) twin.char = under.char
+        else delete twin.char
+      }
       continue
     }
     // Visibilité : le contour n'est pas blanc (au moins 60 % des points du liseré, seuil 245 et
