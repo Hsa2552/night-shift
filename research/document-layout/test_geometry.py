@@ -3,6 +3,7 @@ import unittest
 from experiment import expand_reference, graph, line_scores
 from fixtures import fixtures
 from geometry import adaptive_lines, normalized_fragments, neighbor_blocks, turn_box, xy_cut
+from rulings import ruled_regions
 
 
 class GeometryTests(unittest.TestCase):
@@ -55,6 +56,20 @@ class GeometryTests(unittest.TestCase):
         self.assertEqual(lines, [])
         self.assertEqual(xy_cut(lines, spacing), [])
         self.assertEqual(neighbor_blocks(lines, spacing, candidates), [])
+
+    def test_joining_broken_separators_does_not_promote_dangling_strokes(self):
+        frame = [
+            {"orientation": "h", "box": (0, 0, 13, .2)},
+            {"orientation": "h", "box": (15, 0, 40, .2)},
+            {"orientation": "h", "box": (0, 10, 40, 10.2)},
+            {"orientation": "v", "box": (0, 0, .2, 10)},
+            {"orientation": "v", "box": (40, 0, 40.2, 10)},
+            {"orientation": "v", "box": (20, 10, 20.2, 30)},
+        ]
+        found = ruled_regions(frame, 10)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["crossings"], 4)
+        self.assertEqual(ruled_regions(frame[:3], 10), [])
 
 
 if __name__ == "__main__":

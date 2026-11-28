@@ -9,6 +9,7 @@ from time import perf_counter
 
 from geometry import (StripIndex, adaptive_lines, area, center, envelope, gap, iou,
                       neighbor_blocks, normalized_fragments, overlap, turn_box, xy_cut)
+from rulings import ruled_regions
 
 
 def graph(lines, blocks, order, objects, spacing, width, height):
@@ -66,11 +67,15 @@ def reconstruct(page):
     lines, spacing, candidates = adaptive_lines(fragments)
     line_ms = (perf_counter() - start) * 1000
     results = {}
+    partition_xy = []
     for name, partition in (("xy", lambda: xy_cut(lines, spacing)),
+                            ("xy_margin", lambda: xy_cut(lines, spacing, leading_margin=.15)),
                             ("neighbors", lambda: neighbor_blocks(lines, spacing, candidates))):
         begin = perf_counter()
         blocks = partition()
         order = [i for group in blocks for i in group]
+        if name == "xy":
+            partition_xy = blocks
         results[name] = {
             "lines": [turn_box(lines[i]["box"], -rotation) for i in order],
             "parts": [lines[i]["parts"] for i in order],
@@ -78,7 +83,7 @@ def reconstruct(page):
             "ms": line_ms + (perf_counter() - begin) * 1000,
         }
     objects = [{**obj, "box": turn_box(obj["box"], rotation)} for obj in page.get("objects", [])]
-    use = xy_cut(lines, spacing)
+    use = partition_xy
     order = [i for group in use for i in group]
     begin = perf_counter()
     edges, rankings = graph(lines, use, order, objects, spacing, page["width"], page["height"])
@@ -100,6 +105,7 @@ def reconstruct(page):
         "rankings": {key: [position[i] for i in items] for key, items in rankings.items()},
         "ms": results["xy"]["ms"] + (perf_counter() - begin) * 1000,
     }
+    results["rulings"] = ruled_regions(page.get("objects", []), spacing.em)
     return results, {"quarter_normalized": rotation, "spacing": vars(spacing)}
 
 
@@ -219,6 +225,8 @@ def measure(trace, reference, intermediate):
         print(json.dumps({"logical": {
             "sha256": doc["sha256"], "pages": len(doc["pages"]),
             "tagged": sum(p.get("structureNodes", 0) > 0 for p in doc["pages"]),
+            "linked_pages": sum(p.get("linkedFragments", 0) > 0 for p in doc["pages"]),
+            "linked_fragments": sum(p.get("linkedFragments", 0) for p in doc["pages"]),
             "marked": sum(p.get("marked", 0) for p in doc["pages"]),
             "marked_ids": sum(p.get("markedIds", 0) for p in doc["pages"]),
             "outline": doc.get("outline", 0), "fields": doc.get("fields", 0), "layers": doc.get("layers", 0),
@@ -231,11 +239,18 @@ def measure(trace, reference, intermediate):
             rows = expand_reference(truth)
             answer = {"page": page["key"], "group": "synthetic" if doc.get("synthetic") else labels["label"]}
             for name, result in predictions.items():
+                if name == "rulings":
+                    if "rulings" in truth:
+                        answer[name] = {
+                            **block_scores(truth["rulings"], [r["box"] for r in result]),
+                            "page_candidates": len(result),
+                        }
+                    continue
                 answer[name] = {
                     "ms": round(result["ms"], 3),
                     **(line_scores(page, rows, result) if name != "graph" else {}),
                     **({"blocks": block_scores(truth["blocks"], result["blocks"])} if truth.get("blocks") and name != "graph" else {}),
-                    **({"links": link_scores(page, truth["links"], result, name == "graph")} if truth.get("links") and name in {"current", "graph"} else {}),
+                    **({"links": link_scores(page, truth["links"], result, name == "graph")} if truth.get("links") and name in {"current", "xy", "graph"} else {}),
                     **({"edges": len(result["edges"])} if name == "graph" else {}),
                 }
             print(json.dumps(answer))

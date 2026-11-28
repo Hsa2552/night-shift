@@ -59,6 +59,11 @@
 - Justification. Les 81 cases vides manquées par `findBoxes` brut dans le diagnostic sont présentes dans les deux relevés natifs. Les cas à glyphes, fond coloré ou scan nécessitent d’autres signaux.
 - Raccordement soumis à revue avec Hazem et Salif. Le prototype n’édite aucune interface commune.
 
+### D-28-0437-WB · Géométrie locale et cadres vectoriels · `[PROPOSÉ]`
+
+- Wael propose des observations complémentaires de lignes locales et de cadres à séparateurs croisés. Le nombre de mélanges entre cellules baisse, et les cadres sont précis sur les trois pages annotées. Garder le traitement actuel en dehors des familles confirmées.
+- La topologie dispose d’un prototype TypeScript isolé. Le classement automatique du graphe et la fermeture raster n’apportent pas de bénéfice dans le protocole. Les résultats et limites sont consignés dans V-28-0428-WB et V-28-0437-WB, PR #24.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...

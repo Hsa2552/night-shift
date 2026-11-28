@@ -209,9 +209,9 @@ def whitespace(lines, ids, axis, threshold):
     return best
 
 
-def xy_cut(lines, spacing):
+def xy_cut(lines, spacing, *, leading_margin=0):
     x_limit = max(spacing.word_gap * 1.5, 3 * spacing.character)
-    y_limit = max(.56 * spacing.em, spacing.lead - spacing.em + 2.5 * spacing.lead_mad)
+    y_limit = max(.56 * spacing.em, spacing.lead - spacing.em + max(2.5 * spacing.lead_mad, leading_margin * spacing.em))
     pending = [list(range(len(lines)))]
     blocks = []
     while pending:

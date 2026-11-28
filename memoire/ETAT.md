@@ -153,10 +153,10 @@
 
 ### T-WB-7 · Géométrie adaptative et graphes documentaires
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/research-adaptive-layout`
 - Dépend de : C1 et perception vectorielle. Expériences indépendantes du moteur et du benchmark officiel.
-- Maturité : comparatif Python/Edge mesuré sur pages réelles et variantes synthétiques. Graphe et apport des structures natives en expérimentation. Voir `research/document-layout/`.
+- Maturité : comparatif sur pages réelles et variantes synthétiques. Prototype TypeScript isolé de topologie des séparateurs, comparé à Python. PR #24. Résultats et limites dans `research/document-layout/`.
 
 ## Terminées ou abandonnées
 

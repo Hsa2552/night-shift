@@ -4,6 +4,7 @@ import { layoutPage } from '../../src/detection/layout.ts'
 import { mapTextItem } from '../../src/pdf/text-geometry'
 import { observeNativePage } from '../../src/detection/visual/vector/native-page'
 import type { PageData, Rect } from '../../src/shared/types'
+import type { TextItem as PdfTextItem } from 'pdfjs-dist/types/src/display/api'
 
 GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -60,15 +61,25 @@ export function simulate(pages: FixturePage[]) {
   }
 }
 
-function countTree(node: { role?: string; type?: string; children?: unknown[] } | null): number {
-  if (!node) return 0
-  return (
-    1 +
-    (node.children ?? []).reduce<number>(
-      (count, child) => count + countTree(child as Parameters<typeof countTree>[0]),
-      0,
-    )
-  )
+interface TreeNode {
+  type?: string
+  id?: string
+  children?: TreeNode[]
+}
+
+function inspectTree(root: TreeNode | null, marked: Map<string, number[]>) {
+  const pending = [...(root?.children ?? [])].reverse()
+  const order = new Set<number>()
+  let nodes = 0
+  while (pending.length) {
+    const node = pending.pop()!
+    nodes++
+    if (node.type === 'content' && node.id)
+      for (const index of marked.get(node.id) ?? []) order.add(index)
+    if (node.children)
+      for (let i = node.children.length - 1; i >= 0; i--) pending.push(node.children[i])
+  }
+  return { structureNodes: nodes, linkedFragments: order.size, declaredOrder: [...order] }
 }
 
 export async function extract(bytes: Uint8Array<ArrayBuffer>) {
@@ -87,15 +98,30 @@ export async function extract(bytes: Uint8Array<ArrayBuffer>) {
     const form = await document.getFieldObjects().catch(() => null)
     const layers = await document
       .getOptionalContentConfig()
-      .then((config) => config.getOrder())
-      .catch(() => null)
+      .then((config) => Array.from(config).length)
+      .catch(() => 0)
     for (let pageIndex = 0; pageIndex < document.numPages; pageIndex++) {
       const page = await document.getPage(pageIndex + 1)
       const viewport = page.getViewport({ scale: 1 })
       const content = await page.getTextContent({ includeMarkedContent: true })
-      const items = content.items.filter(
-        (item) => 'str' in item && item.str.trim() && item.width >= 0,
-      )
+      const items: PdfTextItem[] = []
+      const marked = new Map<string, number[]>()
+      const stack: (string | undefined)[] = []
+      let markedGroups = 0
+      for (const item of content.items) {
+        if ('str' in item) {
+          if (!item.str.trim() || item.width < 0) continue
+          for (const id of new Set(stack)) {
+            if (id) marked.get(id)?.push(items.length)
+          }
+          items.push(item)
+        } else if (item.type === 'beginMarkedContent' || item.type === 'beginMarkedContentProps') {
+          const id = 'id' in item && typeof item.id === 'string' ? item.id : undefined
+          stack.push(id)
+          if (id && !marked.has(id)) marked.set(id, [])
+          if (item.type === 'beginMarkedContentProps') markedGroups++
+        } else if (item.type === 'endMarkedContent') stack.pop()
+      }
       const textItems = items.map((item) =>
         mapTextItem(item, content.styles[item.fontName], viewport.transform),
       )
@@ -142,9 +168,6 @@ export async function extract(bytes: Uint8Array<ArrayBuffer>) {
           .filter((glyph) => glyph.visibility === 'paint-command')
           .map((glyph) => ({ box: xyxy(glyph.region.bbox), kind: 'symbol' })),
       ]
-      const marked = content.items.filter(
-        (item) => 'type' in item && item.type === 'beginMarkedContentProps',
-      )
       const tree = await page.getStructTree().catch(() => null)
       pages.push({
         key: String(pageIndex + 1),
@@ -153,17 +176,17 @@ export async function extract(bytes: Uint8Array<ArrayBuffer>) {
         fragments,
         objects,
         baseline: built,
-        marked: marked.length,
-        markedIds: marked.filter((item) => 'id' in item && typeof item.id === 'string').length,
-        structureNodes: countTree(tree),
+        marked: markedGroups,
+        markedIds: marked.size,
+        ...inspectTree(tree, marked),
       })
       page.cleanup()
     }
     return {
       pages,
       outline: outline?.length ?? 0,
-      fields: Object.keys(form ?? {}).length,
-      layers: layers?.length ?? 0,
+      fields: form instanceof Map ? form.size : Object.keys(form ?? {}).length,
+      layers,
     }
   } finally {
     await task.destroy()
