@@ -154,3 +154,15 @@ describe('numérotations hiérarchiques', () => {
     expect(parseQuestion('A. Lyon')?.style).not.toBe('hier')
   })
 })
+
+describe('intitulés de section et sous-questions « b. »', () => {
+  it('« B. Exercice : … » est une partie, « A. Lyon » non', () => {
+    expect(parseQuestion('B. Exercice : les satellites de Jupiter')?.kind).toBe('part')
+    expect(parseQuestion('A. Question de cours : énergie')?.kind).toBe('part')
+    expect(parseQuestion('A. Lyon')).toBeNull()
+  })
+  it('« b. Écrire le volume… » est une sous-question, « a. Paris » non', () => {
+    expect(parseQuestion('b. Écrire le volume de la partie immergée.')?.kind).toBe('letter')
+    expect(parseQuestion('a. Paris')).toBeNull()
+  })
+})

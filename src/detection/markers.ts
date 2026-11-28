@@ -66,6 +66,18 @@ export function parseQuestion(text: string): QuestionMarker | null {
   const stripped = text.replace(LEADING_DECORATION, '')
   const folded = fold(stripped)
 
+  const section = SECTION_RE.exec(folded)
+  if (section && /^[A-H]/.test(stripped)) {
+    return {
+      kind: 'part',
+      level: 0,
+      value: section[1]!,
+      style: 'part',
+      display: `Partie ${section[1]!.toUpperCase()}`,
+      rest: stripped.slice(2).trim(),
+    }
+  }
+
   const strong = STRONG_RE.exec(folded)
   if (strong) {
     const word = STRONG_WORDS[strong[1]!]!
@@ -133,8 +145,29 @@ export function parseQuestion(text: string): QuestionMarker | null {
       rest: stripped.slice(letter[0].length),
     }
   }
+
+  // « b. Écrire le volume… » : lettre minuscule et point, suivie d'une phrase (4 mots au
+  // moins) ; une option courte de QCM (« a. Paris ») reste une option.
+  const letterDot = /^([a-h])\.\s+(?=\S)/.exec(stripped)
+  if (letterDot) {
+    const rest = stripped.slice(letterDot[0].length)
+    if (rest.split(/\s+/).filter((w) => /\p{L}{2,}/u.test(w)).length >= 4) {
+      return {
+        kind: 'letter',
+        level: 4,
+        value: letterDot[1]!,
+        style: 'x.',
+        display: `${letterDot[1]})`,
+        rest,
+      }
+    }
+  }
   return null
 }
+
+/** Intitulé de section « B. Exercice : … », « C. Problème », « A. Question de cours ». */
+const SECTION_RE =
+  /^([a-h])\.\s+(?:exercice|exercise|probleme|problem|question|partie|part|etude|application)\b/
 
 /** Valeur suivante d'une numérotation (3 → 4, b → c, 1.2 → 1.3), ou null. */
 export function nextValue(value: string): string | null {
