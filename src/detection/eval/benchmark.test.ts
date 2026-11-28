@@ -9,10 +9,13 @@
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { version as pdfjsVersion } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
 import { detectCorrections } from '../index.ts'
-import { scoreGeo, type DocumentScore, type GeoTruth } from './geo.ts'
-import { loadPdf } from './loader.ts'
+import { GEO_METRICS_VERSION, provenanceKind, scoreGeo, type GeoTruth } from './geo.ts'
+import { loadPdf, NODE_PDF_LOADER_VERSION } from './loader.ts'
+import { aggregate, type DocReport } from './report.ts'
+import { scoreVisibleInk } from './strict.ts'
 
 const split = process.env.UNSPOIL_BENCH_SPLIT
 const cacheDir = process.env.UNSPOIL_BENCH_CACHE ?? ''
@@ -27,17 +30,6 @@ interface Row {
   sha256: string
 }
 
-interface DocReport extends Partial<DocumentScore> {
-  partition: string
-  name: string
-  family: string
-  status: 'évalué' | 'absent' | 'empreinte différente' | 'sans vérité' | 'erreur'
-  detail?: string
-  provenance?: string
-  durationMs?: number
-  raster?: boolean
-}
-
 const pct = (n: number, d: number) => (d === 0 ? '—' : `${((100 * n) / d).toFixed(1)} %`)
 
 function readManifest(): Row[] {
@@ -48,42 +40,9 @@ function readManifest(): Row[] {
   })
 }
 
-function aggregate(docs: DocReport[]) {
-  const done = docs.filter((d) => d.status === 'évalué' && d.measurable !== false)
-  const sum = (f: (d: DocReport) => number) => done.reduce((a, d) => a + f(d), 0)
-  const corr = sum((d) => d.corrections?.total ?? 0)
-  const full = sum((d) => d.corrections?.full ?? 0)
-  const stmts = sum((d) => d.statements?.total ?? 0)
-  const masked = sum((d) => d.statements?.masked ?? 0)
-  return {
-    documents: docs.length,
-    evaluated: done.length,
-    notMeasurable: docs.filter((d) => d.status === 'évalué' && d.measurable === false).length,
-    errors: docs.filter((d) => d.status !== 'évalué').length,
-    kindCorrect: done.filter((d) => d.kindExpected === d.kindObtained).length,
-    corrections: {
-      total: corr,
-      full,
-      partial: sum((d) => d.corrections?.partial ?? 0),
-      none: sum((d) => d.corrections?.none ?? 0),
-    },
-    leakRate: corr === 0 ? 0 : (corr - full) / corr,
-    statements: { total: stmts, masked },
-    overmaskRate: stmts === 0 ? 0 : masked / stmts,
-    abstentions: done.filter((d) => d.abstained).length,
-    successes: done.filter((d) => d.success).length,
-    documentsWithLeak: done.filter((d) => (d.corrections?.total ?? 0) > (d.corrections?.full ?? 0))
-      .length,
-    meanDurationMs: done.length === 0 ? 0 : Math.round(sum((d) => d.durationMs ?? 0) / done.length),
-  }
-}
-
 describe.skipIf(!split)('benchmark du détecteur', () => {
   it('évalue le corpus et écrit les rapports', { timeout: 3_600_000 }, async () => {
     const rows = readManifest().filter((r) => split === 'all' || r.partition === split)
-    const fontsDir = join(process.cwd(), 'node_modules/pdfjs-dist/standard_fonts/')
-      .split('\\')
-      .join('/')
     const docs: DocReport[] = []
     for (const row of rows) {
       const base: DocReport = {
@@ -101,8 +60,9 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
         continue
       }
       const bytes = new Uint8Array(readFileSync(pdfPath))
-      if (createHash('sha256').update(bytes).digest('hex') !== row.sha256) {
-        docs.push({ ...base, status: 'empreinte différente' })
+      const pdfSha256 = createHash('sha256').update(bytes).digest('hex')
+      if (pdfSha256 !== row.sha256) {
+        docs.push({ ...base, status: 'empreinte différente', pdfSha256 })
         continue
       }
       const repoTruth = join(here, 'annotations', row.partition, `${row.name}.geo.json`)
@@ -113,29 +73,46 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
           ? localTruth
           : null
       if (!truthPath) {
-        docs.push({ ...base, status: 'sans vérité' })
+        docs.push({ ...base, status: 'sans vérité', pdfSha256 })
         continue
       }
-      const truth = JSON.parse(readFileSync(truthPath, 'utf8')) as GeoTruth
+      const annotation = readFileSync(truthPath)
+      const truthSha256 = createHash('sha256').update(annotation).digest('hex')
       try {
+        const truth = JSON.parse(annotation.toString('utf8')) as GeoTruth
         const input = await loadPdf(bytes, {
-          standardFontDataUrl: fontsDir,
           raster: process.env.UNSPOIL_BENCH_RASTER !== '0',
         })
-        const t0 = performance.now()
-        const result = await detectCorrections(input)
-        const durationMs = Math.round(performance.now() - t0)
-        await input.close()
-        docs.push({
-          ...base,
-          status: 'évalué',
-          provenance: truth.provenance,
-          durationMs,
-          raster: input.raster,
-          ...scoreGeo(truth, result),
-        })
+        let measured: DocReport
+        try {
+          const t0 = performance.now()
+          const result = await detectCorrections(input)
+          const durationMs = Math.round(performance.now() - t0)
+          const score = scoreGeo(truth, result, input.pages)
+          const ink =
+            process.env.UNSPOIL_BENCH_INK === '1' && input.getRaster
+              ? await scoreVisibleInk(truth, result.blocks, input.pages, input.getRaster)
+              : undefined
+          measured = {
+            ...base,
+            status: 'évalué',
+            detail: score.measurable ? undefined : 'aucune annotation c ou q',
+            provenance: truth.provenance,
+            annotationSource: provenanceKind(truth.provenance),
+            truthVersion: truth.format,
+            truthSha256,
+            pdfSha256,
+            durationMs,
+            raster: input.raster,
+            ink,
+            ...score,
+          }
+        } finally {
+          await input.close()
+        }
+        docs.push(measured)
       } catch (error) {
-        docs.push({ ...base, status: 'erreur', detail: String(error) })
+        docs.push({ ...base, status: 'erreur', detail: String(error), pdfSha256, truthSha256 })
       }
     }
 
@@ -147,7 +124,14 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
 
     const families = [...new Set(docs.map((d) => d.family))].sort()
     const report = {
-      format: 'unspoil-benchmark/1',
+      format: 'unspoil-benchmark/2',
+      metricsVersion: GEO_METRICS_VERSION,
+      runtime: {
+        environment: 'node',
+        version: process.version,
+        pdfjs: pdfjsVersion,
+        pdfLoader: NODE_PDF_LOADER_VERSION,
+      },
       date: new Date().toISOString(),
       split,
       git: {
@@ -174,10 +158,22 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
       : null
     const regressions: string[] = []
     const resolved: string[] = []
-    if (previous) {
+    const comparable =
+      previous?.metricsVersion === report.metricsVersion &&
+      previous.corpusVersion === report.corpusVersion &&
+      previous.runtime?.pdfLoader === report.runtime.pdfLoader &&
+      previous.runtime?.pdfjs === report.runtime.pdfjs
+    if (comparable) {
       for (const d of docs.filter((x) => x.status === 'évalué' && x.measurable !== false)) {
         const p = previous.documents.find((x) => x.name === d.name && x.status === 'évalué')
-        if (!p || p.measurable === false) continue
+        if (
+          !p ||
+          p.measurable === false ||
+          p.truthSha256 !== d.truthSha256 ||
+          p.pdfSha256 !== d.pdfSha256 ||
+          p.raster !== d.raster
+        )
+          continue
         const leaks = (x: DocReport) => (x.corrections?.total ?? 0) - (x.corrections?.full ?? 0)
         if (p.success && !d.success) regressions.push(`${d.name} : réussite perdue`)
         else if (leaks(d) > leaks(p))
@@ -190,7 +186,7 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
         else if (leaks(d) < leaks(p)) resolved.push(`${d.name} : fuites ${leaks(p)} → ${leaks(d)}`)
       }
     }
-    const comparison = previous
+    const comparison = comparable
       ? { previousSha: previous.git.sha, previousDate: previous.date, regressions, resolved }
       : null
     const full = { ...report, comparison }
@@ -207,6 +203,7 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
 
 function markdown(r: {
   date: string
+  metricsVersion: string
   split?: string
   git: { sha: string; dirty: boolean }
   corpusVersion: string
@@ -237,6 +234,7 @@ function markdown(r: {
     `- Date : ${r.date}`,
     `- Commit : \`${r.git.sha}\`${r.git.dirty ? ' (modifications locales non commitées)' : ''}`,
     `- Version du corpus (empreinte de corpus.tsv) : \`${r.corpusVersion}\``,
+    `- Métriques : \`${r.metricsVersion}\`. Couvertures à 95 % et 5 % calculées sur les régions brutes ; la réussite suit le parcours produit.`,
     `- Documents : ${s.documents}, évalués : ${s.evaluated}, non mesurables (aucune unité annotée) : ${s.notMeasurable}, non évalués : ${s.errors}`,
     `- Unités : lignes reconstruites ou cases annotées (corrections c, énoncés q) ; une correction est entièrement masquée si 95 % de sa surface est couverte, non masquée sous 5 %.`,
     '',
@@ -257,7 +255,7 @@ function markdown(r: {
     ...r.documents.map((d) =>
       d.status !== 'évalué'
         ? `| ${d.name} | ${d.family} | ${d.status}${d.detail ? ` (${d.detail})` : ''} | | | | | | |`
-        : `| ${d.name} | ${d.family} | évalué${d.raster ? '' : ' (texte seul)'}${d.measurable === false ? ', non mesurable' : ''} | ${d.kindExpected} → ${d.kindObtained}${d.abstained ? ' (abstention)' : ''} | ` +
+        : `| ${d.name} | ${d.family} | ${d.measurable === false ? `non mesurable (${d.detail})` : 'évalué'}${d.raster ? '' : ' (texte seul)'} | ${d.kindExpected} → ${d.kindObtained} (${d.presentation?.mode ?? '—'}) | ` +
           `${d.corrections!.full} / ${d.corrections!.partial} / ${d.corrections!.none} sur ${d.corrections!.total} | ` +
           `${d.statements!.masked}/${d.statements!.total} | ` +
           `${d.blocks!.total ? `${d.blocks!.fullyMasked}, ${d.blocks!.independent} sur ${d.blocks!.total}` : '—'} | ${d.success ? 'oui' : 'non'} | ${d.durationMs} ms |`,
@@ -275,7 +273,7 @@ function markdown(r: {
           `Résolus (${r.comparison.resolved.length}) :`,
           ...r.comparison.resolved.map((x) => `- ${x}`),
         ].join('\n')
-      : 'Aucune exécution précédente pour cette partition.',
+      : 'Aucune exécution précédente comparable pour cette partition.',
     '',
     '## Erreurs de téléchargement',
     '',

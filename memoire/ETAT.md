@@ -74,6 +74,16 @@
 - Maturité : correctif intégré. Recette de production avec Mako testée sur Edge, Firefox et WebKit. Mesures reproductibles hors ligne.
 - Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
 
+### T-S-5 · Parité Node–navigateur et validation scientifique
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/benchmark-parity`
+- Dépend de : benchmark et marqueur de build intégrés par la PR #14 à `feat/detection-generalisation`. C1 reste applicable.
+- Critères d'acceptation : mêmes décisions d'affichage dans le produit et le score, référence Node/Edge avec empreintes, exclusions documentées, corpus réservé avant évaluation et vérification HTTPS après activation humaine.
+- Maturité : oracle partagé, score strict et recette réelle testés. Savoie isolé au raster. Trois sujets seuls supplémentaires mesurés, et corpus réservé gelé puis mesuré dans Edge. Voir `QUALITE.md` V-28-0301-S et V-28-0310-S.
+- Notes : PR #17 vers la branche de Hazem qui contient le benchmark.
+- Blocage externe : PR #15 en attente de revue humaine et Pages à activer par le propriétaire. La recette physique dépend de l'URL et de l'accès à des appareils.
+
 ### T01 · Socle technique commun
 
 - Statut : en revue · Priorité : P0

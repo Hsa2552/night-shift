@@ -4,7 +4,7 @@ import { FileInput, Home } from './components/Home'
 import { Icon } from './components/Icon'
 import type { PdfDocument } from './pdf'
 import type { PageData, PageDimensions } from './shared/types'
-import { clipCorrectionBlocks } from './viewer/correctionGeometry'
+import { decideDetection } from './viewer/detectionDecision'
 import type { ViewerMode } from './viewer/DocumentViewer'
 import { Reader } from './viewer/Reader'
 
@@ -136,30 +136,25 @@ export default function App() {
       if (request !== revision.current) return
       setWarnings(result.warnings)
 
-      const conflictingResult = result.kind === 'statement_only' && result.blocks.length > 0
-      if (result.kind === 'unknown' || result.needsFallback || conflictingResult) {
-        setKindLabel('Lecture progressive')
-        setMessage('La détection est incertaine. Fais glisser le trait pour découvrir le document.')
-        setMode({ kind: 'progressive' })
-        return
-      }
-
-      if (result.kind === 'statement_only') {
-        setMessage('Aucun corrigé n’a été détecté.')
-        setMode({ kind: 'automatic', blocks: [] })
-        return
-      }
-
-      const blocks = clipCorrectionBlocks(result.blocks, document.pages)
-      if (!blocks?.length) {
+      const decision = decideDetection(result, document.pages)
+      if (decision.kind === 'progressive') {
         setKindLabel('Lecture progressive')
         setMessage(
-          'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
+          decision.reason === 'uncertain'
+            ? 'La détection est incertaine. Fais glisser le trait pour découvrir le document.'
+            : 'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
         )
         setMode({ kind: 'progressive' })
         return
       }
 
+      if (decision.kind === 'statement_only') {
+        setMessage('Aucun corrigé n’a été détecté.')
+        setMode({ kind: 'automatic', blocks: [] })
+        return
+      }
+
+      const { blocks } = decision
       const count = blocks.length
       setKindLabel(result.kind === 'correction_only' ? 'Corrigé seul' : 'Sujet et corrections')
       setMessage(count === 1 ? '1 bloc de corrigé détecté.' : `${count} blocs de corrigé détectés.`)

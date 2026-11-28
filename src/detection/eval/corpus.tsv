@@ -22,6 +22,9 @@ test	mit-6006-quiz1-sol	marqueurs	https://ocw.mit.edu/courses/6-006-introduction
 test	mit-6006-final-sol	marqueurs	https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/6a81686dc8431dbc9e27dbe42eb683d7_MIT6_006F11_final_sol.pdf	cedf4fea8bb1a92809ec2424102d9070d4f05f9a37c17c1cafca86b9167f8be2
 test	mit-18100c-solutions	corrige-seul	https://ocw.mit.edu/courses/18-100c-real-analysis-fall-2012/4cc3cbbe88488796d2bb767ea0fa9cbe_MIT18_100CF12_Solutions.pdf	d91c236924320c6503b0e36a85c2432d68d83ca0a75f64b26b6d71b468633dab
 dev	lyon2-l2-ccc1	couleur-questions	https://perso.univ-lyon2.fr/~rabdesse/Documents/UFR-SEG/LICENCE/L2/CCC1-2024-2025.pdf	e9086f3b7d59ee072a39fca0c75348563ca0b6c9447ea8a7fdef4ddda1d1d091
+dev-v2-sujets	paris-saclay-m1-algebre	sujet-seul	https://www.imo.universite-paris-saclay.fr/~david.harari/enseignement/m1alg21/dec20.pdf	214256dfa4f27bd8d4645fa1dd6686e4fb15fdc07f575f3d048403456f4d8a49
+dev-v2-sujets	strasbourg-l2-probabilites	sujet-seul	https://irma.math.unistra.fr/~giraudo/CC2_2022_23.pdf	b55d2432f43b93ede338b5e262abeeda209b573d58d824d93390eb0d6527f356
+dev-v2-sujets	stanford-cs107-sujet	sujet-seul	https://web.stanford.edu/class/archive/cs/cs107/cs107.1238/exams/Practice-Midterm-1.pdf	de69dc10946854cad999877a6909f36c9da92791d7adff306aedcf46e469ccc8
 ensai-dev	ensai-09e01e2ab125	qcm-cases	local	09e01e2ab12577cc832d63025895de643b50b28f460da2586a289896ab080294
 ensai-dev	ensai-210af91d4856	qcm-cases	local	210af91d4856ddd1273d556dfe37e140aa3d02a516fcbf7be078a06add5f0ad2
 ensai-dev	ensai-561ca33970dd	qcm-cases	local	561ca33970dd6524add4afb6181058a15e3b4036528c38462b1b05c31cec5906

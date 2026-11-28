@@ -2,6 +2,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { chromium } from 'playwright-core'
+import { displayedBlocks, masksOf } from './browser-masks.mjs'
 
 const [url, expectedSha, ...files] = process.argv.slice(2)
 assert.ok(
@@ -27,7 +28,7 @@ await context.route('**/*', (route) =>
 )
 const results = []
 const truths = process.env.UNSPOIL_RECETTE_VERITES
-const scoreGeo = truths ? (await import('../src/detection/eval/geo.ts')).scoreGeo : null
+const geo = truths ? await import('../src/detection/eval/geo.ts') : null
 const readSha = (page) => page.locator('meta[name=unspoil-build]').getAttribute('content')
 
 async function openCovered(page, file) {
@@ -52,25 +53,6 @@ async function analyze(page) {
   )
   assert.equal(await page.getByRole('alert').count(), 0)
 }
-
-const masksOf = (page) =>
-  page.getByTestId('correction-mask').evaluateAll((masks) =>
-    masks.map((mask) => {
-      const parent = mask.parentElement
-      const [w, h] = parent.style.aspectRatio.split('/').map(Number)
-      const style = getComputedStyle(mask)
-      return {
-        pageIndex: Number(parent.closest('[data-reader-page]').dataset.readerPage),
-        bbox: {
-          x: (parseFloat(mask.style.left) * w) / 100,
-          y: (parseFloat(mask.style.top) * h) / 100,
-          width: (parseFloat(mask.style.width) * w) / 100,
-          height: (parseFloat(mask.style.height) * h) / 100,
-        },
-        opaque: style.backgroundColor === 'rgb(255, 255, 255)' && style.opacity === '1',
-      }
-    }),
-  )
 
 try {
   for (const file of files) {
@@ -116,46 +98,26 @@ try {
       colorCalls = surrounding[0]?.count ?? 0
     }
 
-    const blocks = []
-    const actions = await page
-      .locator('[data-block-action]')
-      .evaluateAll((buttons) => buttons.map((b) => b.dataset.blockAction))
-    for (const id of new Set(actions)) {
-      const button = page.locator('[data-block-action=' + JSON.stringify(id) + ']')
-      await button.evaluate((el) => el.click())
-      await page
-        .locator('[data-revealed][data-block-action=' + JSON.stringify(id) + ']')
-        .waitFor({ state: 'attached' })
-      const remaining = (await masksOf(page)).map((mask) => JSON.stringify(mask))
-      const regions = masks.filter((mask) => {
-        const index = remaining.indexOf(JSON.stringify(mask))
-        if (index === -1) return true
-        remaining.splice(index, 1)
-        return false
-      })
-      assert.ok(regions.length > 0)
-      await button.evaluate((el) => el.click())
-      await page.waitForFunction(
-        (n) => document.querySelectorAll('[data-testid=correction-mask]').length === n,
-        masks.length,
-      )
-      blocks.push({ id, regions })
-    }
+    const blocks = await displayedBlocks(page, masks)
 
     let score = null
-    if (scoreGeo) {
+    if (geo) {
       const truthName = basename(file).replace(/\.pdf$/i, '.geo.json')
       const annotation = await readFile(join(truths, truthName), 'utf8').catch((cause) => {
         if (cause.code === 'ENOENT') return null
         throw cause
       })
       if (annotation) {
-        score = scoreGeo(JSON.parse(annotation), {
-          kind,
-          blocks,
-          needsFallback: fallback,
-          warnings: [],
-        })
+        const reason = (await page.getByText(/Les masques ne peuvent pas/).count())
+          ? 'invalid-masks'
+          : 'uncertain'
+        const decision = fallback
+          ? { kind: 'progressive', reason }
+          : blocks.length
+            ? { kind: 'automatic', blocks }
+            : { kind: 'statement_only' }
+        const presented = geo.scorePresentedGeo(JSON.parse(annotation), decision)
+        score = { ...presented.coverage, presentation: presented, success: presented.success }
       }
     }
 
