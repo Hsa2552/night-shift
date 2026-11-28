@@ -109,3 +109,7 @@
 ### 28/11 04:54 · SESSION · T-WB-8 · Géométrie alternative
 
 - Parité avec les groupes Python sur 14 cas horizontaux de la phase 4.3. Activation conditionnelle par gouttière répétée, indices du lecteur préservés. Deux tests ciblent les invariances et le document simple. Le moteur historique reste en place.
+
+### 28/11 05:03 · SESSION · T-WB-8 · Figures mixtes et cadres
+
+- Fusion native/raster de séparateurs, cellules fusionnées et bande de peinture locale. Blocage d’une peinture mixte si une partie menace l’énoncé. Contrôles ciblés de changement de couleur et résolution, conflit de texte et fermeture hybride.
