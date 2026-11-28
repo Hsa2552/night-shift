@@ -157,6 +157,32 @@
 - Suite, commit `63f4d82` (intertitre de la couleur des questions après « ? » masqué avec la correction ; test unitaire qui échoue sans le correctif, vérifié) : dev réussite 8/10, fuite 0 % (2072/2072), énoncés masqués inchangés (29,7 %) ; `lyon2-stat-ccc1` résolu ; test, ENSAI dev et ENSAI test inchangés, 0 régression ; 180 tests, build OK.
 - Limites : le gain du dev ne se transfère pas au test (aucune amélioration mesurée) ; restent ouverts le sur-masquage de Bordeaux (309 lignes), labri sans marqueur (73/73 masquées) et la famille « sujet seul » (36 % d'énoncés masqués sur le test, aucun exemple disponible dans le dev).
 
+### V-28-0310-HZ · Phase 4, premier jalon : fusion, conventions locales, QCM, énoncés recopiés
+
+- Par : Hazem (Claude Code). Base : `fd88420` + PR #14 de Wael fusionnée dans la branche (`8cebd09`, sans conflit, 181 tests). PR #15 non fusionnée dans main à 03:10 : main non intégrée.
+- Protocole : diagnostic et réglage sur dev et ensai-dev uniquement ; **partitions test et ensai-test non lancées** (évaluation par Salif sur version figée). Commande : `node scripts/benchmark.mjs <partition> --cache <hors dépôt> --hors-ligne`, raster actif. Même corpus et mêmes métriques que V-28-0215-HZ.
+- Diagnostic structurel (P0 de Wael, V-28-0211-WB) :
+  1. `colorDrafts` ne s'exécutait que si le document n'avait **aucun** bloc : les cases d'un QCM suffisaient à désactiver l'inférence colorimétrique de tout le document hybride (convention unique par PDF) ;
+  2. le repli colorimétrique externe n'était pris en compte que pour « sujet seul » : un document `mixed` grâce aux cases ignorait l'encre rouge inexpliquée des pages rédigées ;
+  3. la complétion des cases manquantes reposait seulement sur les lettres extractibles A, B, C… ;
+  4. famille « énoncés recopiés dans le corrigé » : un bloc de corrigé avalait l'énoncé recopié (Bordeaux, 308 lignes d'énoncé dans un seul bloc).
+- Mécanismes et mesures (chacun avec un test unitaire qui échoue sans lui, vérifié) :
+
+| Étape | Commit | dev : réussite / fuite / énoncés masqués / abstentions | ensai-dev : cases visibles / énoncés masqués |
+|---|---|---|---|
+| Avant (63f4d82 + PR #14) | `8cebd09` | 8/10 · 0 % · 387/1304 (29,7 %) · 0 | 0/602 · 62/476 |
+| M1 conventions locales (couleur par unité section × page non expliquée) | `f3a3d8e` | identique | identique |
+| M2 contrôle final de la fusion (convergent / contredit / expliqué / ambigu inexpliqué ; mobilier de page et encre avant la 1re question expliqués) | `f3a3d8e` | identique (première version : 2 abstentions à tort sur Lyon, logo répété ; corrigée) | identique |
+| M3 cases manquantes par régularité du groupe (interpolation seule) | `5cafcbe` | identique | identique |
+| M4 énoncés recopiés (tous les 4-grammes déjà visibles, suites ≥ 2) | `65d8543` | 8/10 · 0 % · **311/1304 (23,8 %)** · 0 | identique |
+
+- Lecture honnête : M1, M2 et M3 n'ont **aucun effet mesurable sur les partitions de développement**, qui ne contiennent ni hybride ni case manquante ; leur bénéfice n'est démontré que sur des cas synthétiques reproduisant les P0 de Wael. Leur effet réel est à mesurer par Salif (ensai-test contient les deux hybrides de 12 pages) et dans Edge.
+- Résultats négatifs, non retenus : (a) démasquer les questions par la syntaxe (« ? », verbes d'instruction) dans un corrigé : au mieux +10 lignes d'énoncé visibles, et 4 fuites pour la variante sans « ? » ; (b) lissage séquentiel (ligne courte entre deux lignes visibles) : +2 lignes d'énoncé, **29 fuites** (Toulouse) ; (c) M4 aux seuils 0,6 ou 0,8, ou en suites d'une ligne : 2 à 20 fuites sur Bordeaux, Liège, exo7, labri.
+- Conclusion intermédiaire sur la segmentation globale (programmation dynamique O(nK²)) : **non justifiée à ce stade**. Les erreurs restantes du dev viennent d'observations locales insuffisantes (formules courtes, reformulations partielles, corrigé titré sans marqueur chez labri) et non d'incohérences de transitions ; le seul lissage séquentiel testé crée des fuites. Prototype non engagé ; à reconsidérer si les observations vectorielles de Wael apportent de nouveaux coûts locaux fiables.
+- Bordeaux, 228 lignes d'énoncé encore masquées : 77 lignes courtes (formules), 87 reprises à moins de 50 %, 64 reprises partielles ; certaines lignes annotées « énoncé » ressemblent à des calculs de corrigé : bruit d'annotation probable (annotateur unique), à confirmer par la validation indépendante de Salif.
+- Temps : dev 803 ms par document en moyenne sur une exécution non chargée (`5cafcbe`) ; les mesures à 1,5 s du même soir correspondent à une machine chargée (même écart sur ensai-dev), non à un coût des mécanismes.
+- Non vérifié : Edge ; partitions de test ; documents hybrides réels.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
