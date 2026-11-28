@@ -170,6 +170,28 @@ describe('questions colorées servant d’ancres (couleur des questions, correct
     expect([4, 6, 7].map(covered)).toEqual([true, true, true])
   })
 
+  it('intertitre de la couleur des questions après « ? » : masqué avec la correction', async () => {
+    const lines = [
+      'Exercice 1 : tests',
+      '1) Les moyennes sont-elles différentes',
+      'au risque de 5 % ? :',
+      'Comparaison de deux moyennes : test de Student',
+      'La statistique vaut 2,4 donc on rejette H0.',
+      '2) Les variances sont-elles égales ? :',
+      'Test de Fisher : on ne rejette pas H0.',
+    ]
+    const page = fakePage(0, lines)
+    const colored = (t: string) => /^\d\)|^au risque|^Comparaison/.test(t)
+    const result = await withRaster(page, (item) => (colored(item.text) ? GREEN : undefined))
+    const top = (n: number) => 72 + n * 16.5
+    const covered = (n: number) =>
+      result.blocks.some((b) =>
+        b.regions.some((r) => r.bbox.y <= top(n) + 2 && r.bbox.y + r.bbox.height >= top(n) + 9),
+      )
+    expect([0, 1, 2, 5].map(covered)).toEqual([false, false, false, false])
+    expect([3, 4, 6].map(covered)).toEqual([true, true, true])
+  })
+
   it('correction sur deux pages : un seul bloc, deux régions', async () => {
     const p0 = fakePage(0, ['Exercice 1', '1) Démontrer le résultat :', 'Première étape.'])
     const p1 = fakePage(1, ['Deuxième étape.', '2) Conclure :', 'Conclusion.'])

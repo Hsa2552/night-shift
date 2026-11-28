@@ -1352,9 +1352,17 @@ function questionInkDrafts(
   const drafts: Draft[] = []
   for (let k = 0; k < flow.length; k++) {
     if (!(isQuestion(k) && inHue(k))) continue
-    // Fin de la question : lignes suivantes de la même teinte.
+    // Fin de la question : lignes suivantes de la même teinte, jusqu'à la ligne qui clôt la
+    // question par « ? » ; un intertitre coloré qui suit (« Comparaison de deux moyennes : »)
+    // appartient à la correction. En cas de doute, masquer plutôt que laisser fuir.
     let i = k
-    while (i + 1 < flow.length && inHue(i + 1) && !isQuestion(i + 1)) i++
+    while (
+      i + 1 < flow.length &&
+      inHue(i + 1) &&
+      !isQuestion(i + 1) &&
+      !/\?\s*:?\s*$/u.test(flow[i]!.text)
+    )
+      i++
     const start = i + 1
     let end = start - 1
     for (let j = start; j < flow.length; j++) {
