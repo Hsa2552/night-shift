@@ -13,7 +13,8 @@ import type {
   PageData,
 } from './contract.ts'
 import { hueDistance, inkOf, type Ink } from './color.ts'
-import { answerBoxes, findBoxes, locateSquare, type Box } from './boxes.ts'
+import { answerBoxes, findBoxes, locateSquare, withNativeBoxes, type Box } from './boxes.ts'
+import { nativeSquares } from './visual/vector/cases.ts'
 import {
   fuseExternalColor,
   registeredColorAnalyzer,
@@ -1054,7 +1055,17 @@ async function boxDrafts(
   for (const page of input.pages) {
     if (!flow.some((l) => l.pageIndex === page.pageIndex)) continue
     const raster = await rasterOf(page.pageIndex)
-    if (raster) all.push(...findBoxes(raster, page))
+    if (!raster) continue
+    // Cases natives (opérateurs du PDF, C1 v1.1), confirmées par le raster ; canal facultatif.
+    const vectors = input.getVectors
+      ? await input.getVectors(page.pageIndex).catch(() => undefined)
+      : undefined
+    const found = findBoxes(raster, page)
+    all.push(
+      ...(vectors
+        ? withNativeBoxes(found, nativeSquares(vectors.rectangles), raster, page)
+        : found),
+    )
   }
   const kept = answerBoxes(all)
   if (kept.length === 0) return { drafts: [], lines: new Set() }
