@@ -93,3 +93,11 @@
 ### 28/11 04:07 · SESSION · T-WB-6 · Glyphes et géométrie des tracés
 
 - PR #20 complétée avec les cellules de glyphes, leurs relations de recouvrement et de voisinage, les fonds colorés, les placements image, les traits et les surlignages. Vérifié sur Virginia Tech, Washington et MIT, puis documenté dans V-28-0407-WB. Les boîtes glyphes sont des estimations et les rôles restent à attribuer dans le moteur.
+
+### 28/11 04:28 · SESSION · T-WB-7 · Géométrie adaptative
+
+- Audit de `layout.ts` et comparaison avec une base adaptative, XY-Cut et des voisins de type Docstrum. Premiers résultats publiés pour Hazem dans la branche dédiée. Aucune modification du moteur ou du lecteur. Voir V-28-0428-WB.
+
+### 28/11 04:37 · SESSION · T-WB-7 · Fermeture des cadres et limites du graphe
+
+- PR #24 complétée. Prototype TypeScript de topologie des séparateurs, comparé à Python. Comparaison de l’ordre, étude des balises/MCID et contrôle raster à trois résolutions. Le classement du graphe et la fermeture raster n’améliorent pas les cibles observées. Voir V-28-0437-WB.

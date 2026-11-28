@@ -423,6 +423,19 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Après — Aucun nœud de commande remplacé au changement de largeur ou de zoom. Chaque bloc garde une commande en pied de sa première page. Les masques groupés se révèlent et se remasquent ensemble. « Masquer les corrigés » remasque les blocs déjà révélés sans nouvelle analyse. Les bascules vers la lecture progressive repartent de pages couvertes. Importations, remplacement et analyse hors ligne vérifiés. `node scripts/verify-viewer-controls.mjs <URL locale> assert <PDF> <PDF> …` reproduit la recette.
 - Distribution — Pages est en service, HTTPS imposé, déploiement `da87ece` confirmé par GitHub Actions. Le SHA-256 du module JavaScript public correspond au build local propre. Dans Edge en émulation tactile, après précache initial, rechargement, import et analyse réussissent hors ligne sur l'URL HTTPS. Installation et essais sur appareils physiques restent à effectuer. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46099507179)
 
+### V-28-0428-WB · Géométrie adaptative et séparation des lignes
+
+- Protocole. Vrai `layoutPage` et reconstructions sur les mêmes fragments PDF.js. Cinq pages de quatre PDF publics, 81 lignes annotées sur le rendu. Cinq cas synthétiques et cinq transformations, sans accès aux partitions réservées.
+- Sur les pages publiques, lignes mélangeant deux colonnes ou cellules de 7 à 1. Concordance de l’ordre 581/655 en référence, 630/655 avec XY-Cut, 586/655 pour les voisins. Blocs à IoU 0,50 de 5/14 à 7/14 avec les deux méthodes, avec des régressions selon les pages.
+- Les voisins retrouvent 18/18 blocs synthétiques de base et 18/18 sous transformations. XY-Cut retrouve 3/18 et 7/18. Le graphe et la proximité brute donnent 3/3 relations synthétiques. Voir `research/document-layout/`. Les observations ne mesurent pas la couverture des corrections.
+
+### V-28-0437-WB · Topologie et structure logique
+
+- Protocole. Trois pages numériques avec cinq cadres ou tableaux annotés depuis le rendu. Quatre des cinq cibles sont retrouvées par les séparateurs natifs, sans proposition supplémentaire sur ces pages. Le tableau à filets horizontaux reste hors de portée de cette topologie. Parité Python/TypeScript sur les quinze cas de la comparaison.
+- À 1,5× et 2×, les traces raster non interrompues retrouvent 5/5 cibles. La fermeture récupère le même nombre et ajoute trois candidats hors cible sur DocLayNet. Aucun candidat sur le scan MIT p. 1.
+- Voisinage des objets. Trois relations sur trois avec la proximité simple et le graphe sur l’exemple synthétique. Sur deux ancres publiques, une retrouvée par la proximité des lignes XY-Cut et aucune par le graphe. Le classement évalué n’est pas retenu.
+- Arbre logique. 0/93 pages de développement/diagnostic avec liens à du texte. Contrôles W3C de 56 et 13 fragments raccordés. Sept champs sur l’exemple W3C correspondant. Contrôle synthétique avec un champ et un calque reconnus. Le corpus n’évalue pas l’ordre logique de documents multipages, le rappel des corrections ou le masque final.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
