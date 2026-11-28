@@ -2,29 +2,56 @@
 // rôles et blocs attendus, provenance ; aucun texte des annales. Indépendante de la
 // reconstruction des lignes : un changement de `layoutPage` ne l'invalide pas.
 
-import type { DetectionResult, DocumentKind, Rect } from '../contract.ts'
+import { decideDetection, type PresentedDetection } from '../../viewer/detectionDecision.ts'
+import type { PageDimensions } from '../../shared/types.ts'
+import type { CorrectionBlock, DetectionResult, DocumentKind, Rect } from '../contract.ts'
 import { coverage, LEAK_THRESHOLD, OVERMASK_THRESHOLD, type Role } from './metrics.ts'
+import { scoreStrictGeometry } from './strict.ts'
+
+export const GEO_METRICS_VERSION = 'unspoil-geo/2'
+
+export function provenanceKind(provenance: string) {
+  if (/^humaine\b/i.test(provenance)) return 'human-reviewed'
+  if (/^automatique\b/i.test(provenance)) return 'automatic'
+  return 'unspecified'
+}
+
+export type ElementCategory = 'text' | 'empty-box' | 'filled-box' | 'figure'
 
 export interface GeoTruth {
   format: 'unspoil-verite-geo/1'
   /** « humaine … » ou « automatique … » : qui a produit cette vérité, et comment. */
   provenance: string
   kind: DocumentKind
-  elements: { page: number; role: Role; bbox: [number, number, number, number]; group?: string }[]
+  elements: {
+    page: number
+    role: Role
+    bbox: [number, number, number, number]
+    group?: string
+    category?: ElementCategory
+  }[]
 }
 
-export interface DocumentScore {
-  kindExpected: DocumentKind
-  kindObtained: DocumentKind
-  /** Document entièrement couvert par l'interface (révélation progressive) : abstention. */
-  abstained: boolean
+interface RegionScore {
   corrections: { total: number; full: number; partial: number; none: number }
   statements: { total: number; masked: number }
   blocks: { total: number; fullyMasked: number; independent: number }
-  /** Faux si aucune unité n'est annotée (zones exclues) : document non mesurable. */
+  strict: ReturnType<typeof scoreStrictGeometry>
+}
+
+export interface PresentedScore {
+  mode: PresentedDetection['kind']
+  reason?: 'uncertain' | 'invalid-masks'
+  coverage: RegionScore | null
+  success: boolean
+}
+
+export interface DocumentScore extends RegionScore {
+  kindExpected: DocumentKind
+  kindObtained: DocumentKind
+  abstained: boolean
   measurable: boolean
-  /** Réussite automatique : pas d'abstention, aucune correction incomplètement masquée,
-   * au plus 5 % des lignes d'énoncé masquées, et pas d'erreur de type « sujet seul ». */
+  presentation: PresentedScore
   success: boolean
 }
 
@@ -35,8 +62,8 @@ const rect = (b: [number, number, number, number]): Rect => ({
   height: b[3],
 })
 
-export function scoreGeo(truth: GeoTruth, result: DetectionResult): DocumentScore {
-  const regions = result.blocks.flatMap((b) => b.regions)
+function scoreRegions(truth: GeoTruth, blocks: readonly CorrectionBlock[]): RegionScore {
+  const regions = blocks.flatMap((b) => b.regions)
   const corrections = truth.elements.filter((e) => e.role === 'c')
   const statements = truth.elements.filter((e) => e.role === 'q')
   const correctionCover = corrections.map((e) => coverage(rect(e.bbox), e.page, regions))
@@ -56,7 +83,7 @@ export function scoreGeo(truth: GeoTruth, result: DetectionResult): DocumentScor
     if (members.every((e) => coverage(rect(e.bbox), e.page, regions) >= LEAK_THRESHOLD)) {
       fullyMasked++
     }
-    const owners = result.blocks.filter((b) =>
+    const owners = blocks.filter((b) =>
       members.some((e) => coverage(rect(e.bbox), e.page, b.regions) > 0.5),
     )
     if (owners.length !== 1) continue
@@ -70,23 +97,57 @@ export function scoreGeo(truth: GeoTruth, result: DetectionResult): DocumentScor
     if (coversAll && !touchesOthers) independent++
   }
 
-  const abstained = result.kind === 'unknown'
-  const leaks = corrections.length - full
-  const overmaskRate = statements.length === 0 ? 0 : masked / statements.length
-  const wrongStatementOnly = result.kind === 'statement_only' && corrections.length > 0
   return {
-    kindExpected: truth.kind,
-    kindObtained: result.kind,
-    abstained,
-    corrections: { total: corrections.length, full, partial: leaks - none, none },
+    corrections: {
+      total: corrections.length,
+      full,
+      partial: corrections.length - full - none,
+      none,
+    },
     statements: { total: statements.length, masked },
     blocks: { total: names.length, fullyMasked, independent },
-    measurable: corrections.length + statements.length > 0,
+    strict: scoreStrictGeometry(truth, blocks),
+  }
+}
+
+export function scorePresentedGeo(truth: GeoTruth, decision: PresentedDetection): PresentedScore {
+  if (decision.kind === 'progressive' || decision.kind === 'error') {
+    return {
+      mode: decision.kind,
+      ...(decision.kind === 'progressive' ? { reason: decision.reason } : {}),
+      coverage: null,
+      success: false,
+    }
+  }
+  const coverage = scoreRegions(truth, decision.kind === 'automatic' ? decision.blocks : [])
+  const { corrections, statements } = coverage
+  const expectedMode = truth.kind === 'statement_only' ? 'statement_only' : 'automatic'
+  return {
+    mode: decision.kind,
+    coverage,
     success:
-      corrections.length + statements.length > 0 &&
-      !abstained &&
-      leaks === 0 &&
-      overmaskRate <= 0.05 &&
-      !wrongStatementOnly,
+      truth.kind !== 'unknown' &&
+      expectedMode === decision.kind &&
+      corrections.total + statements.total > 0 &&
+      corrections.full === corrections.total &&
+      statements.masked <= statements.total * OVERMASK_THRESHOLD,
+  }
+}
+
+export function scoreGeo(
+  truth: GeoTruth,
+  result: DetectionResult,
+  pages: readonly PageDimensions[],
+): DocumentScore {
+  const raw = scoreRegions(truth, result.blocks)
+  const presentation = scorePresentedGeo(truth, decideDetection(result, pages))
+  return {
+    ...raw,
+    kindExpected: truth.kind,
+    kindObtained: result.kind,
+    abstained: presentation.mode === 'progressive',
+    measurable: raw.corrections.total + raw.statements.total > 0,
+    presentation,
+    success: presentation.success,
   }
 }

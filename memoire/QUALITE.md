@@ -313,6 +313,21 @@ P0 transmis à Hazem, dans l’ordre :
 
 Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette repose sur Edge sous Windows pour l’affichage. Téléphone physique et Safari restent à vérifier. L’interface rejette désormais un résultat contradictoire `statement_only` contenant des blocs et conserve la couverture progressive. `npm run check` passe avec 171 tests réussis et 2 évaluations optionnelles ignorées. Le build de production réussit.
 
+### V-28-0301-S · Référence dev et divergence Savoie Node–Edge
+
+- Protocole — `8cebd095e18b4526180a2ecb28f2830be9f065f2` construit depuis un checkout propre. Corpus historique `c74560353248`, mêmes PDF et annotations. Node 24.18.0 avec `@napi-rs/canvas` 1.2.1, Edge 158.0.4370.45 Windows et PDF.js 6.5.438. Mesures géométriques et d'encre `unspoil-geo/2` calculées sur les sorties de ce SHA, avant les évolutions suivantes du moteur.
+
+| Référence dev historique | Mesurables | Réussites | Abstentions | Couverture brute ≥ 95 % | Couverture stricte brute | Zones de correction avec encre visible |
+|---|---:|---:|---:|---:|---:|---:|
+| Node | 10/11 | 8/10 | 1 | 2 072/2 072 | 2 053/2 072 | 0 |
+| Edge | 10/11 | 5/10 | 1 | 1 984/2 072 | 1 968/2 072 | 88 |
+
+- Le rapport v1 donnait zéro abstention Node. Bordeaux fournit 438 zones couvertes au seuil historique, mais demande la lecture progressive. Avec v2, les 438 zones restent dans le score brut et le parcours est compté comme abstention. Aucune divergence entre l'oracle et le parcours réellement observé sur les 11 documents importés sous Edge.
+- Toulouse est présent, HTTP 200, et le SHA-256 du manifeste correspond. Les 111 rectangles comprennent 104 unités `q` et 7 titres `t`. Node présente « sujet seul » avec 0/104 unités masquées. Edge présente le masquage automatique et touche 3/104 unités au seuil historique. L'unique document non mesurable est `ens-sleurent-stats`, dont les plages ont toutes le rôle `m`. Aucun téléchargement ni contrôle d'empreinte n'a échoué. La vérité Toulouse est inchangée.
+- Savoie, test historique exposé exclusivement pour le diagnostic. Même PDF `c6b2a674…`, annotation `72bd9a27…`, mêmes résultats à `ef23fa2` et `8cebd09`. Node/Node et Edge/Node couvrent 101 unités sur 101. Node/Edge et Edge/Edge couvrent 51, avec 4 couvertures partielles et 46 absentes. Le vrai bundle Edge donne le même résultat et la même empreinte que le croisement Edge/Edge. Les fragments, leur ordre, leurs boîtes, les tailles et la reconstruction des lignes concordent après normalisation du préfixe d'identifiants de police. Les cinq rasters font 595 × 842 pixels sous les deux moteurs. Sur la première page, le RVB diffère sur 34 415 pixels, dont 8 525 changent de classe avec le seuil d'encre. Les observations d'encre changent avec le raster et restent identiques en échangeant le texte.
+- La transformée exacte du lecteur, l'ajout des ressources PDF.js et l'autorisation des polices système sous Node ne font pas basculer la sortie. La première divergence causale mesurée est donc la rasterisation. Le facteur de bas niveau entre backend canvas et rendu des polices reste à isoler. La mesure produit utilise le véritable navigateur.
+- Pages était désactivé et l'URL HTTPS standard répondait 404. Le workflow du dépôt est prêt. La vérification du SHA public et l'installation physique attendent l'activation et des appareils.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

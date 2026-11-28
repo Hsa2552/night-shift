@@ -74,6 +74,15 @@
 - Maturité : correctif de mise à jour testé localement.
 - Blocage externe : GitHub Pages est désactivé. Le propriétaire doit activer le workflow de publication et fournir l'URL pour la recette physique.
 
+### T-S-5 · Parité Node–navigateur et validation scientifique
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `fix/benchmark-parity`
+- Dépend de : benchmark et marqueur de build intégrés par la PR #14 à `feat/detection-generalisation`. C1 reste applicable.
+- Critères d'acceptation : mêmes décisions d'affichage dans le produit et le score, référence Node/Edge avec empreintes, exclusions documentées, corpus réservé avant évaluation et vérification HTTPS après activation humaine.
+- Maturité : oracle partagé, score strict et recette réelle testés. Savoie isolé au raster. Référence dev et limites détaillées dans `QUALITE.md` V-28-0301-S. Corpus réservé en constitution.
+- Blocage externe : PR #15 en attente de revue humaine et Pages à activer par le propriétaire. La recette physique dépend de l'URL et de l'accès à des appareils.
+
 ### T01 · Socle technique commun
 
 - Statut : en revue · Priorité : P0

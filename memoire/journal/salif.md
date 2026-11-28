@@ -54,3 +54,9 @@
 - Les PR #9 et #10 sont fusionnées. La branche `fix/pwa-distribution` part de `3ed5e93`.
 - Deux builds sur la même origine reproduisaient une erreur 404 du module PDF pendant une mise à jour. Le service worker attend maintenant la fermeture du dernier onglet avant d'activer la nouvelle version. Vérification avant/après dans Edge, dont réouverture hors ligne. Voir `QUALITE.md` V-28-0012-S.
 - Dépôt public, Pages désactivé au contrôle. Les réglages attendus du propriétaire et le repli sur un hébergement statique HTTPS sont décrits dans le README.
+
+### 28/11 · SESSION · T-S-5 métriques et référence navigateur · Codex
+
+- Branche `fix/benchmark-parity` basée sur `8cebd09` qui intègre la PR #14. Définition partagée de la décision produit, métriques historiques et strictes, rapports navigateur et diagnostic croisé.
+- Référence Node et Edge sur le même SHA, corpus dev historique et mesure d'encre. Toulouse est mesurable, la ligne exclue correspond à une autre annale sans annotation évaluable. Savoie isole l'effet du raster. Voir V-28-0301-S. Aucun réglage du moteur sur ce document du test historique.
+- PR #15 encore en revue humaine. Pages reste désactivé. Le corpus réservé est en constitution, et aucun résultat détaillé n'est diffusé à l'équipe.
