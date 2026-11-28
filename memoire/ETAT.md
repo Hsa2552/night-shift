@@ -165,6 +165,14 @@
 - Dépend de : observations C1 du lecteur et ancres pédagogiques du moteur. Hazem garde la fusion globale.
 - Maturité : sous-détecteur isolé testé sous Edge sur pages publiques et contrôles synthétiques. Géométrie alternative et cadres disponibles séparément. Les expériences nécessitent des périmètres pédagogiques fiables, à raccorder par Hazem. PR #26 et `research/graphic-corrections/README.md`.
 
+### T-S-8 · Validation indépendante et préparation du pitch
+
+- Statut : vérifiée sur le candidat figé · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : test/validation-finale
+- Maturité : recette démontrable sur ca93897 dans Edge, y compris hors ligne. Lyon 2, Illinois et un QCM synthétique sont prêts dans le dossier local. La PR #27 reste sous la responsabilité de Wael.
+- Mesures : développement historique, diagnostic, nouveau développement, validation indépendante, réserve v1 et audit des indices QCM. Voir V-28-0622-S et validation-finale/resultats.md.
+- Limites : fichiers ENSAI-dev indisponibles sur ce poste. Nouveau test ZIP sans annotations consolidées. Seuls les agrégats autorisés sont publiés.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._

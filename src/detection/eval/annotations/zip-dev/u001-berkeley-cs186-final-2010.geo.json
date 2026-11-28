@@ -1,6 +1,6 @@
 {
   "format": "unspoil-verite-geo/1",
-  "provenance": "humaine assistée (Salif/Codex) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 2 Q1 et p. 5 question d; arbre, texte explicatif et réponse rouge distincts.",
+  "provenance": "visuelle (Codex pour Salif) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 2 Q1 et p. 5 question d; arbre, texte explicatif et réponse rouge distincts.",
   "kind": "mixed",
   "elements": [
     {

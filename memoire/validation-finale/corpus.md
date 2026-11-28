@@ -1,6 +1,6 @@
 # Corpus complémentaire de développement
 
-Le lot zip-dev comprend sept PDF publics et 259 zones annotées sur dix pages. Les zones ont été choisies et relues sur le rendu original, avec assistance pour relever les coordonnées, avant tout passage dans le moteur. Le périmètre de chaque document figure dans son fichier d'annotation. Les résultats portent sur des extraits et une décision d'affichage par PDF complet. La relecture croisée par un deuxième annotateur reste à faire.
+Le lot zip-dev comprend sept PDF publics et 259 zones annotées sur dix pages. Codex a choisi et relu les zones sur le rendu original, avec un relevé de coordonnées par PyMuPDF, avant tout passage dans le moteur. Le périmètre de chaque document figure dans son fichier d'annotation. Les résultats portent sur des extraits et une décision d'affichage par PDF complet. Une relecture humaine et une relecture croisée restent à faire.
 
 L'archive d'origine fournissait des références. Le téléchargement a fixé les premières empreintes SHA-256 des octets effectivement reçus. Les noms du manifeste sont normalisés pour le benchmark existant. Le contrôle d'URL et d'empreinte exclut les duplications exactes avec le manifeste historique. L'indépendance typographique reste à vérifier.
 

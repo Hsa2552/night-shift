@@ -444,6 +444,14 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Géométrie C1, cinq pages de phase 4.3. 7 → 1 mélanges de colonnes ou cellules et 581/655 → 630/655 comparaisons d’ordre. L’activation sur trois pages conserve ce score. Parité Python/TypeScript des groupes sur 14 cas horizontaux avec les mêmes lignes de base.
 - Rotation synthétique du sous-détecteur graphique. 1/5 → 5/5 cibles strictes après correction de l’échelle graphique à partir de la taille de police C1, 0/3 énoncé touché. La reconstruction de l’ordre du texte tourné n’a pas été résolue. Aucun résultat de masquage intégré au moteur revendiqué.
 
+### V-28-0622-S · Recette de démonstration et évaluation indépendante du SHA figé
+
+- [FAIT] Edge 158.0.4370.45, SHA du HTML ca93897ba1424e7570ab7b9ae271d5df39c13e5a, checkout propre. Cinq suites achevées sans erreur technique ni divergence entre oracle et affichage. Réussites strictes 3/10 sur dev historique, 0/4 sur diagnostic, 0/7 sur dev ZIP, 1/5 sur validation ZIP et 1/5 sur réserve v1.
+- [FAIT] Lyon 2 L2 donne 70/70 zones masquées et 17/17 blocs indépendants. Trois répétitions avec zoom, défilement, deux révélations et remasquages individuel puis global. Une répétition hors ligne. Build local et service worker vérifiés. Le QCM d'Illinois couvre 30/30 réponses à 95 %, sans encre visible dans ces zones et avec 30 blocs indépendants.
+- [FAIT] Virginia Tech, sortie brute : 6 alertes historiques contre 0 mesurée sur les cadres physiques, une couverture incomplète demeure. Washington garde un indice de couleur visible. Les métriques historiques sont conservées.
+- [FAIT] Le PDF invalide et le PDF protégé déclenchent des messages contrôlés. Un import valide ensuite fonctionne. La rotation PDF de 90° d'un QCM synthétique déclenche le mode progressif, tandis que les variantes marge, échelle et décoration conservent les deux commandes.
+- Limites vérifiées et protocole complet dans [les résultats de validation](validation-finale/resultats.md). Une relecture humaine du nouveau lot, le test ZIP final et la recette sur téléphone physique restent à faire. ENSAI-dev absent sur ce poste.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

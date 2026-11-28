@@ -78,3 +78,9 @@
 ### 28/11 · SESSION · T-S-7 commandes de révélation · Codex
 
 - Diagnostic et correctif sur `fix/commandes-revelation`. La commande individuelle reste dans le même pied de page. Le bouton global remasque les régions révélées sans relancer le détecteur. Voir V-28-0359-S pour les essais réels et la validation de Pages.
+
+### 28/11 06:22 · SESSION · T-S-8 validation finale et pitch · Codex
+
+- Validation du SHA figé ca93897 en worktree séparé. Build, cinq benchmarks Edge, recette hors ligne et audit des cadres QCM terminés. Le lot ENSAI-dev n'est pas disponible sur ce poste.
+- ZIP : développement complet téléchargé et annotations partielles sur les originaux. Le manifeste et les vérités de développement sont publiables. Le manifeste de validation, le nouveau test et les rapports individuels réservés restent au cache local.
+- Démo et secours prêts dans dev-dist/pitch-final. La branche test/validation-finale contient les résultats agrégés et le protocole. Voir V-28-0622-S. Aucun changement de production.

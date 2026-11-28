@@ -1,6 +1,6 @@
 {
   "format": "unspoil-verite-geo/1",
-  "provenance": "humaine assistée (Salif/Codex) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 3, problèmes 1–3. Les six chiffres du tableau et les deux réponses rouges sont les corrections.",
+  "provenance": "visuelle (Codex pour Salif) : zones revues sur le PDF d’origine avant exécution du détecteur. Échantillon partiel. p. 3, problèmes 1–3. Les six chiffres du tableau et les deux réponses rouges sont les corrections.",
   "kind": "mixed",
   "elements": [
     {
