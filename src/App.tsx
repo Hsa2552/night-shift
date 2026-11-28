@@ -136,7 +136,8 @@ export default function App() {
       if (request !== revision.current) return
       setWarnings(result.warnings)
 
-      if (result.kind === 'unknown' || result.needsFallback) {
+      const conflictingResult = result.kind === 'statement_only' && result.blocks.length > 0
+      if (result.kind === 'unknown' || result.needsFallback || conflictingResult) {
         setKindLabel('Lecture progressive')
         setMessage('La détection est incertaine. Fais glisser le trait pour découvrir le document.')
         setMode({ kind: 'progressive' })
