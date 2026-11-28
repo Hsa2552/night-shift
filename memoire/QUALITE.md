@@ -194,6 +194,13 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - PDF atypique — Un PDF synthétique chiffré a été refusé sans afficher de canvas. L'ouverture suivante d'une annale de Liège hors ligne a réussi dans le même onglet.
 - Intégration — Dans une copie du build avec le détecteur `e784dc1` de Hazem, Edge classe le `qcm-cases.pdf` synthétique en `mixed`, avec deux blocs et aucun avertissement. L'interface affiche six régions masquées et annonce deux blocs hors ligne. La suite d'intégration réussit 127 tests. Le test d'évaluation facultatif passe séparément avec `UNSPOIL_EVAL_DIR` pointant sur les exemples du détecteur.
 
+### V-28-0012-S · Mise à jour du service worker sous deux versions
+
+- Protocole — Générer deux builds sous `/night-shift/` avec des marqueurs distincts et des hashes différents pour le lecteur PDF. Même origine locale, puis remplacer les fichiers servis pendant qu'un onglet de la première version reste ouvert. Installer le nouveau service worker et importer un premier PDF dans cet onglet.
+- Avant le correctif — Edge demandait le module PDF de la première version. Le nouveau service worker avait déjà nettoyé ce fichier et le serveur répondait 404. L'application rejetait alors un PDF valide.
+- Après le correctif — Edge garde l'ancien service worker actif pendant l'import de l'onglet existant. La nouvelle version s'active après fermeture du dernier onglet et ouvre le PDF sans réseau. Le cache ne contient plus le module PDF de la première version.
+- Limites — Deux builds locaux. Le déploiement Pages public et la mise à jour depuis une PWA installée sur téléphone demandent une recette après publication.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

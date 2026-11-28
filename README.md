@@ -39,6 +39,10 @@ Pour GitHub Pages, le workflow `.github/workflows/deploy-pages.yml` construit le
 2. Récupérer l'URL du déploiement dans le job `deploy`. Le mainteneur vérifie la redirection HTTP vers HTTPS et active **Enforce HTTPS** si nécessaire. [HTTPS sur GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https)
 3. Ouvrir cette URL sur le téléphone et suivre la vérification ci-dessous depuis l'icône installée. Le serveur de prévisualisation sur le réseau local sert à contrôler l'affichage. L'essai d'installation utilise l'URL HTTPS.
 
+Lors d'une nouvelle publication, les fenêtres déjà ouvertes gardent la version qui a chargé leur lecteur PDF. Fermer toutes les fenêtres Unspoil, y compris les onglets du navigateur, puis rouvrir l'application. Une fois le nouveau service worker activé, ses fichiers sont disponibles hors ligne et les anciens fichiers devenus inutiles sont retirés du précache.
+
+**Solution de repli**. Avec l'accord du propriétaire, construire le même SHA avec `BASE_PATH=/` et déposer le dossier `dist/` par **Direct Upload** dans un projet Cloudflare Pages. Le site est alors servi à la racine d'une URL HTTPS `pages.dev`. Partager l'URL du déploiement qui correspond au SHA vérifié. [Documentation Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)
+
 Pour reproduire le même chemin en local, construire et prévisualiser avec `BASE_PATH` dans le même terminal.
 
 ```sh
@@ -62,7 +66,7 @@ Partir du même commit intégrant le lecteur, le détecteur et l'interface. Les 
 2. **Sur téléphone**, transférer `couleur.pdf`, `sujet-seul.pdf` et `fin.pdf` sur l'appareil. Ouvrir l'URL HTTPS déployée. Sur Android, utiliser l'installation du site dans Chrome si elle est proposée. Sur iPhone, ouvrir Safari, puis **Partager → Sur l'écran d'accueil → Ouvrir comme app web**. [Installation sur iPhone](https://support.apple.com/fr-ca/guide/iphone/iphea86e5236/ios)
 3. **Masques**. Importer `couleur.pdf`. La page s'ouvre couverte. Cliquer sur **Masquer les corrigés**, puis révéler et remasquer un bloc. Redimensionner la fenêtre ou tourner le téléphone et vérifier l'alignement. Avec `sujet-seul.pdf`, vérifier le message « Aucun corrigé n’a été détecté ».
 4. **Multipage**. Importer `fin.pdf`, activer la révélation progressive et déplacer le trait dans les deux sens. Vérifier que la page suivante reste couverte jusqu'au passage du trait. Si disponible, refaire le test avec un PDF autorisé de 50 pages ou plus.
-5. **Hors ligne**. Attendre le chargement du site et recharger une fois en ligne. Sur téléphone, ouvrir une fois l'app depuis l'icône installée. Activer le mode avion, vérifier que le Wi-Fi est coupé, rouvrir l'application, puis importer `couleur.pdf` depuis les fichiers locaux et relancer le masquage. Le lecteur et l'analyse doivent fonctionner après ce nouveau démarrage.
+5. **Hors ligne**. Attendre le chargement du site et recharger une fois en ligne. Sur téléphone, ouvrir une fois l'app depuis l'icône installée. Activer le mode avion et couper le Wi-Fi. Fermer complètement l'app, rouvrir depuis l'icône, puis importer un autre PDF déjà enregistré dans **Fichiers**. Vérifier le masquage, le geste tactile et la rotation encore en mode avion.
 6. Reporter le SHA, l'appareil, le navigateur et les résultats dans [memoire/QUALITE.md](memoire/QUALITE.md). Pour un masque décalé, indiquer le PDF, la page et l'orientation.
 
 ## Limitations connues
