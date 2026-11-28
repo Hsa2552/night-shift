@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { DocumentViewer } from './DocumentViewer'
+import { DocumentViewer, type DocumentViewerHandle } from './DocumentViewer'
 import '../index.css'
 
 // Pages et rectangles synthétiques pour tester l'interface sans PDF.js.
@@ -175,6 +176,31 @@ describe('lecteur', () => {
       <DocumentViewer pages={pages} mode={{ kind: 'automatic', blocks }} renderPage={renderPage} />,
     )
     expect(screen.getAllByTestId('correction-mask')).toHaveLength(4)
+  })
+
+  it('suit l’ordre des corrections et permet d’ignorer les blocs révélés', () => {
+    const ref = createRef<DocumentViewerHandle>()
+    render(
+      <DocumentViewer
+        ref={ref}
+        pages={pages}
+        mode={{ kind: 'automatic', blocks }}
+        renderPage={renderPage}
+      />,
+    )
+    const first = screen.getByRole('button', { name: 'Révéler dans le PDF — Question 1' })
+    const second = screen.getByRole('button', { name: 'Révéler dans le PDF — Question 2' })
+    vi.spyOn(first, 'getBoundingClientRect').mockReturnValue(new DOMRect(20, 400, 100, 40))
+    vi.spyOn(second, 'getBoundingClientRect').mockReturnValue(new DOMRect(20, 600, 100, 40))
+    act(() => ref.current?.navigateCorrection('next'))
+    expect(document.activeElement).toBe(first)
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(4)
+    fireEvent.click(first)
+    act(() => ref.current?.navigateCorrection('unrevealed'))
+    expect(document.activeElement).toBe(second)
+    expect(screen.getAllByTestId('correction-mask')).toHaveLength(1)
+    act(() => ref.current?.navigateCorrection('previous'))
+    expect(document.activeElement).toBe(first)
   })
 
   it('exprime les régions en pourcentages des dimensions canoniques de chaque page', () => {

@@ -52,6 +52,24 @@ async function actionLocations() {
   )
 }
 
+async function assertDesktopRails() {
+  const valid = await reader.locator('.pdf-viewer-actions').evaluateAll((rails) =>
+    rails.every((rail) => {
+      const sheet = rail.closest('.pdf-viewer-sheet')
+      const pageViewport = sheet.querySelector('.pdf-viewer-page-scroll').getBoundingClientRect()
+      const buttons = [...rail.querySelectorAll('button')].map((button) =>
+        button.getBoundingClientRect(),
+      )
+      return buttons.every(
+        (button, index) =>
+          button.left >= pageViewport.right - 0.5 &&
+          (index === 0 || button.top >= buttons[index - 1].bottom - 0.5),
+      )
+    }),
+  )
+  assert.ok(valid, 'Les commandes latérales restent à droite du PDF et ne se chevauchent pas.')
+}
+
 async function assertToolbar() {
   for (const button of [maskButton.or(remask), progressive]) {
     const rect = await button.boundingBox()
@@ -93,6 +111,7 @@ try {
     }
     automatic++
     const desktop = await actionLocations()
+    if (scenario === 'assert') await assertDesktopRails()
     assert.ok(desktop.length > 0)
     assert.equal(new Set(desktop.map(({ id }) => id)).size, desktop.length)
     const initialNodes = await actions.elementHandles()

@@ -167,15 +167,152 @@
   font-weight: 700;
 }
 
+/* Schematic pages contain no pixels or text from the PDF. */
 .page-tile {
   display: grid;
-  width: 38px;
-  aspect-ratio: 0.76;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 3px;
+  width: 40px;
+  max-height: 48px;
+  align-content: start;
+  gap: 4px;
+  padding: 7px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
   background: var(--surface);
 }
+
+.page-tile::before,
+.page-tile::after {
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+  content: '';
+}
+
+.page-tile::after {
+  width: 60%;
+}
+
+.reader-navigation button[aria-current] .page-tile {
+  border-color: var(--accent);
+}
+
+.reader-page-jump {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem;
+  margin-block-end: 0.6rem;
+}
+
+.reader-page-jump input,
+.reader-page-jump button {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0.28rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.77rem;
+}
+
+.reader-page-jump input {
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-menu {
+  position: relative;
+}
+
+.reader-menu summary {
+  list-style: none;
+}
+
+.reader-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.reader-menu summary:focus-visible,
+.reader-page-jump input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.reader-menu-panel {
+  position: absolute;
+  z-index: 1;
+  inset: calc(100% + 6px) 0 auto auto;
+  width: min(18rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - var(--header-height) - var(--reader-toolbar-height) - 1rem);
+  overflow: auto;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.reader-menu-actions {
+  display: grid;
+}
+
+.reader-menu-actions + .reader-menu-actions {
+  margin-block-start: 0.2rem;
+  padding-block-start: 0.2rem;
+  border-block-start: 1px solid var(--line);
+}
+
+.reader-menu-actions button {
+  min-height: 38px;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  color: var(--text);
+  text-align: start;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.reader-menu-actions button:hover:not(:disabled),
+.reader-tools button[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.reader-menu-actions button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.reader-shortcuts {
+  display: grid;
+  gap: 0.25rem;
+  margin-block-start: 0.3rem;
+  padding: 0.55rem 0.5rem;
+  border-block-start: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.reader-shortcuts p {
+  color: var(--text);
+  font-weight: 640;
+}
+
+.reader[data-concentration] .pdf-viewer[data-workspace-pages] .pdf-viewer-sheet {
+  display: block;
+}
+
+.reader[data-concentration] .pdf-viewer[data-workspace-pages] .pdf-viewer-actions,
+.reader[data-concentration] .reader-status-copy:not(:has(.loading-ring)),
+.reader[data-concentration] .reader-warnings {
+  display: none;
+}
+
+.reader[data-concentration] .reader-status {
+  margin-bottom: 0;
+}
+
 .reader-main {
   min-width: 0;
 }
@@ -427,6 +564,8 @@
   background: var(--surface);
   text-align: start;
   cursor: pointer;
+  scroll-margin-block: calc(var(--header-height) + var(--reader-toolbar-height, 0px) + 10px)
+    calc(var(--reader-footer-height, 0px) + 10px);
 }
 
 .pdf-viewer-actions button svg {
@@ -451,6 +590,7 @@
 }
 
 .pdf-viewer-block-action {
+  min-inline-size: 4.5rem;
   color: var(--accent);
   font-size: 0.72rem;
   font-weight: 620;
@@ -586,13 +726,9 @@
     font-size: 0.74rem;
   }
   .reader-tools {
-    justify-content: flex-end;
+    justify-content: center;
     width: 100%;
     gap: 0.45rem;
-  }
-  .reader-page-count {
-    margin-inline-end: auto;
-    text-align: start;
   }
   [data-workspace] .site-header-inner {
     gap: 0.5rem;
@@ -629,7 +765,19 @@
   .reader-tools {
     width: auto;
   }
-  .reader-page-count {
-    min-width: 2.2rem;
+}
+
+@media (max-width: 365px) {
+  .reader-tools {
+    gap: 0.25rem;
+  }
+
+  .reader-tools .icon-button {
+    width: 38px;
+    min-height: 40px;
+  }
+
+  .reader-zoom span {
+    min-width: 40px;
   }
 }

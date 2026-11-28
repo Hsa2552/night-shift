@@ -136,6 +136,50 @@ describe('Unspoil', () => {
     expect(screen.getByText('100 %')).toBeTruthy()
   })
 
+  it('saisit une page sans déclencher les raccourcis ni générer de miniature', async () => {
+    const pdf = fakePdf()
+    pdf.pageCount = 12
+    pdf.getPageDimensions.mockImplementation(async (pageIndex) => ({ ...page, pageIndex }))
+    loadPdf.mockResolvedValue(pdf)
+    await importDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Navigation par page' }))
+    const nav = screen.getByRole('navigation', { name: 'Pages du PDF' })
+    const input = within(nav).getByRole('spinbutton', { name: 'Numéro de page' })
+    fireEvent.keyDown(input, { key: 'F', altKey: true, shiftKey: true })
+    expect(
+      screen.getByRole('button', { name: 'Mode concentration' }).getAttribute('aria-pressed'),
+    ).toBe('false')
+    expect(nav.querySelector('canvas, img')).toBeNull()
+    expect(nav.querySelectorAll('.page-tile')).toHaveLength(12)
+    fireEvent.change(input, { target: { value: '10' } })
+    fireEvent.submit(input.closest('form')!)
+    expect(screen.getByLabelText('Page 10 sur 12')).toBeTruthy()
+    expect(screen.getAllByTestId('page-cover')).toHaveLength(12)
+    fireEvent.click(screen.getByRole('button', { name: 'Révélation progressive' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Navigation par page' }))
+    expect(
+      screen.getByRole('navigation', { name: 'Pages du PDF' }).querySelector('canvas, img'),
+    ).toBeNull()
+  })
+
+  it('conserve l’accès aux corrections et leur état en mode concentration', async () => {
+    detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
+    await importDocument()
+    startAnalysis()
+    const direct = await screen.findByRole('button', { name: 'Révéler dans le PDF — Question 1' })
+    const concentration = screen.getByRole('button', { name: 'Mode concentration' })
+    fireEvent.click(concentration)
+    expect(concentration.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(direct)
+    expect(screen.queryByTestId('correction-mask')).toBeNull()
+    expect(screen.getByText('1 / 1 correction révélée')).toBeTruthy()
+    fireEvent.keyDown(direct, { key: 'F', altKey: true, shiftKey: true })
+    expect(concentration.getAttribute('aria-pressed')).toBe('false')
+    expect(screen.queryByTestId('correction-mask')).toBeNull()
+    fireEvent.keyDown(direct, { key: 'R', altKey: true, shiftKey: true })
+    expect(screen.getByTestId('correction-mask')).toBe(direct)
+  })
+
   it('ne découvre rien après l’annulation explicite d’une analyse en cours', async () => {
     let finish!: (result: DetectionResult) => void
     detect.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)))

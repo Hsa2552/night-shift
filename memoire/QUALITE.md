@@ -522,6 +522,14 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Edge, essai `71fb462` sur le QCM `ensai-09e01e2ab125` : 4 pages, 12 blocs révélables, 94 masques. Deux révélations indépendantes, remasquage individuel et global, zoom, défilement, remplacement et lecture progressive sur le MIT. Huit premiers libellés de question repérés par Poppler sur les pages de propositions, aucun pixel de leur boîte chevauché par un masque. Après rechargement hors ligne, nouveau chargement du worker, import, masquage et révélation réussis. Aucune requête externe ou d’envoi pendant la recette. Installation système et appareil physique non testés.
 - Deux suites Vitest optionnelles sont ignorées par `npm run check` faute de configuration de leurs corpus. Le benchmark navigateur est exécuté séparément. `npm ci` fonctionne sous Windows. Le build de production est vérifié sous WSL, car le poste Windows bloque le chargement de Rollup pour Workbox. L’audit npm des seules dépendances de production ne trouve aucun avis. Aucun verrou, contrat, réglage GitHub ou seuil du moteur n’a changé.
 
+### V-28-0821-UX · Recette ergonomique du lecteur
+
+- Comparaison Edge du lecteur sur la base 34b40dc, identique à ca93897 pour le code de l'application, et sur la branche feat/final-reader-ux. Verdicts et géométrie affichée identiques sur six PDF. Illinois PHYS214 30 blocs et 30 régions, QCM de chimie synthétique 2 et 6, Lyon 2 L2 17 et 18, Washington 2 et 44. Wisconsin passe en progressif et le sujet seul de Toulouse reste sans masque.
+- Clic et remasquage au même endroit, boutons latéraux non chevauchants, remasquage global, progression, focus clavier, zoom et redimensionnement vérifiés. Pour les pages très denses, le panneau de droite défile dans la hauteur du PDF. Les cadres et l'opacité des masques vérifiés restent identiques. Washington conserve sa fuite colorimétrique préexistante.
+- Miniatures schématiques sans contenu quelconque du PDF. Navigation et saisie de page, correction suivante et précédente, mode concentration, plein écran et ajustement à la hauteur vérifiés. Le glissement tactile émulé ne révèle aucun bloc. Le dépôt de fichier, la fermeture du rendu de pages éloignées, les erreurs, l'import hors ligne et le changement de thème ont été exercés.
+- npm run check : 255 tests réussis et deux suites d'évaluation désactivées par défaut. Le build de production génère le service worker. Les tests de la recette Edge ne constatent aucune requête vers une autre origine.
+- Limites : PDF ENSAI-dev indisponibles localement, tests tactiles sur émulateur, vignette schématique sans rendu du document. Les réglages de lecteur restent propres à la session du document et le thème demeure mémorisé.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

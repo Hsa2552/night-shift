@@ -183,10 +183,10 @@
 
 ### T-UX-51 · Ergonomie du lecteur et expérience d'entraînement
 
-- Statut : jalon P0 testé · Priorité : P0
+- Statut : prête pour revue · Priorité : P0
 - Responsable : équipe · Agent : Codex · Branche : feat/final-reader-ux
 - Critères : clic et remasquage dans le PDF, commandes latérales hors du document, état par CorrectionBlock, suivi permanent.
-- Maturité : parcours Edge après redimensionnement, zoom et rechargement hors ligne. Comparaison exacte des blocs et régions affichés sur six PDF du développement ou de démonstration. Fichiers ENSAI-dev indisponibles sur ce poste.
+- Maturité : parcours Edge après redimensionnement, zoom et rechargement hors ligne. Comparaison exacte des blocs et régions affichés sur six PDF du développement ou de démonstration. Navigation ciblée, concentration, plein écran, zoom à la hauteur, miniatures schématiques et raccourcis vérifiés dans Edge. Fichiers ENSAI-dev indisponibles sur ce poste.
 
 ## Terminées ou abandonnées
 

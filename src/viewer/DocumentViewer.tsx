@@ -20,8 +20,11 @@ interface DocumentViewerProps {
   ref?: Ref<DocumentViewerHandle>
 }
 
+type CorrectionDirection = 'previous' | 'next' | 'unrevealed'
+
 export interface DocumentViewerHandle {
   remaskAll(): void
+  navigateCorrection(direction: CorrectionDirection): void
 }
 
 interface InteractiveRegion {
@@ -110,6 +113,8 @@ export function DocumentViewer({
   const [previousKind, setPreviousKind] = useState(mode.kind)
   const [hovered, setHovered] = useState<string>()
   const [focused, setFocused] = useState<string>()
+  const root = useRef<HTMLElement>(null)
+  const lastCorrection = useRef<string>(undefined)
   const pointer = useRef<{ x: number; y: number; moved: boolean }>(undefined)
   if (previousKind !== mode.kind) {
     setPreviousKind(mode.kind)
@@ -120,14 +125,57 @@ export function DocumentViewer({
   const highlighted = hovered ?? focused
   const progressive = useProgressiveReveal(pages, mode.kind === 'progressive')
 
-  useImperativeHandle(ref, () => ({ remaskAll: () => setRevealed(new Set()) }), [])
-
   useLayoutEffect(() => onRevealedCount?.(revealed.size), [onRevealedCount, revealed])
 
   const widestPage = pages.reduce((maximum, page) => Math.max(maximum, page.width), 0)
   const { regionsByPage, actionsByPage } = useMemo(() => pageControls(mode, pages), [mode, pages])
 
+  useLayoutEffect(() => {
+    lastCorrection.current = undefined
+  }, [mode.kind])
+
+  function navigateCorrection(direction: CorrectionDirection) {
+    const primary = root.current?.querySelectorAll<HTMLButtonElement>('[data-primary-region]')
+    if (!primary?.length) return
+    const byId = new Map(Array.from(primary, (target) => [target.dataset.blockRegion, target]))
+    const ordered = pages.flatMap((page) =>
+      (actionsByPage.get(page.pageIndex) ?? []).flatMap(({ id }) => {
+        const target = byId.get(id)
+        return target ? [{ id, target }] : []
+      }),
+    )
+    const anchor = window.innerHeight * 0.35
+    const cursor = ordered.findIndex(({ id, target }) => {
+      if (id !== lastCorrection.current) return false
+      const rect = target.getBoundingClientRect()
+      return rect.bottom > 0 && rect.top < window.innerHeight
+    })
+    const before =
+      cursor < 0
+        ? ordered.findLastIndex(({ target }) => target.getBoundingClientRect().top < anchor)
+        : cursor
+    let entry
+    if (direction === 'previous') {
+      entry = ordered[cursor < 0 ? before : cursor - 1]
+    } else if (direction === 'next') {
+      entry = ordered[Math.min(before + 1, ordered.length - 1)]
+    } else {
+      const next = ordered.slice(before + 1).concat(ordered.slice(0, before + 1))
+      entry = next.find(({ id }) => !revealed.has(id))
+    }
+    if (!entry) return
+    lastCorrection.current = entry.id
+    entry.target.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+    entry.target.focus({ preventScroll: true })
+  }
+
+  useImperativeHandle(ref, () => ({
+    remaskAll: () => setRevealed(new Set()),
+    navigateCorrection,
+  }))
+
   function toggleBlock(id: string) {
+    lastCorrection.current = id
     setRevealed((current) => {
       const next = new Set(current)
       if (next.has(id)) next.delete(id)
@@ -138,6 +186,7 @@ export function DocumentViewer({
 
   return (
     <section
+      ref={root}
       className="pdf-viewer"
       aria-label="Document PDF"
       data-workspace-pages={workspace || undefined}
@@ -217,8 +266,9 @@ export function DocumentViewer({
                       className="pdf-viewer-region"
                       data-testid={isRevealed ? undefined : 'correction-mask'}
                       data-block-region={id}
-                      data-grouped-mask={grouped || undefined}
-                      data-neutral-marker={marker || undefined}
+                      data-primary-region={first || undefined}
+                      data-grouped-mask={(!isRevealed && grouped) || undefined}
+                      data-neutral-marker={(!isRevealed && marker) || undefined}
                       data-highlighted={highlighted === id || undefined}
                       aria-label={
                         (isRevealed ? 'Recouvrir dans le PDF' : 'Révéler dans le PDF') +
