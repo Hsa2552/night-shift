@@ -101,3 +101,7 @@
 ### 28/11 04:37 · SESSION · T-WB-7 · Fermeture des cadres et limites du graphe
 
 - PR #24 complétée. Prototype TypeScript de topologie des séparateurs, comparé à Python. Comparaison de l’ordre, étude des balises/MCID et contrôle raster à trois résolutions. Le classement du graphe et la fermeture raster n’améliorent pas les cibles observées. Voir V-28-0437-WB.
+
+### 28/11 04:50 · SESSION · T-WB-8 · Premier sous-détecteur graphique
+
+- API locale publiée pour Hazem. Les figures natives dans un périmètre de correction confirmé peuvent être rattachées à un bloc ou former une proposition. Trois tests couvrent le rattachement, les ancres sans périmètre, les protections et les conflits. La mesure du masquage sur PDF publics suit.
