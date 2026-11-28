@@ -20,6 +20,7 @@ import { readPageText } from '../../pdf/read-text.ts'
 import type { DetectionInput, PageData, RasterData } from '../contract.ts'
 import { detectCorrections } from '../index.ts'
 import { answerBoxes, findBoxes } from '../boxes.ts'
+import { inkOf } from '../color.ts'
 import { layoutPage } from '../layout.ts'
 import { coverage, evaluate, truthFromRoles, type Truth, type TruthElement } from './metrics.ts'
 
@@ -135,9 +136,17 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
         // Listing à annoter. Sans UNSPOIL_EVAL_GUESS, aucun rôle deviné : annotation à l'aveugle.
         const regions = result.blocks.flatMap((b) => b.regions)
         const guess = process.env.UNSPOIL_EVAL_GUESS === '1'
+        // Encre de chaque ligne (aide à l'annotation : couleur des questions, des corrections).
+        const inks: string[] = []
+        for (const u of units) {
+          const page = input.pages[u.pageIndex]!
+          const r = input.getRaster ? await input.getRaster(u.pageIndex) : null
+          const ink = r ? inkOf(r, page.width, page.height, u.bbox) : null
+          inks.push(!ink ? '' : ink.kind === 'color' ? `teinte${Math.round(ink.hue)}` : ink.kind)
+        }
         const listing = units.map((u, i) => {
           const g = guess ? (coverage(u.bbox, u.pageIndex, regions) > 0.5 ? 'c' : 'q') + '\t' : ''
-          return `${g}${i}\tp${u.pageIndex + 1}\tx${Math.round(u.bbox.x)}\t${u.text}\t${u.font}`
+          return `${g}${i}\tp${u.pageIndex + 1}\tx${Math.round(u.bbox.x)}\t${u.text}\t${u.font}\t${inks[i]}`
         })
         writeFileSync(path.replace(/\.pdf$/i, '.lignes.txt'), listing.join('\n'))
         lines.push(`${f} : ${units.length} lignes, sans vérité (listing à annoter écrit)`)
@@ -187,6 +196,10 @@ describe.skipIf(!dir)('évaluation sur PDF locaux', () => {
         `${ev.kindOk ? 'OK ' : 'KO '} ${f} : attendu ${ev.expectedKind}, obtenu ${ev.kind} ; ` +
           `corrections visibles ${ev.leaked.length}/${ev.corrections} ; ` +
           `énoncés masqués ${ev.overmasked.length}/${ev.questions}` +
+          (ev.blocks.total > 0
+            ? ` ; blocs entièrement masqués ${ev.blocks.fullyMasked}/${ev.blocks.total}, ` +
+              `révélables indépendamment ${ev.blocks.independent}/${ev.blocks.total}`
+            : '') +
           (result.needsFallback ? ' ; repli proposé' : ''),
       )
       for (const e of ev.leaked) lines.push(`     visible : ${short(e)}`)

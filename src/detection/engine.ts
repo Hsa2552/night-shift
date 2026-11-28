@@ -13,6 +13,7 @@ import type {
 } from './contract.ts'
 import { hueDistance, inkOf, type Ink } from './color.ts'
 import { answerBoxes, findBoxes, locateSquare, type Box } from './boxes.ts'
+import { fuseExternalColor, registeredColorAnalyzer, type ExternalColorResult } from './fusion.ts'
 import { buildPageInk, graphicBottom, graphicTop, type PageInk } from './graphics.ts'
 import { layoutPage, type Line, type PageLayout } from './layout.ts'
 import {
@@ -39,6 +40,8 @@ export const WARNINGS = {
   unsegmented: 'Corrigé détecté, mais son découpage par question est impossible.',
   uncovered: "Certaines questions n'ont pas de corrigé détecté.",
   color: 'Corrigés repérés uniquement par leur couleur : vérifiez le résultat.',
+  questionInk: 'Corrigés repérés par la couleur des questions : vérifiez le résultat.',
+  externalColor: 'Corrigés colorés ajoutés par le détecteur visuel : vérifiez le résultat.',
   unplaced: "Une partie du texte n'a pas pu être localisée : des corrigés peuvent rester visibles.",
   noVisualCheck:
     "Aucun marqueur de corrigé, mais l'analyse visuelle de la page a échoué : détection incertaine.",
@@ -361,11 +364,37 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     drafts.push(...boxes.drafts)
   }
 
+  // Couleurs : encre de chaque ligne, dès que le rendu raster est disponible.
+  const inks = input.getRaster ? await lineInks(flow, layouts, rasterOf) : null
+
+  // Questions colorées servant d'ancres : si une teinte porte les questions numérotées, la
+  // correction de chaque question est ce qui suit sa question jusqu'à la question suivante.
+  // Cette structure, plus précise, remplace la segmentation textuelle (titre « Corrigé »,
+  // titres seuls) ; les blocs de cases de QCM sont conservés.
+  let byQuestionInk = false
+  let questionHue: number | null = null
+  if (inks) {
+    const anchoring = questionInkDrafts(flow, parsed, inks, labelAt)
+    const anchored = anchoring.drafts
+    questionHue = anchoring.hue
+    if (anchored.length > 0) {
+      byQuestionInk = true
+      for (let k = drafts.length - 1; k >= 0; k--) {
+        if (drafts[k]!.custom) continue
+        const d = drafts.splice(k, 1)[0]!
+        for (let i = d.start; i <= d.end; i++) modeAt[i] = 'statement'
+      }
+      for (const d of anchored) {
+        drafts.push(d)
+        for (let i = d.start; i <= d.end; i++) modeAt[i] = 'correction'
+      }
+    }
+  }
+
   // Sans aucun marqueur textuel : les corrigés se distinguent-ils par leur couleur ?
   let byColor = false
   let visualCheckFailed = false
-  if (drafts.length === 0 && input.getRaster) {
-    const inks = await lineInks(flow, layouts, rasterOf)
+  if (drafts.length === 0 && inks) {
     for (const layout of layouts) {
       if (layout.lines.length > 0 && !(await rasterOf(layout.pageIndex))) visualCheckFailed = true
     }
@@ -400,8 +429,9 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       }
       return false
     })
-    kind = correctionFromStart || !hasStatement ? 'correction_only' : 'mixed'
+    kind = (correctionFromStart && !byQuestionInk) || !hasStatement ? 'correction_only' : 'mixed'
     if (byColor) warnings.push(WARNINGS.color)
+    if (byQuestionInk) warnings.push(WARNINGS.questionInk)
     if (kind === 'correction_only' && drafts.length === 1 && !drafts[0]!.label) {
       warnings.push(WARNINGS.unsegmented)
       needsFallback = true
@@ -477,6 +507,49 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       ...(b.label ? { questionLabel: b.label } : {}),
       regions: b.regions,
     }))
+
+  // Détecteur colorimétrique externe (s'il est enregistré) : fusion sans union aveugle.
+  const analyzer = registeredColorAnalyzer()
+  if (analyzer && input.getRaster) {
+    const results: ExternalColorResult[] = []
+    for (const page of input.pages) {
+      if (!flow.some((l) => l.pageIndex === page.pageIndex)) continue
+      const raster = await rasterOf(page.pageIndex)
+      if (!raster) continue
+      try {
+        results.push(analyzer(page, raster))
+      } catch {
+        results.push({ candidates: [], blocks: [], needsFallback: true })
+      }
+    }
+    const protectedLines = flow
+      .filter((_, i) => parsed[i]!.q !== null && modeAt[i] !== 'correction')
+      .map((l) => ({ pageIndex: l.pageIndex, bbox: l.bbox }))
+    const outcome = fuseExternalColor(results, {
+      protectedLines,
+      ownRegions: blocks.flatMap((b) => b.regions),
+      questionHue,
+      labelAt: (pageIndex, y) => {
+        let found: string | undefined
+        flow.forEach((l, i) => {
+          if (l.pageIndex === pageIndex && l.bbox.y <= y) found = labelAt[i] ?? found
+        })
+        return found
+      },
+    })
+    for (const b of outcome.added) {
+      blocks.push({ ...b, id: `c${blocks.length + 1}` })
+    }
+    if (outcome.added.length > 0) {
+      warnings.push(WARNINGS.externalColor)
+      if (kind === 'statement_only' || kind === 'unknown') kind = 'mixed'
+    }
+    if (outcome.externalFallback && kind === 'statement_only') {
+      kind = 'unknown'
+      needsFallback = true
+      warnings.push(WARNINGS.suspicious)
+    }
+  }
 
   if (textlessPages.length > 0) {
     const human = textlessPages.map((p) => p + 1)
@@ -1195,4 +1268,77 @@ function sanitize(
       bbox: { x: left, y: top, width: right - left, height: bottom - top },
     },
   ]
+}
+
+// --- Questions colorées servant d'ancres ------------------------------------------------
+
+/**
+ * Une teinte est l'encre des questions si elle porte la plupart des questions numérotées
+ * (au moins 2 et 60 %) et presque uniquement des questions et leurs lignes de suite. Aucune
+ * couleur n'est supposée a priori : le rôle est déduit de la numérotation et de la géométrie.
+ * Chaque question (ligne numérotée et suite de même teinte) ouvre un bloc qui court jusqu'à
+ * la question suivante, un intitulé d'exercice ou une ligne de séparation. Les données qui
+ * précèdent la première question restent visibles.
+ */
+function questionInkDrafts(
+  flow: Line[],
+  parsed: Parsed[],
+  inks: Ink[],
+  labelAt: (string | undefined)[],
+): { drafts: Draft[]; hue: number | null } {
+  const isQuestion = (i: number) => {
+    const q = parsed[i]!.q
+    return q !== null && q.kind !== 'part' && q.kind !== 'exercise'
+  }
+  const hueOf = (i: number) => {
+    const ink = inks[i]
+    return ink && ink.kind === 'color' ? ink.hue : null
+  }
+  const questions = flow.map((_, i) => i).filter(isQuestion)
+  if (questions.length < 2) return { drafts: [], hue: null }
+  // Teinte majoritaire des questions numérotées.
+  let best: { hue: number; count: number } | null = null
+  for (const i of questions) {
+    const h = hueOf(i)
+    if (h === null) continue
+    const count = questions.filter((k) => {
+      const hk = hueOf(k)
+      return hk !== null && hueDistance(hk, h) <= 20
+    }).length
+    if (!best || count > best.count) best = { hue: h, count }
+  }
+  if (!best || best.count < 2 || best.count < 0.6 * questions.length)
+    return { drafts: [], hue: null }
+  const inHue = (i: number) => {
+    const h = hueOf(i)
+    return h !== null && hueDistance(h, best!.hue) <= 20
+  }
+  // Presque toutes les lignes de cette teinte sont des questions ou leur suite immédiate.
+  const hueLines = flow.map((_, i) => i).filter(inHue)
+  const explained = hueLines.filter((i) => isQuestion(i) || (i > 0 && inHue(i - 1))).length
+  if (explained < 0.9 * hueLines.length) return { drafts: [], hue: null }
+
+  // Ligne de séparation décorative (« ***** °°° ***** », « ------ ») ; un symbole isolé
+  // d'une formule (« √ », une accolade) n'en est pas une.
+  const isSeparator = (i: number) => /^[\s*°·•_=~\-–—]{5,}$/u.test(flow[i]!.text)
+  const isHeading = (i: number) => {
+    const q = parsed[i]!.q
+    return q !== null && (q.kind === 'part' || q.kind === 'exercise')
+  }
+  const drafts: Draft[] = []
+  for (let k = 0; k < flow.length; k++) {
+    if (!(isQuestion(k) && inHue(k))) continue
+    // Fin de la question : lignes suivantes de la même teinte.
+    let i = k
+    while (i + 1 < flow.length && inHue(i + 1) && !isQuestion(i + 1)) i++
+    const start = i + 1
+    let end = start - 1
+    for (let j = start; j < flow.length; j++) {
+      if ((isQuestion(j) && inHue(j)) || isHeading(j) || isSeparator(j)) break
+      end = j
+    }
+    if (end >= start) drafts.push({ start, end, label: labelAt[k], grouped: false })
+    k = i
+  }
+  return drafts.length >= 2 ? { drafts, hue: best.hue } : { drafts: [], hue: null }
 }

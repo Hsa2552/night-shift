@@ -13,6 +13,8 @@ export interface TruthElement {
   role: Role
   text?: string
   bbox: Rect
+  /** Bloc de correction attendu (révélation indépendante), si annoté. */
+  group?: string
 }
 
 export interface Truth {
@@ -28,6 +30,8 @@ export interface Evaluation {
   leaked: TruthElement[]
   questions: number
   overmasked: TruthElement[]
+  /** Blocs attendus : total, entièrement masqués, révélables indépendamment. */
+  blocks: { total: number; fullyMasked: number; independent: number }
 }
 
 /** Part de la surface de `bbox` couverte par les régions de la même page (échantillonnage). */
@@ -103,6 +107,7 @@ export function evaluate(truth: Truth, result: DetectionResult): Evaluation {
       const inside = corrections.filter((c) => c.pageIndex === e.pageIndex).map((c) => c.bbox)
       return coverage(e.bbox, e.pageIndex, regions, inside) > OVERMASK_THRESHOLD
     }),
+    blocks: blockStats(truth, result),
   }
 }
 
@@ -121,6 +126,7 @@ export function truthFromRoles(
   let kind: DocumentKind = 'unknown'
   let fallback: Role = 'q'
   const roles = new Map<number, Role>()
+  const groups = new Map<number, string>()
   for (const raw of spec.split(/\r?\n/)) {
     const line = raw.replace(/#.*/, '').trim()
     if (!line) continue
@@ -134,18 +140,55 @@ export function truthFromRoles(
       fallback = d[1] as Role
       continue
     }
-    const r = /^([qctm])\s+(.+)$/.exec(line)
+    // « bloc <nom> <plages> » : lignes de correction formant un bloc attendu.
+    const blk = /^bloc\s+(\S+)\s+(.+)$/.exec(line)
+    const r = blk ? ['', 'c', blk[2]!] : /^([qctm])\s+(.+)$/.exec(line)
     if (!r) throw new Error(`Ligne d'annotation invalide : ${raw}`)
     for (const part of r[2]!.split(/[,\s]+/).filter(Boolean)) {
       const [a, b] = part.split('-').map(Number)
       if (!Number.isInteger(a) || (b !== undefined && !Number.isInteger(b))) {
         throw new Error(`Plage invalide : ${part}`)
       }
-      for (let i = a!; i <= (b ?? a!); i++) roles.set(i, r[1] as Role)
+      for (let i = a!; i <= (b ?? a!); i++) {
+        roles.set(i, r[1] as Role)
+        if (blk) groups.set(i, blk[1]!)
+      }
     }
   }
   return {
     kind,
-    elements: units.map((u, i) => ({ ...u, role: roles.get(i) ?? fallback })),
+    elements: units.map((u, i) => {
+      const group = groups.get(i)
+      return { ...u, role: roles.get(i) ?? fallback, ...(group ? { group } : {}) }
+    }),
   }
+}
+
+/**
+ * Blocs attendus : entièrement masqué si chacune de ses lignes est couverte à 95 % ;
+ * révélable indépendamment si un seul bloc détecté couvre toutes ses lignes et que ce bloc
+ * ne couvre (au-delà de 50 %) aucune ligne d'un autre bloc attendu.
+ */
+function blockStats(truth: Truth, result: DetectionResult) {
+  const names = [...new Set(truth.elements.map((e) => e.group).filter((g): g is string => !!g))]
+  let fullyMasked = 0
+  let independent = 0
+  for (const name of names) {
+    const members = truth.elements.filter((e) => e.group === name)
+    const all = result.blocks.flatMap((b) => b.regions)
+    if (members.every((e) => coverage(e.bbox, e.pageIndex, all) >= LEAK_THRESHOLD)) fullyMasked++
+    const owners = result.blocks.filter((b) =>
+      members.some((e) => coverage(e.bbox, e.pageIndex, b.regions) > 0.5),
+    )
+    if (owners.length !== 1) continue
+    const owner = owners[0]!
+    const coversAll = members.every(
+      (e) => coverage(e.bbox, e.pageIndex, owner.regions) >= LEAK_THRESHOLD,
+    )
+    const leaksOthers = truth.elements.some(
+      (e) => e.group && e.group !== name && coverage(e.bbox, e.pageIndex, owner.regions) > 0.5,
+    )
+    if (coversAll && !leaksOthers) independent++
+  }
+  return { total: names.length, fullyMasked, independent }
 }
