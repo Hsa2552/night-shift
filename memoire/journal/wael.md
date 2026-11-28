@@ -67,3 +67,9 @@
 - Vérifié dans Edge : Lyon 2, quatre pages, 23/23 fragments bleus et 7/7 échantillons noirs observés, aucun masque couleur sur les questions. Berkeley conserve les résultats du premier jalon. Voir V-28-0128-WB.
 - Audit QCM de la branche de Hazem sur le recueil ENSAI local : toutes les cases noircies couvertes, huit cases vides résiduelles susceptibles de donner un indice. Voir V-28-0129-WB. Les fichiers du moteur et les PDF restent hors de la PR.
 - Maturité : relevé testé en isolation, intégration structurelle confiée à Hazem.
+
+### 28/11 02:11 · SESSION · T-WB-4 · Recette du produit intégré
+
+- Build de recette `ef23fa2f25c3066350534472352fc2a63455cec0`. Base `329d297` et moteur `54e0e7b`. Les chemins du moteur et du lecteur restent ceux des responsables. Le SHA est présent dans le HTML et vérifié après rechargement hors ligne.
+- Le moteur appelle l’analyseur couleur dans le vrai parcours. Lyon 2 L2 donne 17/17 blocs indépendants dans Edge. Deux annales ENSAI comparées à `329d297` affichent encore des réponses visibles et cinq indices par élimination. L’écart Node/Edge a été reproduit sur Savoie. Voir V-28-0211-WB.
+- Le visualiseur conserve la couverture si un résultat « sujet seul » renvoie aussi des blocs. La recette reproductible est dans le README et `scripts/verify-real-pdfs.mjs`. P0 transmis à Hazem. Des annales supplémentaires ont été demandées à Salif pour une recette indépendante.

@@ -1,6 +1,6 @@
 ﻿import assert from 'node:assert/strict'
-import { writeFile } from 'node:fs/promises'
-import { basename, isAbsolute, relative, resolve } from 'node:path'
+import { readFile, writeFile } from 'node:fs/promises'
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { chromium } from 'playwright-core'
 
 const [url, expectedSha, ...files] = process.argv.slice(2)
@@ -14,7 +14,10 @@ assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname))
 const saveTo = process.env.UNSPOIL_RECETTE_SORTIE
 if (saveTo) {
   const path = relative(process.cwd(), resolve(saveTo))
-  assert.ok(isAbsolute(path) || path.startsWith('..'), 'Écris le rapport privé hors du dépôt.')
+  assert.ok(
+    isAbsolute(path) || path === '..' || path.startsWith('..' + sep),
+    'Écris le rapport privé hors du dépôt.',
+  )
 }
 
 const browser = await chromium.launch({ channel: process.env.UNSPOIL_CHANNEL || 'msedge' })
@@ -23,6 +26,8 @@ await context.route('**/*', (route) =>
   new URL(route.request().url()).origin === origin.origin ? route.continue() : route.abort(),
 )
 const results = []
+const truths = process.env.UNSPOIL_RECETTE_VERITES
+const scoreGeo = truths ? (await import('../src/detection/eval/geo.ts')).scoreGeo : null
 const readSha = (page) => page.locator('meta[name=unspoil-build]').getAttribute('content')
 
 async function openCovered(page, file) {
@@ -38,6 +43,14 @@ async function openCovered(page, file) {
     )
   assert.ok(hidden)
   return pages
+}
+
+async function analyze(page) {
+  await page.getByRole('button', { name: 'Masquer les corrigés', exact: true }).click()
+  await page.waitForFunction(() =>
+    document.querySelector('.reader-modes [aria-pressed=true], [role=alert]'),
+  )
+  assert.equal(await page.getByRole('alert').count(), 0)
 }
 
 const masksOf = (page) =>
@@ -73,16 +86,19 @@ try {
     assert.equal(await readSha(page), expectedSha)
     const pages = await openCovered(page, file)
     const start = performance.now()
-    await page.getByRole('button', { name: 'Masquer les corrigés', exact: true }).click()
-    await page.waitForFunction(() =>
-      document.querySelector('.reader-modes [aria-pressed=true], [role=alert]'),
-    )
+    await analyze(page)
     const durationMs = Math.round(performance.now() - start)
-    const warning = await page.getByRole('alert').count()
-    assert.equal(warning, 0)
     const fallback = (await page.getByTestId('progressive-mask').count()) === pages
     const masks = await masksOf(page)
     assert.ok(masks.every(({ opaque }) => opaque))
+    const correctionOnly = (await page.getByText('Corrigé seul', { exact: true }).count()) > 0
+    const kind = fallback
+      ? 'unknown'
+      : correctionOnly
+        ? 'correction_only'
+        : masks.length
+          ? 'mixed'
+          : 'statement_only'
     let colorCalls = null
     const { result: coverage } = await cdp.send('Profiler.takePreciseCoverage')
     for (const script of coverage.filter(
@@ -124,6 +140,23 @@ try {
         masks.length,
       )
       blocks.push({ id, regions })
+    }
+
+    let score = null
+    if (scoreGeo) {
+      const truthName = basename(file).replace(/\.pdf$/i, '.geo.json')
+      const annotation = await readFile(join(truths, truthName), 'utf8').catch((cause) => {
+        if (cause.code === 'ENOENT') return null
+        throw cause
+      })
+      if (annotation) {
+        score = scoreGeo(JSON.parse(annotation), {
+          kind,
+          blocks,
+          needsFallback: fallback,
+          warnings: [],
+        })
+      }
     }
 
     if (!fallback) {
@@ -169,6 +202,8 @@ try {
       pages,
       durationMs,
       fallback,
+      kind,
+      score,
       colorCalls,
       blocks,
       serviceWorker,
@@ -180,6 +215,8 @@ try {
         pages,
         durationMs,
         fallback,
+        kind,
+        score,
         colorCalls,
         blocks: blocks.length,
         masks: masks.length,
@@ -195,7 +232,8 @@ try {
   await cachePage.reload()
   assert.equal(await readSha(cachePage), expectedSha)
   await openCovered(cachePage, files[0])
-  console.log(JSON.stringify({ sha: expectedSha, offlineReloadAndImport: true }))
+  await analyze(cachePage)
+  console.log(JSON.stringify({ sha: expectedSha, offlineReloadImportAndAnalysis: true }))
   if (saveTo) await writeFile(saveTo, JSON.stringify(results))
 } finally {
   await browser.close()

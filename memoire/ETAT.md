@@ -110,6 +110,14 @@
 - Maturité : testée en isolation avec le lecteur PDF dans Edge et par tests unitaires, dont le cas des questions bleues et données/corrections noires. Intégration structurelle par Hazem.
 - Notes : PR #13. Vérifications V-28-0118-WB et V-28-0128-WB. Détecteur QCM développé par Hazem, relu en isolation par Wael (V-28-0129-WB).
 
+### T-WB-4 · Recette intégrée et couverture de sécurité
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `fix/recette-production`
+- Dépend de : moteur de Hazem, lecteur réel et C1. Comparaison indépendante supplémentaire demandée à Salif.
+- Critères d’acceptation : SHA vérifié par le navigateur et après rechargement hors ligne, appel couleur observé dans le build, verdict mesuré sur les annales et transmission des P0 au responsable du moteur.
+- Maturité : recette reproductible et correctif d’interface testés. Lyon 2 validé dans Edge. Les deux annales ENSAI échouent encore au masquage automatique. Voir V-28-0211-WB.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._

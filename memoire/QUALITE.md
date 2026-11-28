@@ -271,6 +271,34 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Résultat : 226/226 cases noircies entièrement couvertes, 0 partielle, 0 visible. Huit cases non noircies de propositions à masquer restent partiellement couvertes (2) ou visibles (6). Elles ne correspondent pas à une boîte reconnue dans le raster à ces positions. Ces différences donnent un indice indirect par élimination. Aucun comptage vérifié des énoncés masqués à tort sur ce document. Temps du moteur sur 28 pages : 2 041 ms lors du passage sans instrumentation supplémentaire, dont 913 ms pour les rasters.
 - Signalé à Hazem dans la PR #13. Aucun deuxième détecteur géométrique de QCM développé sur cette branche.
 
+### V-28-0211-WB · Recette P0 du produit intégré sur annales réelles
+
+- Build testé `ef23fa2f25c3066350534472352fc2a63455cec0`, base `329d2973609fb8c6babfd92fa6611416e7cc8d3f` et moteur `54e0e7b4e399625310e4c2efb15cecf40c1b9da0`. Production Ubuntu sous `/night-shift/`, Edge 1440 × 900 avec profil neuf et port local distinct. Le SHA lu dans le HTML correspond après rechargement hors ligne. La couverture V8 du bundle confirme les appels effectifs à l’analyseur couleur lors de l’action « Masquer les corrigés » (12 et 4 sur les annales ENSAI, 4 sur Lyon 2). L’analyseur est désormais enregistré par défaut dans le moteur.
+- Protocole des mesures ENSAI. Vérité indépendante issue des carrés vectoriels des propositions et grilles, des fragments de correction rouges et des fragments d’énoncé du PDF original. Les cases vides et pleines de chaque groupe de réponses figurent dans les unités à neutraliser. Les grilles d’identification figurent dans les unités à préserver. La recette recueille les rectangles visibles dans le DOM, puis déduit le rattachement aux blocs en activant chaque commande. Calcul avec `scoreGeo` de Hazem, seuils de couverture à 95 % et 5 %. Les PDF, annotations locales et captures restent hors du dépôt. Les unités sont des fragments et des cases, distinctes du nombre de réponses.
+- Comparaison avec `329d2973609fb8c6babfd92fa6611416e7cc8d3f` avant intégration du moteur. Les deux builds ont été construits et servis séparément. Le build de référence ne contenait pas encore de métadonnée SHA.
+
+| Document et build | Unités entièrement / partiellement / non couvertes | Énoncés touchés selon le seuil | Blocs indépendants |
+| --- | ---: | ---: | ---: |
+| ENSAI hybride, 12 p., `329d297` | 124 / 0 / 1 427 sur 1 551 | 354 / 3 746 | 0 / 34 |
+| ENSAI hybride, 12 p., `ef23fa2` | 347 / 0 / 1 204 sur 1 551 | 0 / 3 746 | 16 / 34 |
+| ENSAI QCM, 4 p., `329d297` | 71 / 7 / 26 sur 104 | 576 / 916 | 0 / 10 |
+| ENSAI QCM, 4 p., `ef23fa2` | 103 / 0 / 1 sur 104 | 0 / 916 | 7 / 10 |
+| Lyon 2 L2, 4 p., `ef23fa2` | 70 / 0 / 0 sur 70 | 0 / 38 | 17 / 17 |
+
+- Hybride. Sur les p. 1–4, 103/1 303 fragments rouges couverts. Sur les p. 5–12, les 66 cases noircies des propositions et de la grille à 26 lignes sont couvertes. Les 40 cases d’identification restent visibles. Quatre propositions conservent une case vide visible, ce qui donne un indice par élimination. L’analyse prend 3,68 s sur ce passage navigateur.
+- QCM à deux sessions. Les 22 cases noircies et les deux grilles de réponses sont couvertes. Les 80 cases d’identification restent visibles. Une case vide de proposition reste visible dans la seconde session et donne un indice. Les numéros répétés ont des commandes distinctes, mais trois groupes sur dix échouent encore au critère géométrique d’indépendance. L’analyse prend 0,82 s sur ce passage.
+- Deux annales ENSAI sur deux s’affichent en mode automatique avec des fuites. Sur six PDF testés dans Edge, seul le corrigé manuscrit MIT s’abstient. Le document reste entièrement couvert et la révélation progressive n’expose que la première page au premier déplacement. Les essais confirment la couverture à l’ouverture, l’opacité, l’alignement au zoom, le rendu de la dernière page, le remasquage et la reprise de l’import et de l’analyse hors ligne.
+- Corpus indépendant de Hazem sous Node, même SHA et arbre propre. 1/12 documents réussis automatiquement, 1/12 abstention, 2 663/3 348 unités entièrement couvertes, 36 partiellement, 649 visibles. Le moteur masque 629/2 004 lignes d’énoncé au-delà du seuil. Sur Savoie INFO201, le benchmark couvre 101/101 corrections et masque 55/86 énoncés. Le produit dans Edge couvre 51/101 corrections, laisse 4 partielles et 46 visibles, et masque 5/86 énoncés. L’appel direct au moteur confirme l’écart avant le visualiseur (11 blocs et 16 régions sous Node, 8 blocs et 27 régions dans Edge). Les empreintes des rasters et des fragments diffèrent bien que leurs dimensions et effectifs concordent. La cause fine de l’écart reste à isoler. Sur le sujet MIT 18.05, 77/434 unités d’énoncé masquées sont reproduites dans Edge.
+- La vidéo locale montre `QCM3.pdf` et une URL de développement sur le port 5173. Le nom et le texte observable ne confirment la correspondance avec aucun des deux PDF fournis. Le SHA de la vidéo ne peut pas être établi.
+
+P0 transmis à Hazem, dans l’ordre :
+
+1. Le passage couleur indique une incertitude sur chacune des quatre pages rédactionnelles. Le moteur exploite ce signal pour `statement_only`, mais son classement `mixed` sur les blocs AMC permet de laisser les réponses rouges visibles. Décider de la couverture par exercice ou conserver le document couvert tant qu’une convention plausible reste sans résolution.
+2. Les cinq cases vides résiduelles sont absentes de la sortie brute de `findBoxes`. Vérifier la complétude de chaque groupe avec le contexte et les emplacements voisins avant de rendre un résultat automatique. Une grille de réponses reliée doit suivre le bloc de son groupe et de sa session.
+3. L’écart Node/Edge exige une vérification navigateur représentative pour conclure sur l’utilisabilité. Un contrôle des entrées du détecteur doit isoler les différences textuelles et raster, puis établir leur contribution.
+
+Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette repose sur Edge sous Windows pour l’affichage. Téléphone physique et Safari restent à vérifier. L’interface rejette désormais un résultat contradictoire `statement_only` contenant des blocs et conserve la couverture progressive. `npm run check` passe avec 171 tests réussis et 2 évaluations optionnelles ignorées. Le build de production réussit.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
