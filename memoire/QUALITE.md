@@ -563,3 +563,11 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Constat et reproduction :
 - Contournement :
 - Responsable ou tâche :
+
+### V-28-0927-S · Confort du lecteur et démonstration hors ligne
+
+- Référence : `9811c8a` (PR #32 intégrée à main), comparée au lecteur de `feat/final-user-comfort` dans Edge. Les identifiants et les coordonnées C1 de tous les masques affichés concordent sur les six PDF publics ou synthétiques de la recette.
+- Modes et comptages Edge (blocs/régions) : Illinois PHYS214 31/32, QCM synthétique de chimie 2/6, Lyon 2 17/18, Washington 2/44, Wisconsin en lecture progressive, Toulouse sujet seul. Ces comptages décrivent la sortie affichée. Ils ne mesurent pas la précision des corrigés.
+- Le QCM intégré est réellement analysé. Les six masques sont toujours opaques. Le parcours est disponible hors ligne après mise en cache. Refus et acceptation de la révélation globale, replacement du document, retour à l'entraînement avec remasquage et conservation du zoom et des corrections en plein écran exercés.
+- Les miniatures schématiques n’affichent aucun contenu de PDF. Les deux thèmes, les deux côtés des commandes sur grand écran, neuf tailles de fenêtre et le toucher émulé ont été contrôlés. La recette de distribution a exercé Edge, Firefox et WebKit hors ligne et vérifié les clés de préférences et les requêtes locales.
+- Limites : QCM ENSAI-dev indisponible sur ce poste. Appareils physiques et installation via le système non exercés. L’événement d’installation et l’affichage de l’aide sont couverts par les tests d’interface.

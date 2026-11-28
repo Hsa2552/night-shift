@@ -3,11 +3,18 @@ import demonstration from './detection/samples/qcm-cases.pdf?inline'
 import { Brand, ThemeToggle } from './components/Brand'
 import { FileInput, Home } from './components/Home'
 import { Icon } from './components/Icon'
+import { PwaInstallation } from './components/PwaInstallation'
+import { usePwaInstallation } from './components/usePwaInstallation'
 import type { PdfDocument } from './pdf'
 import type { PageData, PageDimensions } from './shared/types'
 import { decideDetection } from './viewer/detectionDecision'
 import type { ViewerMode } from './viewer/DocumentViewer'
 import { Reader, type AnalysisProgress } from './viewer/Reader'
+import {
+  readReaderPreferences,
+  saveReaderPreferences,
+  type ReaderPreferences,
+} from './viewer/readerPreferences'
 
 interface OpenDocument {
   id: number
@@ -16,8 +23,8 @@ interface OpenDocument {
   pages: PageDimensions[]
 }
 
-interface Training {
-  mode: Extract<ViewerMode, { kind: 'automatic' }>
+interface DetectionPresentation {
+  mode: Exclude<ViewerMode, { kind: 'covered' }>
   message: string
   warnings: string[]
   kindLabel: string
@@ -28,10 +35,13 @@ function closePdf(pdf: PdfDocument) {
 }
 
 export default function App() {
+  const installation = usePwaInstallation()
+  const [preferences, setPreferences] = useState(readReaderPreferences)
+  const [readerHelpDismissed, setReaderHelpDismissed] = useState(false)
   const [document, setDocument] = useState<OpenDocument>()
   const [mode, setMode] = useState<ViewerMode>({ kind: 'covered' })
   const [analysis, setAnalysis] = useState<AnalysisProgress>()
-  const [training, setTraining] = useState<Training>()
+  const [detection, setDetection] = useState<DetectionPresentation>()
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [message, setMessage] = useState('')
   const [warnings, setWarnings] = useState<string[]>([])
@@ -55,6 +65,12 @@ export default function App() {
     }
   }, [])
 
+  function updatePreferences(change: Partial<ReaderPreferences>) {
+    const next = { ...preferences, ...change }
+    setPreferences(next)
+    saveReaderPreferences(next)
+  }
+
   function returnHome() {
     revision.current += 1
     if (currentPdf.current) closePdf(currentPdf.current)
@@ -65,7 +81,7 @@ export default function App() {
     openingPdf.current = null
     setPendingFile(null)
     setAnalysis(undefined)
-    setTraining(undefined)
+    setDetection(undefined)
     dragDepth.current = 0
     setDragging(false)
     setMode({ kind: 'covered' })
@@ -114,7 +130,7 @@ export default function App() {
       openingPdf.current = null
       setDocument({ id: request, name: file.name, pdf, pages })
       setMode({ kind: 'covered' })
-      setTraining(undefined)
+      setDetection(undefined)
       setAnalysis(undefined)
       setMessage('')
       setWarnings([])
@@ -144,7 +160,7 @@ export default function App() {
     )
   }
 
-  function startTraining(presentation: Training) {
+  function showDetection(presentation: DetectionPresentation) {
     setMode(presentation.mode)
     setMessage(presentation.message)
     setWarnings(presentation.warnings)
@@ -154,8 +170,8 @@ export default function App() {
 
   async function maskCorrections() {
     if (!document || analysis) return
-    if (training) {
-      startTraining(training)
+    if (detection) {
+      showDetection(detection)
       return
     }
     const request = ++revision.current
@@ -182,23 +198,26 @@ export default function App() {
         getVectors: document.pdf.getVectors?.bind(document.pdf),
       })
       if (request !== revision.current) return
-      setWarnings(result.warnings)
 
       const decision = decideDetection(result, document.pages)
       if (decision.kind === 'progressive') {
-        setKindLabel('Lecture progressive')
-        setMessage(
-          decision.reason === 'uncertain'
-            ? 'La détection est incertaine. Fais glisser le trait pour découvrir le document.'
-            : 'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
-        )
-        setMode({ kind: 'progressive' })
+        const presentation: DetectionPresentation = {
+          mode: { kind: 'progressive' },
+          kindLabel: 'Lecture progressive',
+          warnings: result.warnings,
+          message:
+            decision.reason === 'uncertain'
+              ? 'La détection est incertaine. Fais glisser le trait pour découvrir le document.'
+              : 'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
+        }
+        setDetection(presentation)
+        showDetection(presentation)
         return
       }
 
       const blocks = decision.kind === 'automatic' ? decision.blocks : []
       const count = blocks.length
-      const presentation: Training = {
+      const presentation: DetectionPresentation = {
         mode: { kind: 'automatic', blocks },
         message:
           decision.kind === 'statement_only'
@@ -214,8 +233,8 @@ export default function App() {
               ? 'Corrigé seul'
               : 'Sujet et corrections',
       }
-      setTraining(presentation)
-      startTraining(presentation)
+      setDetection(presentation)
+      showDetection(presentation)
     } catch {
       if (request !== revision.current) return
       setError('L’analyse a échoué. La révélation progressive reste disponible.')
@@ -310,12 +329,16 @@ export default function App() {
           pages={document.pages}
           mode={mode}
           analysis={analysis}
-          trainingAvailable={!!training}
+          detectedMode={detection?.mode.kind}
           replacing={!!pendingFile}
           status={status}
           kindLabel={kindLabel}
           warnings={warnings}
           error={error}
+          preferences={preferences}
+          onPreferencesChange={updatePreferences}
+          helpDismissed={readerHelpDismissed}
+          onHelpDismissed={() => setReaderHelpDismissed(true)}
           onAnalyze={() => void maskCorrections()}
           onProgressive={showProgressively}
           onCancel={cancelAnalysis}
@@ -324,6 +347,7 @@ export default function App() {
         <Home
           onFile={importPdf}
           onDemo={tryDemonstration}
+          installation={<PwaInstallation {...installation} />}
           pending={pendingFile}
           onCancel={returnHome}
           error={error}

@@ -187,6 +187,35 @@
   white-space: nowrap;
 }
 
+.home-demonstration {
+  margin: 0.75rem auto 0;
+}
+.home-demo-note {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.home-install-action,
+.home-install-help {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.home-install-action,
+.home-install-help summary {
+  cursor: pointer;
+  min-height: 32px;
+  padding-block: 0.35rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.home-install-action:hover,
+.home-install-help summary:hover {
+  color: var(--accent);
+}
+.home-install-help p {
+  max-width: 32ch;
+}
 .home-privacy {
   display: flex;
   align-items: center;

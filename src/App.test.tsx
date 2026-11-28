@@ -49,10 +49,99 @@ function startAnalysis() {
 beforeEach(() => {
   vi.resetAllMocks()
   loadPdf.mockResolvedValue(fakePdf())
-  window.localStorage.removeItem('unspoil-theme')
+  window.localStorage.clear()
 })
 
 describe('Unspoil', () => {
+  it('mémorise le zoom, la navigation et le côté sans mémoriser le document', async () => {
+    const firstApp = render(<App />)
+    selectFile('annale-synthetique.pdf')
+    await screen.findByRole('heading', { name: 'annale-synthetique.pdf' })
+    const menu = screen.getByLabelText('Outils et raccourcis')
+    fireEvent.click(menu)
+    fireEvent.click(screen.getByRole('button', { name: 'Commandes à gauche' }))
+    expect(screen.getByRole('main').dataset.correctionSide).toBe('left')
+    fireEvent.click(screen.getByRole('button', { name: 'Navigation par page' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom avant' }))
+    const storage = window.localStorage
+    expect(JSON.parse(storage.getItem('unspoil-reader-preferences')!)).toEqual({
+      correctionSide: 'left',
+      navigation: true,
+      zoom: 125,
+    })
+    expect(Object.keys(storage)).toEqual(['unspoil-reader-preferences'])
+    selectFile('nouveau.pdf')
+    await screen.findByRole('heading', { name: 'nouveau.pdf' })
+    expect(screen.getByText('125 %')).toBeTruthy()
+    expect(screen.getByRole('main').dataset.correctionSide).toBe('left')
+    expect(
+      screen.getByRole('button', { name: 'Navigation par page' }).getAttribute('aria-expanded'),
+    ).toBe('true')
+    firstApp.unmount()
+    await importDocument()
+    expect(screen.getByText('125 %')).toBeTruthy()
+    expect(screen.getByRole('main').dataset.correctionSide).toBe('left')
+  })
+
+  it('valide les préférences lues et les applique même quand le stockage est indisponible', async () => {
+    window.localStorage.setItem(
+      'unspoil-reader-preferences',
+      JSON.stringify({
+        zoom: 9999,
+        correctionSide: 'sideways',
+        navigation: 'closed',
+        ignored: 'champ inconnu',
+      }),
+    )
+    await importDocument()
+    expect(screen.getByText('100 %')).toBeTruthy()
+    expect(screen.getByRole('main').dataset.correctionSide).toBe('right')
+    const refused = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('Stockage indisponible')
+    })
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Zoom avant' }))
+      expect(screen.getByText('125 %')).toBeTruthy()
+      selectFile('suivant.pdf')
+      await screen.findByRole('heading', { name: 'suivant.pdf' })
+      expect(screen.getByText('125 %')).toBeTruthy()
+    } finally {
+      refused.mockRestore()
+    }
+  })
+
+  it('ouvre le dialogue d’installation seulement lorsque le navigateur le propose', () => {
+    render(<App />)
+    expect(screen.queryByRole('button', { name: 'Installer Unspoil' })).toBeNull()
+    expect(screen.getByText('Aide à l’installation')).toBeTruthy()
+    const prompt = vi.fn().mockResolvedValue(undefined)
+    const event = Object.assign(new Event('beforeinstallprompt', { cancelable: true }), { prompt })
+    act(() => window.dispatchEvent(event))
+    expect(event.defaultPrevented).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Installer Unspoil' }))
+    expect(prompt).toHaveBeenCalledOnce()
+    act(() => window.dispatchEvent(new Event('appinstalled')))
+    expect(screen.queryByRole('button', { name: 'Installer Unspoil' })).toBeNull()
+    expect(screen.queryByText('Aide à l’installation')).toBeNull()
+  })
+
+  it('permet de fermer puis retrouver l’aide sans révéler de corrigé', async () => {
+    detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
+    await importDocument()
+    startAnalysis()
+    const help = await screen.findByRole('complementary', { name: 'Aide du lecteur' })
+    fireEvent.click(within(help).getByRole('button', { name: 'Fermer l’aide' }))
+    expect(help.isConnected).toBe(false)
+    const menu = screen.getByLabelText('Outils et raccourcis')
+    expect(document.activeElement).toBe(menu)
+    fireEvent.click(menu)
+    fireEvent.click(screen.getByRole('button', { name: 'Aide du lecteur' }))
+    expect(document.activeElement).toBe(
+      screen.getByRole('complementary', { name: 'Aide du lecteur' }),
+    )
+    expect(screen.getByTestId('correction-mask')).toBeTruthy()
+  })
+
   it('ouvre l’annale synthétique couverte puis transmet ses pages au moteur', async () => {
     detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
     render(<App />)
@@ -408,6 +497,12 @@ describe('Unspoil', () => {
       )
       expect(screen.getByText('Une page ne contient pas de texte.')).toBeTruthy()
       expect(screen.getByTestId('progressive-mask').style.top).toBe('0%')
+      const maskAgain = screen.getByRole<HTMLButtonElement>('button', {
+        name: 'Masquer les corrigés',
+      })
+      expect(maskAgain.disabled).toBe(true)
+      fireEvent.click(maskAgain)
+      expect(detect).toHaveBeenCalledOnce()
     },
   )
 

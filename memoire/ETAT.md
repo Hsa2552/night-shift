@@ -219,7 +219,7 @@ _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste acti
 
 ### T-S-9 · Confort utilisateur et simplification du lecteur
 
-- Statut : jalon P0 vérifié · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Salif · Agent : Codex · Branche : `feat/final-user-comfort`
 - Critères : annale synthétique analysée dans le lecteur, disponible hors ligne ; remplacement sans perte sur fichier invalide ; progression et annulation ; révélation globale confirmée ; retour à l'entraînement sans nouvelle analyse.
-- Maturité : lecteur Edge, parcours du QCM public synthétique et contrôle hors ligne dans le build. Fermeture des PDF remplacés et annulation contrôlées par les tests d'interface.
+- Maturité : lecteur Edge, parcours du QCM public synthétique et contrôle hors ligne dans le build. Fermeture des PDF remplacés et annulation contrôlées par les tests d'interface. Préférences d’affichage, côté des commandes, plein écran, aide contextuelle et recette hors ligne sur trois moteurs. Voir V-28-0927-S.

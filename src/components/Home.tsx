@@ -29,12 +29,14 @@ export function FileInput({
 export function Home({
   onFile,
   onDemo,
+  installation,
   pending,
   onCancel,
   error,
 }: {
   onFile: (file: File) => void
   onDemo: () => void
+  installation: ReactNode
   pending: File | null
   onCancel: () => void
   error: string
@@ -103,6 +105,7 @@ export function Home({
               <Icon name="lock" size={15} /> Tes fichiers restent sur ton appareil.
             </p>
 
+            {installation}
             {pending && (
               <div className="home-feedback" role="status">
                 <span className="loading-ring" aria-hidden="true" />
