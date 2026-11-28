@@ -185,7 +185,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   let firstPreambleMarker = -1
   for (let i = 0; i < preambleEnd && firstPreambleMarker < 0; i++) {
     const titleZone = flow[i]!.pageIndex === 0 && i < 6
-    if (isC(i) || (titleZone && isCorrectionTitle(flow[i]!.text))) firstPreambleMarker = i
+    if (isC(i) || (titleZone && announcesCorrection(flow[i]!.text))) firstPreambleMarker = i
   }
   const markerIsTitle = (i: number) => {
     const c = parsed[i]!.c
@@ -1630,6 +1630,19 @@ function questionInkDrafts(
 
 // --- Indices de corrigés non localisés ----------------------------------------------------
 
+/**
+ * Consigne de notation (« Solutions that violate … may get partial credit », « La correction
+ * tiendra compte de la rédaction ») : le mot « solution » ou « correction » y décrit la
+ * notation et n'annonce pas un corrigé. Texte replié (minuscules, sans accents).
+ */
+const GRADING_NOTE =
+  /\b(?:credit|points?|marks?|graded|grading|bareme|notation|notee?s?|penalis\w*|tiendra compte|tient compte|prise? en compte|will be (?:graded|marked|evaluated)|may (?:get|receive|lose))\b/
+
+/** Titre ou bandeau annonçant un corrigé, hors consigne de notation. */
+function announcesCorrection(text: string): boolean {
+  return isCorrectionTitle(text) && !GRADING_NOTE.test(fold(text))
+}
+
 /** Tournures qui ouvrent typiquement une réponse rédigée (français et anglais). */
 const ANSWER_CUE =
   /^(?:on a\b|donc\b|d['’]où\b|ainsi\b|par conséquent\b|la réponse\b|réponse\b|il suffit\b|c['’]est\b|therefore\b|hence\b|thus\b|we have\b|we get\b|the answer\b)/iu
@@ -1646,7 +1659,7 @@ function correctionHint(layouts: PageLayout[], flow: Line[], parsed: Parsed[]): 
   const bands = layouts.flatMap((p) =>
     p.lines.filter((l) => l.bbox.y < 0.08 * p.height || l.bbox.y > 0.9 * p.height),
   )
-  const announces = [...titleZone, ...bands].some((l) => isCorrectionTitle(l.text))
+  const announces = [...titleZone, ...bands].some((l) => announcesCorrection(l.text))
   if (announces) return true
   let span = -1
   let cues = 0
