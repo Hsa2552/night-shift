@@ -429,6 +429,35 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       for (const d of colorBlocks) for (let i = d.start; i <= d.end; i++) modeAt[i] = 'correction'
     }
   }
+  // Énoncés recopiés dans un corrigé : une ligne dont tout le texte figure déjà dans des lignes
+  // visibles plus haut ne révèle rien ; en suite d'au moins deux lignes, elle reste visible
+  // et le bloc est découpé autour.
+  const restated = restatedLines(flow, drafts, modeAt)
+  if (restated.size > 0) {
+    const split: Draft[] = []
+    for (const d of drafts) {
+      if (d.custom) {
+        split.push(d)
+        continue
+      }
+      let segStart = -1
+      for (let i = d.start; i <= d.end + 1; i++) {
+        const inSegment = i <= d.end && !restated.has(i)
+        if (inSegment && segStart < 0) segStart = i
+        if (!inSegment && segStart >= 0) {
+          split.push({
+            ...d,
+            start: segStart,
+            end: i - 1,
+            ...(segStart === d.start ? {} : { inlineX: undefined }),
+          })
+          segStart = -1
+        }
+      }
+    }
+    drafts.splice(0, drafts.length, ...split)
+    for (const i of restated) modeAt[i] = 'statement'
+  }
   drafts.sort((a, b) => a.start - b.start)
 
   // --- Classification -----------------------------------------------------------
@@ -1286,6 +1315,55 @@ function colorDrafts(
     i = j + 1
   }
   return drafts
+}
+
+const normTokens = (text: string) =>
+  text
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .split(' ')
+    .filter(Boolean)
+
+const grams4 = (tokens: string[]) => {
+  const out: string[] = []
+  for (let i = 0; i + 4 <= tokens.length; i++) out.push(tokens.slice(i, i + 4).join(' '))
+  return out
+}
+
+/**
+ * Lignes masquées dont tous les 4-grammes de mots (au moins deux) figurent déjà dans des lignes
+ * visibles situées avant elles : énoncé recopié dans un corrigé. Seules les suites d'au moins
+ * deux telles lignes consécutives d'un même bloc sont retenues. Par construction, ces lignes
+ * ne révèlent aucun texte absent de la partie visible.
+ */
+function restatedLines(flow: Line[], drafts: Draft[], modeAt: string[]): Set<number> {
+  const masked = new Map<number, Draft>()
+  for (const d of drafts) {
+    if (d.custom) continue
+    for (let i = d.start; i <= d.end; i++)
+      if (!(i === d.start && d.inlineX !== undefined)) masked.set(i, d)
+  }
+  if (masked.size === 0) return new Set()
+  const visible = new Set<string>()
+  const candidate: boolean[] = []
+  flow.forEach((line, i) => {
+    const grams = grams4(normTokens(line.text))
+    if (masked.has(i)) candidate[i] = grams.length >= 2 && grams.every((g) => visible.has(g))
+    else if (modeAt[i] !== 'correction') for (const g of grams) visible.add(g)
+  })
+  const out = new Set<number>()
+  for (let i = 0; i < flow.length;) {
+    if (!candidate[i]) {
+      i++
+      continue
+    }
+    let j = i
+    while (candidate[j + 1] && masked.get(j + 1) === masked.get(i)) j++
+    if (j > i) for (let k = i; k <= j; k++) out.add(k)
+    i = j + 1
+  }
+  return out
 }
 
 /**
