@@ -5,7 +5,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { chromium } from 'playwright-core'
-import { build, preview } from 'vite'
+import { build, normalizePath, preview } from 'vite'
 
 export const hash = (data) => createHash('sha256').update(data).digest('hex')
 const digest = (data) => hash(JSON.stringify(data) ?? 'undefined')
@@ -183,12 +183,13 @@ async function browserControls(page, release, checkout, bytes, productionRasters
   return out
 }
 
-async function nodeProbe(checkout) {
+export async function nodeProbe(checkout, extraSources = {}) {
   const sources = {
     './src/detection/index.ts': 'detectCorrections',
     './src/detection/layout.ts': 'layoutPage',
     './src/detection/visual/index.ts': 'observePageInk',
     './src/detection/eval/loader.ts': 'loadPdf',
+    ...extraSources,
   }
   const work = resolve(checkout, 'dev-dist/parity-ssr')
   const entry = resolve(work, 'entry.mjs')
@@ -208,6 +209,16 @@ async function nodeProbe(checkout) {
     configFile: false,
     root: checkout,
     logLevel: 'error',
+    resolve: {
+      alias: [
+        {
+          find: /^pdfjs-dist$/,
+          replacement: normalizePath(
+            resolve(checkout, 'node_modules/pdfjs-dist/legacy/build/pdf.mjs'),
+          ),
+        },
+      ],
+    },
     build: {
       ssr: entry,
       outDir: work,

@@ -64,7 +64,11 @@ async function preparePdf(
       raster = false
     }
   }
-  const vectors = createVectorSource(doc.numPages, (index) => doc.getPage(index + 1))
+  const vectors = createVectorSource(
+    doc.numPages,
+    (index) => doc.getPage(index + 1),
+    async (_, index) => pages[index]!.textItems,
+  )
   const cache = new Map<number, Promise<RasterData>>()
   const getRaster = raster
     ? (pageIndex: number): Promise<RasterData> => {

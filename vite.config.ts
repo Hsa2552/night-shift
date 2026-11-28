@@ -5,7 +5,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, normalizePath } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // BASE_PATH : '/' par défaut (Vercel, Netlify, local).
@@ -28,6 +28,12 @@ function buildRevision() {
 
 export default defineConfig({
   base,
+  resolve: {
+    alias: [
+      // The vector probe only needs OPS. Share the reader's PDF.js runtime and worker.
+      { find: /^pdfjs-dist$/, replacement: normalizePath(join(pdfjsRoot, 'legacy/build/pdf.mjs')) },
+    ],
+  },
   plugins: [
     {
       name: 'unspoil-build-revision',

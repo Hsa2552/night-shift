@@ -64,7 +64,9 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
     return document.getPage(pageIndex + 1)
   }
 
-  const vectors = createVectorSource(document.numPages, getPage)
+  const vectors = createVectorSource(document.numPages, getPage, (page) =>
+    readPageText(page, page.getViewport({ scale: 1 }).transform, document.isPureXfa),
+  )
 
   async function renderPage(
     pageIndex: number,

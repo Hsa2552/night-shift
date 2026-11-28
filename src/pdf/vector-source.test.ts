@@ -1,18 +1,21 @@
 import { expect, it, vi } from 'vitest'
-import type { VectorPageObservation } from '../shared/types.ts'
+import type { PDFPageProxy } from 'pdfjs-dist'
 import { createVectorSource } from './vector-source.ts'
-import { observeVectorPage } from '../detection/visual/vector/index.ts'
+import { observeNativePage } from '../detection/visual/vector/native-page.ts'
 
-vi.mock('../detection/visual/vector/index.ts', () => ({ observeVectorPage: vi.fn() }))
+vi.mock('../detection/visual/vector/native-page.ts', () => ({ observeNativePage: vi.fn() }))
 
-const observe = vi.mocked(observeVectorPage)
+const observe = vi.mocked(observeNativePage)
+const getItems = async () => []
 const page = (pageNumber: number) => ({
   pageNumber,
   getViewport: vi.fn(),
   getOperatorList: vi.fn(),
   cleanup: vi.fn(),
+  getAnnotations: vi.fn(),
+  commonObjs: {} as PDFPageProxy['commonObjs'],
 })
-const observation: VectorPageObservation = {
+const observation: Awaited<ReturnType<typeof observeNativePage>> = {
   pageIndex: 0,
   width: 595,
   height: 842,
@@ -21,13 +24,17 @@ const observation: VectorPageObservation = {
   images: 0,
   unresolvedPaths: 0,
   unsupportedPathEncoding: 0,
+  textColors: [],
+  glyphSymbols: [],
+  markRelations: [],
+  backgroundRelations: [],
 }
 
 it('reads on demand, shares only the in-flight observation and releases operator data', async () => {
   observe.mockReset().mockResolvedValue(observation)
   const first = page(1)
   const lookup = vi.fn().mockResolvedValue(first)
-  const source = createVectorSource(1, lookup)
+  const source = createVectorSource(1, lookup, getItems)
   expect(lookup).not.toHaveBeenCalled()
   const values = await Promise.all([source.getVectors(0), source.getVectors(0)])
   expect(values).toEqual([observation, observation])
@@ -39,15 +46,15 @@ it('reads on demand, shares only the in-flight observation and releases operator
 })
 
 it('drops an in-flight result when its document closes and isolates the next document', async () => {
-  let finish!: (value: VectorPageObservation) => void
+  let finish!: (value: typeof observation) => void
   let enter!: () => void
   const started = new Promise<void>((resolve) => {
     enter = resolve
   })
   const first = page(1)
   const replacement = page(1)
-  const source = createVectorSource(1, async () => first)
-  const other = createVectorSource(1, async () => replacement)
+  const source = createVectorSource(1, async () => first, getItems)
+  const other = createVectorSource(1, async () => replacement, getItems)
   const replacementObservation = { ...observation, width: 200 }
   observe
     .mockReset()
@@ -70,7 +77,7 @@ it('drops an in-flight result when its document closes and isolates the next doc
 
 it('reports unavailable operations as a fallback and can retry the page', async () => {
   const first = page(1)
-  const source = createVectorSource(1, async () => first)
+  const source = createVectorSource(1, async () => first, getItems)
   observe
     .mockReset()
     .mockRejectedValueOnce(new Error('operator list unavailable'))

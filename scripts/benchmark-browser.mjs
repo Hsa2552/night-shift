@@ -51,6 +51,7 @@ assert.ok(
   'Partition, nom de fichier ou SHA-256 invalide dans le manifeste',
 )
 const documents = []
+const analysisTimeoutMs = 120_000
 const release = await openBuild(resolve(checkout))
 const origin = new URL(release.url).origin
 
@@ -70,7 +71,7 @@ async function presented(page, file) {
   if (await alert.count()) return { kind: 'error' }
   await analyze.click()
   const active = reader.locator('.reader-modes [aria-pressed=true]')
-  await active.or(alert).first().waitFor()
+  await active.or(alert).first().waitFor({ timeout: analysisTimeoutMs })
   if (await alert.count()) return { kind: 'error' }
   if (await reader.getByTestId('progressive-mask').count()) {
     assert.equal(

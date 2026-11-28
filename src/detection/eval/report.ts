@@ -21,6 +21,10 @@ export interface DocReport extends Partial<DocumentScore> {
 
 export function aggregate(docs: DocReport[]) {
   const done = docs.filter((d) => d.status === 'évalué' && d.measurable !== false)
+  const handled = done.filter(
+    ({ presentation }) =>
+      presentation?.mode === 'automatic' || presentation?.mode === 'statement_only',
+  )
   const sum = (f: (d: DocReport) => number) => done.reduce((a, d) => a + f(d), 0)
   const corr = sum((d) => d.corrections?.total ?? 0)
   const full = sum((d) => d.corrections?.full ?? 0)
@@ -51,6 +55,15 @@ export function aggregate(docs: DocReport[]) {
         .length,
     },
     strictSuccesses: done.filter((d) => d.presentation?.strictSuccess).length,
+    automaticHandling: {
+      eligible: done.length,
+      handled: handled.length,
+      strictFailures: handled.filter(({ presentation }) => !presentation?.strictSuccess).length,
+      withCorrectionsVisibleAt95: handled.filter(({ presentation }) => {
+        const corrections = presentation?.coverage?.corrections
+        return corrections && corrections.full < corrections.total
+      }).length,
+    },
     presentation: {
       automatic: docs.filter((d) => d.presentation?.mode === 'automatic').length,
       statementOnly: docs.filter((d) => d.presentation?.mode === 'statement_only').length,
