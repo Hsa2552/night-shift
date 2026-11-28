@@ -98,8 +98,8 @@
 - Responsable : Hazem · Agent : Claude Code · Branche : `feat/detection-generalisation`
 - Dépend de : rien de bloquant ; contrat C1 inchangé
 - Critères d'acceptation : mesures avant/après sur corpus réels dev et test séparés ; QCM ENSAI DOC-corrige sans indice visuel
-- Maturité : intégrée (169 tests, benchmark automatique, détecteur de Wael fusionné) ; QCM ENSAI et BUG-001 vérifiés dans Edge. Non testé : téléphone, Safari
-- Notes : journal entrées du 28/11 01:25 et 02:00 ; `QUALITE.md` V-28-0115-HZ à V-28-0205-HZ ; PR à ouvrir (lien dans le journal)
+- Maturité : intégrée (179 tests, benchmark automatique, détecteur de Wael fusionné) ; QCM ENSAI et BUG-001 vérifiés dans Edge. Non testé : téléphone, Safari
+- Notes : journal entrées du 28/11 01:25, 02:00 et 02:20 ; `QUALITE.md` V-28-0115-HZ à V-28-0215-HZ ; PR à ouvrir (lien dans le journal) ; à valider par l'équipe : `benchmark.yml` et scripts `benchmark:*` de `package.json`
 
 ### T-WB-3 · Détecteurs visuels déterministes
 

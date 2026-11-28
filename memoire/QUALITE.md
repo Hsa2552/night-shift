@@ -143,6 +143,19 @@
 - Intégration du détecteur colorimétrique de Wael par défaut : aucune régression sur les quatre partitions (comparaison automatique du benchmark).
 - Limites : vérités dev et test annotées par Hazem seul (pas de second annotateur) ; vérités ENSAI automatiques (opérations vectorielles) ; workflow GitHub `benchmark.yml` non exécuté (à valider par l'équipe).
 
+### V-28-0215-HZ · Améliorations par famille sur le dev (numérotations, extraction dégradée, sections)
+
+- Par : Hazem (Claude Code) · Commits `54e0e7b` (titre de corrigé malgré une extraction dégradée), `fcb54c8` (numérotations hiérarchiques A.1., C.I.1., II.a, VII.1 avec continuité), `c52cf6c` (intitulés « B. Exercice », sous-questions « b. »). Mesures faites sur le contenu de `c52cf6c` (rapport marqué `fcb54c8` + modifications locales, identiques au commit).
+- Commande : `node scripts/benchmark.mjs <partition> --cache <cache hors dépôt> --hors-ligne`, raster actif (`@napi-rs/canvas`).
+- Résultats, comparés à V-28-0205-HZ :
+  - dev (réglages faits sur cette partition) : réussite 3/10 → 7/10 mesurables, abstention 1 → 0, fuite 13,1 % → 0,1 % (2069/2072 corrections entièrement masquées, 3 non masquées dans un document), énoncés masqués 50,7 % → 29,7 % (387/1304) ;
+  - test (totaux seulement, aucun réglage) : inchangé, réussite 1/12, fuite 20,5 %, énoncés masqués 31,4 % ;
+  - ENSAI dev : fuite 0 %, énoncés masqués 13,0 % ; ENSAI test : fuite 0,1 % (1/1012), énoncés masqués 14,5 % : inchangés.
+  - Comparaison automatique : 0 régression sur les quatre partitions ; dev : `tlse-l1pc-2009-corrige` résolu (4/105 énoncés masqués).
+- `npm run check` : 179 tests réussis, 2 ignorés ; `npm run build` OK.
+- Résultat négatif, non retenu : découper une correction aux questions recopiées en repérant un changement de police dominante a produit 5 régressions sur le dev ; annulé avant commit.
+- Limites : le gain du dev ne se transfère pas au test (aucune amélioration mesurée) ; restent ouverts le sur-masquage de Bordeaux (309 lignes), labri sans marqueur (73/73 masquées) et la famille « sujet seul » (36 % d'énoncés masqués sur le test, aucun exemple disponible dans le dev).
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné

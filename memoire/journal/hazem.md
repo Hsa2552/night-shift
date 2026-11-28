@@ -85,3 +85,11 @@
 - PR : non ouverte par l'agent (`gh` absent, accès à l'identifiant Git refusé) ; lien à ouvrir par l'équipe.
 - Pour Wael : sur BUG-001, `analyzeColorPage` propose un bloc sur une question bleue (page 1) ; la fusion le rejette. `observePageInk` n'est pas encore utilisé par le moteur (l'encre par ligne vient de `color.ts`).
 - Suite : familles du dev (extraction dégradée, numérotations « A.1. » et « VII.1 », corrigés en fin avec énoncés recopiés).
+
+### 28/11 02:20 · SESSION · T-HZ-3 familles du dev · Claude Code
+
+- Fait : titre de corrigé reconnu malgré une extraction dégradée (`54e0e7b`) ; numérotations hiérarchiques avec continuité (`fcb54c8`) ; intitulés « B. Exercice » et sous-questions « b. » (`c52cf6c`). Tentative de découpage par changement de police annulée (5 régressions).
+- Vérifié : dev réussite 7/10, fuite 0,1 %, énoncés masqués 29,7 % ; test, ENSAI dev et ENSAI test inchangés, 0 régression ; 179 tests, build OK. Détail : `QUALITE.md` V-28-0215-HZ.
+- Non vérifié : ces trois commits dans Edge (seulement sous Node) ; aucun gain mesuré sur le test.
+- PR : toujours à ouvrir par l'équipe : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation
+- Suite : sur-masquage de Bordeaux, labri sans marqueur, sujets seuls de sources indépendantes.
