@@ -1,8 +1,9 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
-import type { PageData, PageDimensions, RasterData } from '../shared/types'
+import type { PageData, PageDimensions, RasterData, VectorPageObservation } from '../shared/types'
 import { fitCanvas, MAX_DISPLAY_PIXELS, MAX_RASTER_PIXELS } from './canvas-size'
 import { readPageText } from './read-text'
+import { createVectorSource } from './vector-source'
 
 export type { PageData, PageDimensions, RasterData, Rect, TextItem } from '../shared/types'
 
@@ -24,6 +25,7 @@ export interface PdfDocument {
     options?: RenderPageOptions,
   ): Promise<void>
   getRaster(pageIndex: number): Promise<RasterData>
+  getVectors?(pageIndex: number): Promise<VectorPageObservation | undefined>
   close(): Promise<void>
 }
 
@@ -61,6 +63,8 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
     }
     return document.getPage(pageIndex + 1)
   }
+
+  const vectors = createVectorSource(document.numPages, getPage)
 
   async function renderPage(
     pageIndex: number,
@@ -119,6 +123,7 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
       return { pageIndex, width, height, textItems }
     },
     renderPage,
+    getVectors: vectors.getVectors,
     async getRaster(pageIndex) {
       const canvas = globalThis.document.createElement('canvas')
       // Initialize before PDF.js so its opaque canvas context does not introduce
@@ -135,6 +140,7 @@ export async function openPdf(file: Blob): Promise<PdfDocument> {
       }
     },
     close() {
+      vectors.close()
       closing ??= task.destroy()
       return closing
     },

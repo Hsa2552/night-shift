@@ -74,15 +74,22 @@ export async function openBrowserProbe(page, release, file) {
         const pages = []
         for (let index = 0; index < pdf.pageCount; index++) pages.push(await pdf.getPageData(index))
         const rasterRequests = []
+        const vectorRequests = []
         const result = await detectCorrections({
           pages,
           getRaster(index) {
             rasterRequests.push(index)
             return pdf.getRaster(index)
           },
+          getVectors:
+            pdf.getVectors &&
+            ((index) => {
+              vectorRequests.push(index)
+              return pdf.getVectors(index)
+            }),
         })
         window.parityPdf = pdf
-        return { pages, result, rasterRequests }
+        return { pages, result, rasterRequests, vectorRequests }
       } catch (error) {
         await pdf.close()
         throw error
