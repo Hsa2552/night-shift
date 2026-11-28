@@ -194,7 +194,7 @@
 - Statut : fusionnée (PR #28, `dcbf709`) · Priorité : P0
 - Responsable : équipe · Agent : Codex · Branche : feat/final-reader-ux
 - Critères : clic et remasquage dans le PDF, commandes latérales hors du document, état par CorrectionBlock, suivi permanent.
-- Maturité : parcours Edge après redimensionnement, zoom et rechargement hors ligne. Comparaison exacte des blocs et régions affichés sur six PDF du développement ou de démonstration. Navigation ciblée, concentration, plein écran, zoom à la hauteur, miniatures schématiques et raccourcis vérifiés dans Edge. Fichiers ENSAI-dev indisponibles sur ce poste.
+- Maturité : parcours Edge après redimensionnement, zoom et rechargement hors ligne. Comparaison exacte des blocs et régions affichés sur six PDF du développement ou de démonstration. Navigation ciblée, plein écran, zoom à la hauteur, miniatures schématiques et raccourcis vérifiés dans Edge. Fichiers ENSAI-dev indisponibles sur ce poste.
 
 ### T-WB-11 · README final pour le jury
 
@@ -222,3 +222,10 @@ _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste acti
 - Critères d'acceptation :
 - Maturité : codée | compile | testée | intégrée | utilisable | démontrable
 - Notes, blocage, passation : <renvoi vers le journal>
+
+### T-S-9 · Confort utilisateur et simplification du lecteur
+
+- Statut : en revue · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branche : `feat/final-user-comfort`
+- Critères : annale synthétique analysée dans le lecteur, disponible hors ligne ; remplacement sans perte sur fichier invalide ; progression et annulation ; révélation globale confirmée ; retour à l'entraînement sans nouvelle analyse.
+- Maturité : lecteur Edge, parcours du QCM public synthétique et contrôle hors ligne dans le build. Fermeture des PDF remplacés et annulation contrôlées par les tests d'interface. Préférences d’affichage, côté des commandes, plein écran, aide contextuelle et recette hors ligne sur trois moteurs. Voir V-28-0927-S.

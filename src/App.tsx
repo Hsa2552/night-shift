@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
+import demonstration from './detection/samples/qcm-cases.pdf?inline'
 import { Brand, ThemeToggle } from './components/Brand'
 import { FileInput, Home } from './components/Home'
 import { Icon } from './components/Icon'
+import { PwaInstallation } from './components/PwaInstallation'
+import { usePwaInstallation } from './components/usePwaInstallation'
 import type { PdfDocument } from './pdf'
 import type { PageData, PageDimensions } from './shared/types'
 import { decideDetection } from './viewer/detectionDecision'
 import type { ViewerMode } from './viewer/DocumentViewer'
-import { Reader } from './viewer/Reader'
+import { Reader, type AnalysisProgress } from './viewer/Reader'
+import {
+  readReaderPreferences,
+  saveReaderPreferences,
+  type ReaderPreferences,
+} from './viewer/readerPreferences'
 
 interface OpenDocument {
   id: number
@@ -15,14 +23,25 @@ interface OpenDocument {
   pages: PageDimensions[]
 }
 
+interface DetectionPresentation {
+  mode: Exclude<ViewerMode, { kind: 'covered' }>
+  message: string
+  warnings: string[]
+  kindLabel: string
+}
+
 function closePdf(pdf: PdfDocument) {
   void pdf.close().catch(() => undefined)
 }
 
 export default function App() {
+  const installation = usePwaInstallation()
+  const [preferences, setPreferences] = useState(readReaderPreferences)
+  const [readerHelpDismissed, setReaderHelpDismissed] = useState(false)
   const [document, setDocument] = useState<OpenDocument>()
   const [mode, setMode] = useState<ViewerMode>({ kind: 'covered' })
-  const [busy, setBusy] = useState<'opening' | 'detecting'>()
+  const [analysis, setAnalysis] = useState<AnalysisProgress>()
+  const [detection, setDetection] = useState<DetectionPresentation>()
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [message, setMessage] = useState('')
   const [warnings, setWarnings] = useState<string[]>([])
@@ -30,22 +49,41 @@ export default function App() {
   const [error, setError] = useState('')
   const currentPdf = useRef<PdfDocument | null>(null)
   const revision = useRef(0)
+  const openingRevision = useRef(0)
+  const openingPdf = useRef<PdfDocument | null>(null)
+  const dragDepth = useRef(0)
+  const [dragging, setDragging] = useState(false)
 
   useEffect(() => {
     return () => {
       revision.current += 1
+      openingRevision.current += 1
+      if (openingPdf.current) closePdf(openingPdf.current)
+      openingPdf.current = null
       if (currentPdf.current) closePdf(currentPdf.current)
       currentPdf.current = null
     }
   }, [])
+
+  function updatePreferences(change: Partial<ReaderPreferences>) {
+    const next = { ...preferences, ...change }
+    setPreferences(next)
+    saveReaderPreferences(next)
+  }
 
   function returnHome() {
     revision.current += 1
     if (currentPdf.current) closePdf(currentPdf.current)
     currentPdf.current = null
     setDocument(undefined)
+    openingRevision.current += 1
+    if (openingPdf.current) closePdf(openingPdf.current)
+    openingPdf.current = null
     setPendingFile(null)
-    setBusy(undefined)
+    setAnalysis(undefined)
+    setDetection(undefined)
+    dragDepth.current = 0
+    setDragging(false)
     setMode({ kind: 'covered' })
     setMessage('')
     setWarnings([])
@@ -55,67 +93,90 @@ export default function App() {
   }
 
   async function importPdf(file: File) {
-    const request = ++revision.current
-    if (currentPdf.current) closePdf(currentPdf.current)
-    currentPdf.current = null
-    setDocument(undefined)
-    setMode({ kind: 'covered' })
-    setMessage('')
-    setWarnings([])
-    setError('')
-    setKindLabel('')
-    setPendingFile(null)
-
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      setBusy(undefined)
       setError('Choisis un fichier PDF.')
       return
     }
 
-    setBusy('opening')
+    const request = ++openingRevision.current
+    if (openingPdf.current) closePdf(openingPdf.current)
+    openingPdf.current = null
+    setError('')
     setPendingFile(file)
     try {
       const { openPdf } = await import('./pdf')
-      if (request !== revision.current) return
+      if (request !== openingRevision.current) return
       const pdf = await openPdf(file)
-      if (request !== revision.current) {
+      if (request !== openingRevision.current) {
         closePdf(pdf)
         return
       }
-      currentPdf.current = pdf
+      openingPdf.current = pdf
       const pages: PageDimensions[] = []
       for (let index = 0; index < pdf.pageCount; index += 1) {
         const page = await pdf.getPageDimensions(index)
-        if (request !== revision.current) return
+        if (request !== openingRevision.current) return
         if (![page.width, page.height].every((size) => Number.isFinite(size) && size > 0)) {
           throw new Error('Dimensions de page invalides')
         }
         pages.push(page)
       }
       if (pages.length === 0) throw new Error('Document vide')
-      setDocument({ id: request, name: file.name, pdf, pages })
-    } catch (cause) {
-      if (request !== revision.current) return
+
+      // Commit the replacement only when PDF.js has opened and validated the page geometry.
+      revision.current += 1
       if (currentPdf.current) closePdf(currentPdf.current)
-      currentPdf.current = null
+      currentPdf.current = pdf
+      openingPdf.current = null
+      setDocument({ id: request, name: file.name, pdf, pages })
+      setMode({ kind: 'covered' })
+      setDetection(undefined)
+      setAnalysis(undefined)
+      setMessage('')
+      setWarnings([])
+      setKindLabel('')
+      setError('')
+    } catch (cause) {
+      if (request !== openingRevision.current) return
       setError(
         cause instanceof Error && cause.name === 'PasswordException'
           ? 'Ce PDF est protégé par un mot de passe. Importe une copie déverrouillée.'
           : 'Impossible d’ouvrir ce PDF. Vérifie que le fichier s’ouvre, puis réessaie.',
       )
     } finally {
-      if (request === revision.current) {
-        setBusy(undefined)
+      if (request === openingRevision.current) {
+        if (openingPdf.current) closePdf(openingPdf.current)
+        openingPdf.current = null
         setPendingFile(null)
       }
     }
   }
 
+  function tryDemonstration() {
+    const encoded = demonstration.slice(demonstration.indexOf(',') + 1)
+    const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))
+    void importPdf(
+      new File([bytes], 'QCM de démonstration (synthétique).pdf', { type: 'application/pdf' }),
+    )
+  }
+
+  function showDetection(presentation: DetectionPresentation) {
+    setMode(presentation.mode)
+    setMessage(presentation.message)
+    setWarnings(presentation.warnings)
+    setKindLabel(presentation.kindLabel)
+    setError('')
+  }
+
   async function maskCorrections() {
-    if (!document) return
+    if (!document || analysis) return
+    if (detection) {
+      showDetection(detection)
+      return
+    }
     const request = ++revision.current
     setMode({ kind: 'covered' })
-    setBusy('detecting')
+    setAnalysis({ phase: 'extract', extracted: 0, total: document.pages.length })
     setError('')
     setMessage('')
     setWarnings([])
@@ -126,7 +187,9 @@ export default function App() {
       for (const { pageIndex } of document.pages) {
         pages.push(await document.pdf.getPageData(pageIndex))
         if (request !== revision.current) return
+        setAnalysis({ phase: 'extract', extracted: pages.length, total: document.pages.length })
       }
+      setAnalysis({ phase: 'detect' })
       const { detectCorrections } = await import('./detection')
       if (request !== revision.current) return
       const result = await detectCorrections({
@@ -135,43 +198,55 @@ export default function App() {
         getVectors: document.pdf.getVectors?.bind(document.pdf),
       })
       if (request !== revision.current) return
-      setWarnings(result.warnings)
 
       const decision = decideDetection(result, document.pages)
       if (decision.kind === 'progressive') {
-        setKindLabel('Lecture progressive')
-        setMessage(
-          decision.reason === 'uncertain'
-            ? 'La détection est incertaine. Fais glisser le trait pour découvrir le document.'
-            : 'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
-        )
-        setMode({ kind: 'progressive' })
+        const presentation: DetectionPresentation = {
+          mode: { kind: 'progressive' },
+          kindLabel: 'Lecture progressive',
+          warnings: result.warnings,
+          message:
+            decision.reason === 'uncertain'
+              ? 'La détection est incertaine. Fais glisser le trait pour découvrir le document.'
+              : 'Les masques ne peuvent pas être placés. Fais glisser le trait pour lire le PDF.',
+        }
+        setDetection(presentation)
+        showDetection(presentation)
         return
       }
 
-      if (decision.kind === 'statement_only') {
-        setMessage('Aucun corrigé n’a été détecté.')
-        setMode({ kind: 'automatic', blocks: [] })
-        return
-      }
-
-      const { blocks } = decision
+      const blocks = decision.kind === 'automatic' ? decision.blocks : []
       const count = blocks.length
-      setKindLabel(result.kind === 'correction_only' ? 'Corrigé seul' : 'Sujet et corrections')
-      setMessage(count === 1 ? '1 bloc de corrigé détecté.' : `${count} blocs de corrigé détectés.`)
-      setMode({ kind: 'automatic', blocks })
+      const presentation: DetectionPresentation = {
+        mode: { kind: 'automatic', blocks },
+        message:
+          decision.kind === 'statement_only'
+            ? 'Aucun corrigé n’a été détecté.'
+            : count === 1
+              ? '1 bloc de corrigé détecté.'
+              : count + ' blocs de corrigé détectés.',
+        warnings: result.warnings,
+        kindLabel:
+          decision.kind === 'statement_only'
+            ? ''
+            : result.kind === 'correction_only'
+              ? 'Corrigé seul'
+              : 'Sujet et corrections',
+      }
+      setDetection(presentation)
+      showDetection(presentation)
     } catch {
       if (request !== revision.current) return
       setError('L’analyse a échoué. La révélation progressive reste disponible.')
     } finally {
-      if (request === revision.current) setBusy(undefined)
+      if (request === revision.current) setAnalysis(undefined)
     }
   }
 
   function showProgressively() {
     if (mode.kind === 'progressive') return
     revision.current += 1
-    setBusy(undefined)
+    setAnalysis(undefined)
     setError('')
     setMessage('')
     setWarnings([])
@@ -181,13 +256,15 @@ export default function App() {
 
   function cancelAnalysis() {
     revision.current += 1
-    setBusy(undefined)
+    setAnalysis(undefined)
     setMessage('Analyse annulée. Le document reste couvert.')
   }
 
   let status = message
-  if (busy === 'opening') status = 'Ouverture du PDF…'
-  else if (busy === 'detecting') status = 'Analyse du PDF…'
+  if (analysis?.phase === 'extract') {
+    status = 'Extraction du texte — ' + analysis.extracted + ' / ' + analysis.total + ' pages'
+  } else if (analysis?.phase === 'detect') status = 'Analyse des corrections…'
+  else if (pendingFile) status = 'Ouverture du nouveau PDF…'
   else if (!message && mode.kind === 'progressive') {
     status = 'Fais glisser le trait pour découvrir le document.'
   } else if (!message && !error && document && mode.kind === 'covered') {
@@ -198,11 +275,26 @@ export default function App() {
     <div
       className="unspoil"
       data-workspace={document ? true : undefined}
+      onDragEnter={(event) => {
+        if (!document || !event.dataTransfer.types.includes('Files')) return
+        dragDepth.current += 1
+        setDragging(true)
+      }}
+      onDragLeave={() => {
+        if (dragDepth.current > 0) dragDepth.current -= 1
+        if (dragDepth.current === 0) setDragging(false)
+      }}
       onDragOver={(event) => {
-        if (event.dataTransfer.types.includes('Files')) event.preventDefault()
+        if (!event.dataTransfer.types.includes('Files')) return
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'copy'
       }}
       onDrop={(event) => {
-        if (event.dataTransfer.types.includes('Files')) event.preventDefault()
+        const file = event.dataTransfer.files[0]
+        if (file || event.dataTransfer.types.includes('Files')) event.preventDefault()
+        dragDepth.current = 0
+        setDragging(false)
+        if (document && file) void importPdf(file)
       }}
     >
       <a className="skip-link" href="#main-content">
@@ -236,17 +328,37 @@ export default function App() {
           pdf={document.pdf}
           pages={document.pages}
           mode={mode}
-          analyzing={busy === 'detecting'}
+          analysis={analysis}
+          detectedMode={detection?.mode.kind}
+          replacing={!!pendingFile}
           status={status}
           kindLabel={kindLabel}
           warnings={warnings}
           error={error}
+          preferences={preferences}
+          onPreferencesChange={updatePreferences}
+          helpDismissed={readerHelpDismissed}
+          onHelpDismissed={() => setReaderHelpDismissed(true)}
           onAnalyze={() => void maskCorrections()}
           onProgressive={showProgressively}
           onCancel={cancelAnalysis}
         />
       ) : (
-        <Home onFile={importPdf} pending={pendingFile} onCancel={returnHome} error={error} />
+        <Home
+          onFile={importPdf}
+          onDemo={tryDemonstration}
+          installation={<PwaInstallation {...installation} />}
+          pending={pendingFile}
+          onCancel={returnHome}
+          error={error}
+        />
+      )}
+      {document && dragging && (
+        <div className="reader-drop-overlay" role="status">
+          <p>
+            <Icon name="upload" size={24} /> Dépose un PDF pour remplacer le document ouvert
+          </p>
+        </div>
       )}
     </div>
   )

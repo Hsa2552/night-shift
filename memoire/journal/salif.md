@@ -94,3 +94,15 @@
 - Validation du SHA figé ca93897 en worktree séparé. Build, cinq benchmarks Edge, recette hors ligne et audit des cadres QCM terminés. Le lot ENSAI-dev n'est pas disponible sur ce poste.
 - ZIP : développement complet téléchargé et annotations partielles sur les originaux. Le manifeste et les vérités de développement sont publiables. Le manifeste de validation, le nouveau test et les rapports individuels réservés restent au cache local.
 - Démo et secours prêts dans dev-dist/pitch-final. La branche test/validation-finale contient les résultats agrégés et le protocole. Voir V-28-0622-S. Aucun changement de production.
+
+### 28/11 · SESSION · T-S-9 confort utilisateur, jalon P0 · Codex
+
+- PR #31 fusionnée à la demande de Salif après contrôle de son SHA, de sa CI et de sa fusionnabilité. La branche de confort part de `c89fa5c`.
+- Le QCM synthétique du dépôt s'ouvre depuis l'accueil et passe par PDF.js et le détecteur. Le lecteur accepte un dépôt de remplacement après ouverture réussie, indique le nombre de pages extraites, confirme la révélation globale et réutilise les masques du document courant lors du retour à l'entraînement.
+- Sur la base `c89fa5c`, `npm run check` réussit (260 tests passés, 2 évaluations ignorées) et le build Pages aboutit. Edge confirme deux blocs et six régions opaques sur l'exemple, avec le même résultat en import, via le bouton de démonstration et après rechargement hors ligne.
+
+### 28/11 · SESSION · T-S-9 confort utilisateur, validation · Codex
+
+- Le jalon P0 `eb55b67` a été publié après vérification sur `9811c8a`. Les réglages sauvegardés concernent uniquement le côté des commandes, le zoom et la navigation. Le thème utilise son stockage d’origine.
+- L’aide est disponible à la première analyse réussie et depuis le menu du lecteur. L’action d’installation exploite l’invite éventuelle du navigateur. Les aperçus de page restent schématiques.
+- Les masques de six PDF coïncident avec ceux du build de base dans Edge. Le PDF de démonstration s’ouvre et s’analyse hors ligne. Les résultats publics et limites figurent dans V-28-0927-S.

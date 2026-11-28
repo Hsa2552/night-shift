@@ -14,6 +14,7 @@ const page = await context.newPage()
 page.setDefaultTimeout(20000)
 const reader = page.locator('.reader')
 const maskButton = reader.getByRole('button', { name: 'Masquer les corrigés', exact: true })
+const training = reader.getByRole('button', { name: 'Mode entraînement', exact: true })
 const remask = reader.getByRole('button', { name: 'Tout remasquer', exact: true })
 const progressive = reader.getByRole('button', { name: 'Révélation progressive', exact: true })
 const masks = reader.getByTestId('correction-mask')
@@ -52,22 +53,26 @@ async function actionLocations() {
   )
 }
 
-async function assertDesktopRails() {
-  const valid = await reader.locator('.pdf-viewer-actions').evaluateAll((rails) =>
-    rails.every((rail) => {
-      const sheet = rail.closest('.pdf-viewer-sheet')
-      const pageViewport = sheet.querySelector('.pdf-viewer-page-scroll').getBoundingClientRect()
-      const buttons = [...rail.querySelectorAll('button')].map((button) =>
-        button.getBoundingClientRect(),
-      )
-      return buttons.every(
-        (button, index) =>
-          button.left >= pageViewport.right - 0.5 &&
-          (index === 0 || button.top >= buttons[index - 1].bottom - 0.5),
-      )
-    }),
+async function assertDesktopRails(side = 'right') {
+  const valid = await reader.locator('.pdf-viewer-actions').evaluateAll(
+    (rails, side) =>
+      rails.every((rail) => {
+        const sheet = rail.closest('.pdf-viewer-sheet')
+        const pageViewport = sheet.querySelector('.pdf-viewer-page-scroll').getBoundingClientRect()
+        const buttons = [...rail.querySelectorAll('button')].map((button) =>
+          button.getBoundingClientRect(),
+        )
+        return buttons.every(
+          (button, index) =>
+            (side === 'left'
+              ? button.right <= pageViewport.left + 0.5
+              : button.left >= pageViewport.right - 0.5) &&
+            (index === 0 || button.top >= buttons[index - 1].bottom - 0.5),
+        )
+      }),
+    side,
   )
-  assert.ok(valid, 'Les commandes latérales restent à droite du PDF et ne se chevauchent pas.')
+  assert.ok(valid, 'Les commandes latérales restent à côté du PDF et ne se chevauchent pas.')
 }
 
 async function assertToolbar() {
@@ -97,6 +102,7 @@ try {
   for (const file of inputs) {
     await page.setViewportSize({ width: 1440, height: 900 })
     await open(file)
+    await reader.getByRole('button', { name: 'Ajuster à la largeur' }).click()
     await analyze()
     const total = await masks.count()
     if (!total) {
@@ -110,6 +116,40 @@ try {
       continue
     }
     automatic++
+    if (scenario === 'assert' && automatic === 1) {
+      const menu = reader.getByLabel('Outils et raccourcis')
+      const side = reader.getByRole('button', { name: 'Commandes à gauche', exact: true })
+      await menu.click()
+      await side.click()
+      await assertDesktopRails('left')
+      const zoomIn = reader.getByRole('button', { name: 'Zoom avant' })
+      await zoomIn.click()
+      await assertDesktopRails('left')
+      await actions.first().press('Space')
+      assert.ok((await masks.count()) < total)
+      if (await page.evaluate(() => document.fullscreenEnabled)) {
+        await menu.click()
+        await reader.getByRole('button', { name: 'Plein écran', exact: true }).click()
+        await page.waitForFunction(() => !!document.fullscreenElement)
+        assert.ok((await masks.count()) < total)
+        await reader.getByText('125 %', { exact: true }).waitFor()
+        await assertDesktopRails('left')
+        const meter = await reader
+          .getByRole('progressbar', { name: 'Corrections révélées' })
+          .boundingBox()
+        assert.ok(meter && meter.y >= 0 && meter.y + meter.height <= page.viewportSize().height)
+        await menu.click()
+        await reader.getByRole('button', { name: 'Quitter le plein écran', exact: true }).click()
+        await page.waitForFunction(() => !document.fullscreenElement)
+        assert.ok((await masks.count()) < total)
+        await reader.getByText('125 %', { exact: true }).waitFor()
+      }
+      await remask.click()
+      await reader.getByRole('button', { name: 'Ajuster à la largeur' }).click()
+      await menu.click()
+      await side.click()
+      await assertDesktopRails()
+    }
     const desktop = await actionLocations()
     if (scenario === 'assert') await assertDesktopRails()
     assert.ok(desktop.length > 0)
@@ -169,7 +209,8 @@ try {
       await reader.getByTestId('progressive-mask').count(),
       await reader.locator('[data-reader-page]').count(),
     )
-    await analyze()
+    await training.click()
+    await masks.first().waitFor()
     assert.equal(await masks.count(), total)
     console.log(
       JSON.stringify({

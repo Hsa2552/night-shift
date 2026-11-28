@@ -186,9 +186,19 @@ async function verifyPrivacy(page, network) {
     ),
   )
   assert.ok(
-    retained.preferences.every(
-      ([key, value]) => key === 'unspoil-theme' && ['light', 'dark'].includes(value),
-    ),
+    retained.preferences.every(([key, value]) => {
+      if (key === 'unspoil-theme') return ['light', 'dark'].includes(value)
+      if (key !== 'unspoil-reader-preferences') return false
+      const preferences = JSON.parse(value)
+      return (
+        Object.keys(preferences).sort().join(',') === 'correctionSide,navigation,zoom' &&
+        ['left', 'right'].includes(preferences.correctionSide) &&
+        [true, false, null].includes(preferences.navigation) &&
+        Number.isInteger(preferences.zoom) &&
+        preferences.zoom >= 25 &&
+        preferences.zoom <= 200
+      )
+    }),
   )
   assert.equal(retained.temporaryKeys.length, 0)
   assert.ok(!retained.databases || retained.databases.every((name) => name?.startsWith('workbox-')))
@@ -369,10 +379,19 @@ async function resilience(context, name) {
   ]) {
     await page.locator('input[type=file]').setInputFiles(file)
     await page.getByRole('alert').filter({ hasText: message }).waitFor()
-    assert.equal(await page.locator('.reader canvas').count(), 0)
-    await importPdf(page, privateFile, privateFile.name)
+    assert.equal(await page.getByRole('heading', { name: 'qcm-cases.pdf', exact: true }).count(), 1)
+    assert.equal(await mask.getAttribute('style'), canonicalPosition)
   }
   await page.reload()
+  await page.getByRole('button', { name: 'Essayer avec une annale de démonstration' }).click()
+  await page.getByRole('heading', { name: 'QCM de démonstration (synthétique).pdf' }).waitFor()
+  await page.getByTestId('page-cover').first().waitFor()
+  await analyze(page)
+  assert.equal(await page.getByTestId('correction-mask').count(), 6)
+  assert.equal(
+    await page.getByTestId('correction-mask').first().getAttribute('style'),
+    canonicalPosition,
+  )
   const graphics = syntheticPdf('graphics-only', makeGraphicsOnlyTestPdf())
   await importPdf(page, graphics, graphics.name)
   await analyze(page)
