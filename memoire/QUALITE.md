@@ -183,6 +183,25 @@
 - Temps : dev 803 ms par document en moyenne sur une exécution non chargée (`5cafcbe`) ; les mesures à 1,5 s du même soir correspondent à une machine chargée (même écart sur ensai-dev), non à un coût des mécanismes.
 - Non vérifié : Edge ; partitions de test ; documents hybrides réels.
 
+### V-28-0415-HZ · Parité Node/Edge du moteur : faux carrés de glyphes et lettres sombres dans les cases
+
+- Par : Hazem (Claude Code). Commits `6829b38` (glyphes), `fc5ce79` (lettre sombre dans une case), mesurés sur `861a75d` (main intégrée, PR #18, #19, #21). Diagnostic sur les seules partitions dev et ensai-dev ; test et réservé non consultés.
+- Protocole : benchmark navigateur de Salif (`scripts/benchmark-browser.mjs`, build `--manifest`, Edge, métriques v2, `UNSPOIL_BENCH_INK=1`) et benchmark Node ; croisements texte × raster (Node/Edge) hors dépôt à partir des pages et rasters relevés dans le build Edge (`scripts/pdf-parity.mjs` réutilisé).
+- Diagnostic : sur exo7, labri et le sujet de Toulouse, le texte extrait est identique sous Node et Edge ; l'encre des lignes aussi (2 lignes de ponctuation sur 367). Seul le raster change le résultat, par `findBoxes` : le rendu FontFace d'Edge dessine des glyphes en petits carrés pleins ou creux (lettres d'un titre « A. Question de cours », puces « • », « ℝ », « 𝑛 »), reconnus comme cases de QCM. Ces faux blocs perturbaient toute la segmentation (labri : 16 → 7 régions de texte). Second défaut, ensai-dev : dans Edge, la lettre « A » imprimée dans une case vide est plus sombre et faisait rejeter le contour (« centre clair » calculé sur tous les pixels noirs).
+- Correctifs, décidés sur le texte extrait et la géométrie, un test unitaire chacun (échec vérifié sans la règle) : forme sur une lettre accolée à une autre (dans un mot, apostrophe comprise) ou sur un signe non alphanumérique autre qu'un symbole de case : glyphe ; lettre isolée dont la forme n'est pas plus grande que le texte (< 1,1 × sa hauteur ; lettres AMC des annales ENSAI de dev : 1,36, lettres de titre : ≤ 0,79) : glyphe ; une case de réponse a une voisine alignée (même rangée, ou même colonne à moins de 20 côtés) ; centre d'un contour jugé sur les seuls pixels de sa composante.
+- Première version de la règle d'alignement (rayon de huit côtés) : 5 lignes d'énoncé masquées en plus sur une annale ENSAI (propositions en rangée espacées de 131 points) ; corrigée avant commit.
+
+| Edge, produit réel | Réussites (strictes) | Corrections couvertes | Énoncés masqués | Documents avec fuite |
+|---|---|---|---|---|
+| dev, `87b6aef` (avant) | 5/10 (2) | 1 984/2 072 (88 visibles : exo7 55, labri 33) | 298/1 304 | 2 |
+| dev, `861a75d` | **8/10 (3)** | **2 072/2 072** | 311/1 304 | **0** |
+| ensai-dev, `6829b38` | 1/6 | 600/602 (2 cases « A » visibles) | 62/476 | 1 |
+| ensai-dev, `861a75d` | 1/6 | **602/602** | 62/476 | **0** |
+
+- Node, `861a75d` : dev 8/10, 2 072/2 072, 311/1 304 ; ensai-dev 602/602, 62/476 : identique à Edge. Le sujet seul de Toulouse est de nouveau présenté comme « sujet seul » dans Edge (0/104 énoncé masqué). Aucun écart entre l'oracle de décision et les masques présentés.
+- Temps moyen Edge par document (import et interaction compris) : 2,1 s sur `6829b38`, 4,3 s sur `861a75d` ; non expliqué (transport vectoriel nouvellement raccordé ou charge de la machine), à mesurer à part.
+- Non vérifié : partitions test et réservée (évaluation par Salif sur version figée) ; Safari, téléphone.
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné

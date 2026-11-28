@@ -13,6 +13,9 @@ export interface Box {
   density: number
   /** Caractère extrait sous la case (lettre de la proposition, chiffre d'une grille), s'il existe. */
   char?: string
+  /** La forme est le dessin d'un glyphe du texte (lettre d'un mot, puce, guillemet…) et non
+   * une case : décidé sur le texte extrait, identique d'un moteur de rendu à l'autre. */
+  glyph?: boolean
 }
 
 /** Encre : seuil large, pour suivre les contours fins anticrénelés. Noir : remplissage. */
@@ -57,11 +60,14 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
   // Taille plausible d'une case : entre 4 et 30 points de côté.
   const minSide = Math.max(4, Math.round(4 * s))
   const maxSide = Math.round(30 * s)
-  const seen = new Uint8Array(W * H)
+  // Numéro de composante de chaque pixel (0 : non visité).
+  const seen = new Int32Array(W * H)
+  let label = 0
   const stack: number[] = []
   const boxes: Box[] = []
   for (let start = 0; start < W * H; start++) {
     if (!dark[start] || seen[start]) continue
+    label++
     // Composante connexe (4-connexité), avec abandon dès qu'elle dépasse la taille maximale.
     let x0 = W
     let y0 = H
@@ -70,7 +76,7 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
     let count = 0
     let tooBig = false
     stack.push(start)
-    seen[start] = 1
+    seen[start] = label
     while (stack.length > 0) {
       const p = stack.pop()!
       const x = p % W
@@ -84,7 +90,7 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       for (const q of [p - 1, p + 1, p - W, p + W]) {
         if (q < 0 || q >= W * H || seen[q] || !dark[q]) continue
         if ((q === p - 1 && x === 0) || (q === p + 1 && x === W - 1)) continue
-        seen[q] = 1
+        seen[q] = label
         stack.push(q)
       }
     }
@@ -131,12 +137,15 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       const ix1 = x1 - Math.round(w * 0.3)
       const iy0 = y0 + Math.round(h * 0.3)
       const iy1 = y1 - Math.round(h * 0.3)
+      // Centre clair : seuls les pixels de la forme elle-même comptent. La lettre imprimée dans
+      // une case (non reliée au contour) n'en fait pas une case pleine, quel que soit le rendu
+      // de sa police (plus sombre dans Edge).
       let inner = 0
       let innerDark = 0
       for (let y = iy0; y <= iy1; y++) {
         for (let x = ix0; x <= ix1; x++) {
           inner++
-          if (black[y * W + x]) innerDark++
+          if (black[y * W + x] && seen[y * W + x] === label) innerDark++
         }
       }
       if (inner > 0 && innerDark / inner > 0.5) continue
@@ -148,25 +157,53 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       width: w / s,
       height: h / (H / page.height),
     }
-    boxes.push({ pageIndex: page.pageIndex, bbox, filled, density, char: charUnder(page, bbox) })
+    const under = charUnder(page, bbox)
+    boxes.push({
+      pageIndex: page.pageIndex,
+      bbox,
+      filled,
+      density,
+      ...(under ? { char: under.char, glyph: under.glyph } : {}),
+    })
   }
   return boxes
 }
 
-/** Caractère du texte extrait situé au centre de la case (estimation proportionnelle). */
-function charUnder(page: PageData, box: Rect): string | undefined {
+/** Symboles de case à cocher (☐ ☑ ☒ ■ □ ▢ ◻ ◼…) : un glyphe qui est réellement une case. */
+const BOX_SYMBOL = /[\u25A0-\u25A3\u25AA\u25AB\u25FB-\u25FE\u2610-\u2612\u274F-\u2752]/u
+const ALNUM = /[\p{L}\p{N}]/u
+
+/**
+ * Caractère du texte extrait situé au centre de la case (estimation proportionnelle), et s'il
+ * s'agit d'un glyphe de texte : lettre ou chiffre accolé à une autre lettre (dans un mot), ou
+ * signe qui n'est ni alphanumérique ni un symbole de case (puce, guillemet, ponctuation), ou
+ * lettre isolée dont la forme n'est pas plus grande que le texte qui la porte (lettre de titre
+ * « A. »). Une lettre imprimée dans une case de QCM est plus petite que la case (rapport côté /
+ * hauteur du texte de 1,36 sur les annales ENSAI, au plus 0,79 pour les lettres de titre).
+ */
+function charUnder(page: PageData, box: Rect): { char: string; glyph: boolean } | undefined {
   const cx = box.x + box.width / 2
   const cy = box.y + box.height / 2
   for (const item of page.textItems) {
     const b = item.bbox
-    const text = item.text
-    if (!text.trim() || cy < b.y || cy > b.y + b.height || cx < b.x || cx > b.x + b.width) continue
+    const chars = [...item.text] // points de code (lettres mathématiques hors BMP comprises)
+    if (!item.text.trim() || cy < b.y || cy > b.y + b.height || cx < b.x || cx > b.x + b.width)
+      continue
     const k = Math.min(
-      text.length - 1,
-      Math.floor(((cx - b.x) / Math.max(b.width, 1e-6)) * text.length),
+      chars.length - 1,
+      Math.floor(((cx - b.x) / Math.max(b.width, 1e-6)) * chars.length),
     )
-    const ch = text[k]!.trim() || text.trim()[0]
-    return ch
+    const at = chars[k]!.trim() ? k : chars.findIndex((c) => c.trim())
+    const ch = chars[at]!
+    if (BOX_SYMBOL.test(ch)) return { char: ch, glyph: false }
+    if (!ALNUM.test(ch)) return { char: ch, glyph: true }
+    // Voisin dans le mot, apostrophe comprise (« n’est », « l'aire »).
+    const joined = (step: number) => {
+      const next = chars[at + step] ?? ''
+      return ALNUM.test(next) || (/['’]/.test(next) && ALNUM.test(chars[at + 2 * step] ?? ''))
+    }
+    const notLarger = Math.max(box.width, box.height) < 1.1 * b.height
+    return { char: ch, glyph: joined(-1) || joined(1) || notLarger }
   }
   return undefined
 }
@@ -177,7 +214,7 @@ function charUnder(page: PageData, box: Rect): string | undefined {
  * comme un QCM corrigé que s'il a à la fois des cases pleines et des cases vides.
  */
 export function answerBoxes(all: Box[]): Box[] {
-  const candidates = all.filter((b) => !isDigit(b.char))
+  const candidates = all.filter((b) => !isDigit(b.char) && !b.glyph)
   const empty = candidates.filter((b) => !b.filled)
   if (empty.length === 0) return []
   // Taille de référence : la classe la plus peuplée des contours carrés à centre clair (un
@@ -194,7 +231,22 @@ export function answerBoxes(all: Box[]): Box[] {
     }
   }
   const near = (b: Box) => Math.abs(side(b) - ref) <= 0.2 * ref
-  const kept = candidates.filter((b) => near(b) && (!b.filled || b.density >= 0.85))
+  const sized = candidates.filter((b) => near(b) && (!b.filled || b.density >= 0.85))
+  // Cohérence de groupe : une case de réponse a au moins une voisine alignée sur sa page :
+  // même rangée (à 2 points près, à toute distance : propositions réparties sur la largeur) ou
+  // même colonne (à 2 points près, à moins de vingt côtés). Une forme isolée (symbole
+  // mathématique, puce) n'est pas une case.
+  const center = (b: Box) => ({ x: b.bbox.x + b.bbox.width / 2, y: b.bbox.y + b.bbox.height / 2 })
+  const kept = sized.filter((b) =>
+    sized.some((o) => {
+      if (o === b || o.pageIndex !== b.pageIndex) return false
+      const a = center(b)
+      const c = center(o)
+      const sameRow = Math.abs(a.y - c.y) <= 2
+      const sameColumn = Math.abs(a.x - c.x) <= 2 && Math.abs(a.y - c.y) <= 20 * side(b)
+      return sameRow || sameColumn
+    }),
+  )
   if (!kept.some((b) => b.filled) || !kept.some((b) => !b.filled) || kept.length < 3) return []
   return kept
 }

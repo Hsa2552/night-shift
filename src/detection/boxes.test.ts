@@ -341,3 +341,91 @@ describe('cohérence géométrique des groupes de cases', () => {
     expect(sides.size).toBe(1)
   })
 })
+
+describe('glyphes rendus comme des carrés (rendu des polices du navigateur) : pas des cases', () => {
+  /** Texte extrait présent mais non peint : seules les formes carrées sont dans le raster. */
+  const shapesOnly = (p: QcmPage) => {
+    const page: PageData = { pageIndex: p.pageIndex, ...A4, textItems: p.items }
+    const raster = fakeRaster(page, () => [255, 255, 255])
+    for (const s of p.shapes) box(raster, s.x, s.y, s.side, s.filled)
+    return { page, raster }
+  }
+  /** Carré peint sur le k-ième caractère d'un fragment (estimation proportionnelle). */
+  const over = (item: TextItem, k: number, side: number, filled: boolean) => {
+    const cw = item.bbox.width / item.text.length
+    return {
+      x: item.bbox.x + (k + 0.5) * cw - side / 2,
+      y: item.bbox.y + item.bbox.height / 2 - side / 2,
+      side,
+      filled,
+    }
+  }
+
+  it('lettres à l’intérieur des mots et puces : aucune case retenue', () => {
+    const p = new QcmPage(0)
+    p.text('Montrer que la fonction est continue sur cet intervalle.')
+    p.text('•')
+    p.text('Calculer la limite de la suite quand n tend vers l’infini.')
+    const [l1, bullet, l2] = p.items
+    // Formes plus grandes que le texte (rapport 1,3) : seule la règle « dans un mot » joue.
+    p.shapes.push(over(l1!, 3, 14, true), over(l1!, 20, 14, false), over(l2!, 5, 14, true))
+    p.shapes.push(over(l2!, 30, 14, false), over(bullet!, 0, 14, true))
+    const { page, raster } = shapesOnly(p)
+    const all = findBoxes(raster, page)
+    expect(all.length).toBeGreaterThanOrEqual(4)
+    expect(answerBoxes(all)).toEqual([])
+  })
+
+  it('lettre isolée de titre, pas plus grande que son texte : pas une case', () => {
+    const p = new QcmPage(0)
+    p.text('A', 72, 16)
+    p.text('B', 72, 16)
+    p.text('C', 72, 16)
+    const items = [...p.items]
+    p.shapes.push(
+      over(items[0]!, 0, 14, true),
+      over(items[1]!, 0, 14, false),
+      over(items[2]!, 0, 14, false),
+    )
+    const { page, raster } = p.build()
+    expect(answerBoxes(findBoxes(raster, page))).toEqual([])
+  })
+
+  it('formes isolées sans voisine alignée (symboles mathématiques) : pas un QCM', () => {
+    const p = new QcmPage(0)
+    // Lettres isolées petites (rapport > 1,1), dispersées : ni même rangée ni même colonne.
+    const spots = [
+      [80, 100, true],
+      [300, 260, true],
+      [150, 420, false],
+      [420, 600, false],
+    ] as const
+    for (const [x, y, filled] of spots) {
+      p.items.push(fakeItem('R', x + 3, y + 3, 6))
+      p.shapes.push({ x, y, side: 12, filled })
+    }
+    const { page, raster } = shapesOnly(p)
+    expect(findBoxes(raster, page).length).toBe(4)
+    expect(answerBoxes(findBoxes(raster, page))).toEqual([])
+  })
+})
+
+describe('lettre sombre imprimée dans une case vide (rendu des polices du navigateur)', () => {
+  it('la case reste reconnue comme vide : le centre est jugé sur le contour seul', () => {
+    const p = new QcmPage(0)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1))
+    // Lettres peintes en noir (et non en gris) : elles remplissent le centre des cases vides.
+    const page: PageData = { pageIndex: 0, ...A4, textItems: p.items }
+    const raster = fakeRaster(page)
+    for (const s of p.shapes) box(raster, s.x, s.y, s.side, s.filled)
+    const found = findBoxes(raster, page)
+    const empty = p.shapes.filter((s) => !s.filled)
+    for (const s of empty) {
+      const hit = found.find(
+        (b) => Math.abs(b.bbox.x - s.x) < 2 && Math.abs(b.bbox.y - s.y) < 2 && !b.filled,
+      )
+      expect(hit).toBeDefined()
+    }
+  })
+})
