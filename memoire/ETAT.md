@@ -160,10 +160,10 @@
 
 ### T-WB-8 · Corrections graphiques et géométrie adaptative
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/graphic-corrections-adaptive-layout`
 - Dépend de : observations C1 du lecteur et ancres pédagogiques du moteur. Hazem garde la fusion globale.
-- Maturité : API et premier détecteur de figures sous périmètre confirmé testés sur contrôles ciblés. Voir `src/detection/visual/graphic-corrections/README.md`.
+- Maturité : sous-détecteur isolé testé sous Edge sur pages publiques et contrôles synthétiques. Géométrie alternative et cadres disponibles séparément. Les expériences nécessitent des périmètres pédagogiques fiables, à raccorder par Hazem. PR #26 et `research/graphic-corrections/README.md`.
 
 ## Terminées ou abandonnées
 

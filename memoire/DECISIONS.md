@@ -64,6 +64,11 @@
 - Wael propose des observations complémentaires de lignes locales et de cadres à séparateurs croisés. Le nombre de mélanges entre cellules baisse, et les cadres sont précis sur les trois pages annotées. Garder le traitement actuel en dehors des familles confirmées.
 - La topologie dispose d’un prototype TypeScript isolé. Le classement automatique du graphe et la fermeture raster n’apportent pas de bénéfice dans le protocole. Les résultats et limites sont consignés dans V-28-0428-WB et V-28-0437-WB, PR #24.
 
+### D-28-0510-WB · Sous-détecteur graphique sous contexte fiable · `[PROPOSÉ]`
+
+- Wael recommande une intégration conditionnelle des masques raster et hybrides dans un périmètre de correction validé par le moteur. Le natif apporte des frontières complémentaires. Sans périmètres établis, aucun gain automatique n’est mesuré. Voir V-28-0510-WB et PR #26.
+- Les cadres, cellules et lignes alternatives restent des indices. Une peinture mixte non séparée ou touchant une protection ne produit pas de masquage garanti. Le moteur de Hazem conserve la fusion et le repli.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...

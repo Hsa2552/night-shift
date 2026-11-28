@@ -436,6 +436,14 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Voisinage des objets. Trois relations sur trois avec la proximité simple et le graphe sur l’exemple synthétique. Sur deux ancres publiques, une retrouvée par la proximité des lignes XY-Cut et aucune par le graphe. Le classement évalué n’est pas retenu.
 - Arbre logique. 0/93 pages de développement/diagnostic avec liens à du texte. Contrôles W3C de 56 et 13 fragments raccordés. Sept champs sur l’exemple W3C correspondant. Contrôle synthétique avec un champ et un calque reconnus. Le corpus n’évalue pas l’ordre logique de documents multipages, le rappel des corrections ou le masque final.
 
+### V-28-0510-WB · Masques graphiques isolés et ablations
+
+- Protocole Edge sur quatre pages de trois diagnostics publics et trois scènes synthétiques avec variantes. Cibles évaluées par pixels. Périmètres et protections fournis séparément du score. Moteur historique de `main` `0444703`, hors benchmark réservé. Voir `research/graphic-corrections/`.
+- L’hybride contextualisé couvre 10/10 cibles synthétiques, sans toucher les 6 énoncés. Sur le public, 37 307/46 503 pixels de correction sont couverts, avec 1/7 cibles strictes, 3 partielles et 3 visibles. Les 4 zones d’énoncé restent intactes. L’historique couvre 5 625 pixels et touche une des quatre zones d’énoncé. L’ajout sans nouveaux périmètres reproduit l’historique.
+- Le raster seul donne la même couverture contextualisée. L’IoU médiane sur les appariements publics passe de 0,629 en raster à 0,762 en hybride, rappel 5/11 dans les deux cas. Le natif seul donne 4/11. Les inconnues publiques ne permettent pas de déduire la précision globale des candidats.
+- Géométrie C1, cinq pages de phase 4.3. 7 → 1 mélanges de colonnes ou cellules et 581/655 → 630/655 comparaisons d’ordre. L’activation sur trois pages conserve ce score. Parité Python/TypeScript des groupes sur 14 cas horizontaux avec les mêmes lignes de base.
+- Rotation synthétique du sous-détecteur graphique. 1/5 → 5/5 cibles strictes après correction de l’échelle graphique à partir de la taille de police C1, 0/3 énoncé touché. La reconstruction de l’ordre du texte tourné n’a pas été résolue. Aucun résultat de masquage intégré au moteur revendiqué.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

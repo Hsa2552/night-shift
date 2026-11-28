@@ -4,6 +4,7 @@ import { observeGraphicFrames } from './frames'
 import { reconstructAdaptiveLayout } from './adaptive-layout'
 import { detectGraphicCorrections, type GraphicAnchor } from './index'
 import { overlap } from './geometry'
+import { locateRuledRegions, type Separator } from './closed-rules'
 
 const bbox = (x: number, y: number, width: number, height: number): Rect => ({
   x,
@@ -22,6 +23,59 @@ const page: PageData = {
     { text: 'merged', bbox: bbox(38, 67, 31, 8) },
   ],
 }
+
+it('keeps nested frames separate and leaves open figures as uncertified layouts', () => {
+  function frame(x: number, y: number, width: number, height: number): Separator[] {
+    return [
+      { orientation: 'h', box: [x, y, x + width, y + 1] },
+      { orientation: 'h', box: [x, y + height, x + width, y + height + 1] },
+      { orientation: 'v', box: [x, y, x + 1, y + height] },
+      { orientation: 'v', box: [x + width, y, x + width + 1, y + height] },
+    ]
+  }
+  expect(locateRuledRegions([...frame(10, 10, 160, 90), ...frame(41, 33, 60, 30)], 8)).toHaveLength(
+    2,
+  )
+  expect(locateRuledRegions(frame(10, 10, 160, 90).slice(1, 3), 8)).toEqual([])
+})
+
+it('retains short labels on a confirmed graphic edge and leaves unrelated prose untouched', () => {
+  const image = raster()
+  image.fill(bbox(30, 80, 35, 30), [0, 0, 0])
+  const label = bbox(69, 87, 21, 8)
+  const prose = bbox(27, 112, 100, 8)
+  const annotated: PageData = {
+    ...page,
+    textItems: [
+      ...page.textItems,
+      { text: '5 N', bbox: label },
+      { text: 'Detailed explanation outside the drawing', bbox: prose },
+    ],
+  }
+  const correction: GraphicAnchor = {
+    id: 'c',
+    role: 'correction',
+    reliability: 'confirmed',
+    region: region(bbox(20, 71, 22, 7)),
+    scope: region(bbox(19, 68, 150, 75)),
+  }
+  const result = detectGraphicCorrections({ page: annotated, raster: image, anchors: [correction] })
+  expect(
+    result.candidates.some(
+      (c) => c.kind === 'label' && c.region.bbox.x === label.x && c.masks.length,
+    ),
+  ).toBe(true)
+  expect(
+    result.candidates.some((c) => c.kind === 'label' && overlap(c.region.bbox, prose) > 0),
+  ).toBe(false)
+  const protectedResult = detectGraphicCorrections({
+    page: annotated,
+    raster: image,
+    anchors: [correction],
+    protectedRegions: [region(label)],
+  })
+  expect(protectedResult.candidates.some((c) => c.kind === 'label' && c.masks.length)).toBe(false)
+})
 
 function raster(scale = 1): RasterData & { fill: (box: Rect, rgb: number[]) => void } {
   const width = page.width * scale,

@@ -8,11 +8,12 @@ import type {
 } from '../../../shared/types'
 import type { NativeRgb } from '../vector/text-colors'
 import { intersect } from '../vector/geometry'
-import { area, bottom, contains, expand, overlap, right, valid } from './geometry'
+import { area, bottom, contains, expand, median, overlap, right, valid } from './geometry'
 import { reconstructAdaptiveLayout, type AdaptiveLayout } from './adaptive-layout'
 import { observeGraphicFrames, type GraphicFrame } from './frames'
 import { matchesPaint, observeRasterGraphics, rasterIncrement } from './raster-objects'
 import { parseRgb } from '../vector/text-colors'
+import { graphicLabels } from './labels'
 
 export interface MixedFigure {
   region: PageRegion
@@ -46,7 +47,7 @@ export interface GraphicPageInput {
 }
 
 export type GraphicKind =
-  'figure' | 'path' | 'frame' | 'fill' | 'highlight' | 'table' | 'table-cell'
+  'figure' | 'path' | 'frame' | 'fill' | 'highlight' | 'table' | 'table-cell' | 'label'
 export type GraphicRole = 'correction' | 'statement' | 'mixed' | 'decorative' | 'unknown'
 export type GraphicSource = 'native' | 'raster'
 
@@ -209,6 +210,7 @@ function classify(
     masks: [],
   }
   if (positive.length) candidate.evidence.push('confirmed-correction-scope')
+  if (object.kind === 'label') candidate.evidence.push('short-label-near-visible-figure')
   if (blocks.length) candidate.evidence.push('existing-block-contains')
   if (negative) candidate.evidence.push('confirmed-statement-scope')
   if (!owners.length && near.length) candidate.evidence.push('near-anchor-only')
@@ -284,7 +286,21 @@ export function detectGraphicCorrections(input: GraphicPageInput): GraphicPageRe
   }
   if (!valid(viewport)) return result
   const layout = input.layout ?? reconstructAdaptiveLayout(page)
-  const em = layout.lines.length ? layout.spacing.em : Math.min(page.width, page.height) / 64
+  const nominal = layout.lines.length ? layout.spacing.em : Math.min(page.width, page.height) / 64
+  const fontEm = median(
+    page.textItems.flatMap(({ bbox, fontSize, text }) =>
+      valid(bbox) && text.trim().length >= 3
+        ? [
+            typeof fontSize === 'number' && fontSize > 0 && Number.isFinite(fontSize)
+              ? fontSize
+              : Math.min(bbox.width, bbox.height),
+          ]
+        : [],
+    ),
+    nominal,
+  )
+  // The C1 font size is invariant under quarter turns, whereas the box height is not.
+  const em = nominal > 2 * fontEm ? fontEm : nominal
   const native = input.modality === 'raster' ? undefined : input.vectors
   const raster = input.modality === 'native' ? undefined : input.raster
   const painted = raster && observeRasterGraphics(page, raster, em, input.mixedFigures ?? [])
@@ -306,7 +322,7 @@ export function detectGraphicCorrections(input: GraphicPageInput): GraphicPageRe
     }
     objects.push(...rasterObjects)
   }
-  result.frames = observeGraphicFrames(page, layout, native, painted?.separators ?? [])
+  result.frames = observeGraphicFrames(page, layout, native, painted?.separators ?? [], em)
   for (const frame of result.frames) {
     if (frame.kind !== 'closed-rules' || !frame.sources.length) continue
     const visibility = frame.sources.includes('raster') ? 'raster-ink' : 'declared'
@@ -353,6 +369,7 @@ export function detectGraphicCorrections(input: GraphicPageInput): GraphicPageRe
       masks: [],
     })
   }
+  if (painted) objects.push(...graphicLabels(input, layout, objects, viewport))
   const protectedBox = [
     ...(input.protectedRegions ?? []),
     ...input.anchors

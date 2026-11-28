@@ -70,6 +70,7 @@ export function observeGraphicFrames(
   layout: AdaptiveLayout,
   vectors?: VectorPageObservation,
   rasterRules: readonly Separator[] = [],
+  em = layout.spacing.em,
 ): GraphicFrame[] {
   const native =
     vectors?.pageIndex !== page.pageIndex
@@ -78,12 +79,12 @@ export function observeGraphicFrames(
           .filter((r) => r.visibility === 'paint-command' && r.region.pageIndex === page.pageIndex)
           .map<Separator>((r) => ({ orientation: r.orientation, box: box(r.region.bbox) }))
   const rules = [...native, ...rasterRules]
-  const tolerance = 0.4 * layout.spacing.em
+  const tolerance = 0.4 * em
   const output: GraphicFrame[] = []
   function source(rectangle: Rect, observations: readonly Separator[]) {
     return observations.some((s) => overlap(rectangle, rect(s.box)) > 0)
   }
-  for (const table of locateRuledRegions(rules, layout.spacing.em)) {
+  for (const table of locateRuledRegions(rules, em)) {
     const region = { pageIndex: page.pageIndex, bbox: rect(table.box) }
     const rows = table.horizontal
     const columns = table.vertical

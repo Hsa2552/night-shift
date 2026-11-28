@@ -44,6 +44,18 @@ const anchor: GraphicAnchor = {
 }
 
 describe('graphic corrections', () => {
+  it('uses invariant font size for graphic filtering when C1 text boxes run vertically', () => {
+    const rotated = {
+      ...page,
+      textItems: [
+        { text: 'Vertical synthetic label', bbox: region(20, 45, 9, 85).bbox, fontSize: 10 },
+      ],
+    }
+    const result = detectGraphicCorrections({ page: rotated, vectors, anchors: [anchor] })
+    expect(result.newBlocks).toHaveLength(1)
+    expect(result.candidates[0].masks).toHaveLength(1)
+  })
+
   it('proposes a padded C1 mask attached to an existing correction block', () => {
     const result = detectGraphicCorrections({
       page,

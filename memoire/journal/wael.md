@@ -113,3 +113,8 @@
 ### 28/11 05:03 · SESSION · T-WB-8 · Figures mixtes et cadres
 
 - Fusion native/raster de séparateurs, cellules fusionnées et bande de peinture locale. Blocage d’une peinture mixte si une partie menace l’énoncé. Contrôles ciblés de changement de couleur et résolution, conflit de texte et fermeture hybride.
+
+### 28/11 05:10 · SESSION · T-WB-8 · Recette graphique isolée
+
+- Une figure MIT intégralement protégée et deux partielles. Le raster seul rejoint l’hybride sur la couverture. La fusion des blocs historiques seule ne produit aucun gain. Protocole Edge, chiffres et limites dans V-28-0510-WB.
+- Échelle graphique corrigée pour la rotation du viewport avec taille de police C1. Prototype conditionnel documenté et transmis à Hazem dans la PR #26.
