@@ -13,6 +13,9 @@ export interface Box {
   density: number
   /** Caractère extrait sous la case (lettre de la proposition, chiffre d'une grille), s'il existe. */
   char?: string
+  /** La forme est le dessin d'un glyphe du texte (lettre d'un mot, puce, guillemet…) et non
+   * une case : décidé sur le texte extrait, identique d'un moteur de rendu à l'autre. */
+  glyph?: boolean
 }
 
 /** Encre : seuil large, pour suivre les contours fins anticrénelés. Noir : remplissage. */
@@ -148,25 +151,53 @@ function scanBoxes(raster: RasterData, page: PageData, inkThreshold: number): Bo
       width: w / s,
       height: h / (H / page.height),
     }
-    boxes.push({ pageIndex: page.pageIndex, bbox, filled, density, char: charUnder(page, bbox) })
+    const under = charUnder(page, bbox)
+    boxes.push({
+      pageIndex: page.pageIndex,
+      bbox,
+      filled,
+      density,
+      ...(under ? { char: under.char, glyph: under.glyph } : {}),
+    })
   }
   return boxes
 }
 
-/** Caractère du texte extrait situé au centre de la case (estimation proportionnelle). */
-function charUnder(page: PageData, box: Rect): string | undefined {
+/** Symboles de case à cocher (☐ ☑ ☒ ■ □ ▢ ◻ ◼…) : un glyphe qui est réellement une case. */
+const BOX_SYMBOL = /[\u25A0-\u25A3\u25AA\u25AB\u25FB-\u25FE\u2610-\u2612\u274F-\u2752]/u
+const ALNUM = /[\p{L}\p{N}]/u
+
+/**
+ * Caractère du texte extrait situé au centre de la case (estimation proportionnelle), et s'il
+ * s'agit d'un glyphe de texte : lettre ou chiffre accolé à une autre lettre (dans un mot), ou
+ * signe qui n'est ni alphanumérique ni un symbole de case (puce, guillemet, ponctuation), ou
+ * lettre isolée dont la forme n'est pas plus grande que le texte qui la porte (lettre de titre
+ * « A. »). Une lettre imprimée dans une case de QCM est plus petite que la case (rapport côté /
+ * hauteur du texte de 1,36 sur les annales ENSAI, au plus 0,79 pour les lettres de titre).
+ */
+function charUnder(page: PageData, box: Rect): { char: string; glyph: boolean } | undefined {
   const cx = box.x + box.width / 2
   const cy = box.y + box.height / 2
   for (const item of page.textItems) {
     const b = item.bbox
-    const text = item.text
-    if (!text.trim() || cy < b.y || cy > b.y + b.height || cx < b.x || cx > b.x + b.width) continue
+    const chars = [...item.text] // points de code (lettres mathématiques hors BMP comprises)
+    if (!item.text.trim() || cy < b.y || cy > b.y + b.height || cx < b.x || cx > b.x + b.width)
+      continue
     const k = Math.min(
-      text.length - 1,
-      Math.floor(((cx - b.x) / Math.max(b.width, 1e-6)) * text.length),
+      chars.length - 1,
+      Math.floor(((cx - b.x) / Math.max(b.width, 1e-6)) * chars.length),
     )
-    const ch = text[k]!.trim() || text.trim()[0]
-    return ch
+    const at = chars[k]!.trim() ? k : chars.findIndex((c) => c.trim())
+    const ch = chars[at]!
+    if (BOX_SYMBOL.test(ch)) return { char: ch, glyph: false }
+    if (!ALNUM.test(ch)) return { char: ch, glyph: true }
+    // Voisin dans le mot, apostrophe comprise (« n’est », « l'aire »).
+    const joined = (step: number) => {
+      const next = chars[at + step] ?? ''
+      return ALNUM.test(next) || (/['’]/.test(next) && ALNUM.test(chars[at + 2 * step] ?? ''))
+    }
+    const notLarger = Math.max(box.width, box.height) < 1.1 * b.height
+    return { char: ch, glyph: joined(-1) || joined(1) || notLarger }
   }
   return undefined
 }
@@ -177,7 +208,7 @@ function charUnder(page: PageData, box: Rect): string | undefined {
  * comme un QCM corrigé que s'il a à la fois des cases pleines et des cases vides.
  */
 export function answerBoxes(all: Box[]): Box[] {
-  const candidates = all.filter((b) => !isDigit(b.char))
+  const candidates = all.filter((b) => !isDigit(b.char) && !b.glyph)
   const empty = candidates.filter((b) => !b.filled)
   if (empty.length === 0) return []
   // Taille de référence : la classe la plus peuplée des contours carrés à centre clair (un
@@ -194,7 +225,22 @@ export function answerBoxes(all: Box[]): Box[] {
     }
   }
   const near = (b: Box) => Math.abs(side(b) - ref) <= 0.2 * ref
-  const kept = candidates.filter((b) => near(b) && (!b.filled || b.density >= 0.85))
+  const sized = candidates.filter((b) => near(b) && (!b.filled || b.density >= 0.85))
+  // Cohérence de groupe : une case de réponse a au moins une voisine alignée sur sa page :
+  // même rangée (à 2 points près, à toute distance : propositions réparties sur la largeur) ou
+  // même colonne (à 2 points près, à moins de vingt côtés). Une forme isolée (symbole
+  // mathématique, puce) n'est pas une case.
+  const center = (b: Box) => ({ x: b.bbox.x + b.bbox.width / 2, y: b.bbox.y + b.bbox.height / 2 })
+  const kept = sized.filter((b) =>
+    sized.some((o) => {
+      if (o === b || o.pageIndex !== b.pageIndex) return false
+      const a = center(b)
+      const c = center(o)
+      const sameRow = Math.abs(a.y - c.y) <= 2
+      const sameColumn = Math.abs(a.x - c.x) <= 2 && Math.abs(a.y - c.y) <= 20 * side(b)
+      return sameRow || sameColumn
+    }),
+  )
   if (!kept.some((b) => b.filled) || !kept.some((b) => !b.filled) || kept.length < 3) return []
   return kept
 }
