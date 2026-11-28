@@ -120,3 +120,10 @@
 - Nouvelle répartition appliquée : aucun travail engagé sur les observations graphiques (images, figures, tableaux, cadres, séparateurs, surlignages), aucune opération en cours à transmettre. Interface minimale proposée à Wael : `DECISIONS.md` D-28-0655-HZ.
 - Pour Salif : version candidate `6f7c4e4` ; faux positif de la métrique `groupsWithGeometryCue` décrit dans V-28-0655-HZ.
 - PR vers main à ouvrir par l'équipe : https://github.com/Hsa2552/night-shift/pull/new/feat/detection-generalisation
+
+### 28/11 11:15 · SESSION · T-HZ-3 corrigés annotés et QCM à croix · Claude Code
+
+- Demande de Hazem : faire fonctionner l'outil sur deux nouveaux PDF (dossier local, hors dépôt) sans dégrader l'existant. Fait : `e545e68`, détail et limites dans `QUALITE.md` V-28-1115-HZ.
+- Écart signalé avec la répartition du matin : masquer les dessins relève en principe des observations graphiques confiées à Wael. Traité ici sur demande explicite de Hazem, dans un module à part (`src/detection/overlay.ts`) limité aux couches d'annotation ajoutées par-dessus le sujet ; les figures composées de l'énoncé ne sont pas touchées.
+- Pour Wael : `overlay.ts` ne fait que la couche d'annotation (tracés postérieurs à tout le contenu de la page). Ton sous-détecteur graphique reste seul responsable des figures, tableaux et cadres du document lui-même ; à coordonner si tu observes des couches d'annotation dans tes PDF.
+- Non-régression vérifiée dans Edge sur les quatre partitions autorisées (chiffres identiques au jalon `6f7c4e4`).
