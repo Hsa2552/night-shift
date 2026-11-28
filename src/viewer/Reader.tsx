@@ -7,11 +7,16 @@ import { DocumentViewer } from './DocumentViewer'
 import type { DocumentViewerHandle, ViewerMode } from './DocumentViewer'
 import { PdfCanvas } from './PdfCanvas'
 
+export type AnalysisProgress =
+  { phase: 'extract'; extracted: number; total: number } | { phase: 'detect' }
+
 interface ReaderProps {
   pdf: PdfDocument
   pages: PageDimensions[]
   mode: ViewerMode
-  analyzing: boolean
+  analysis?: AnalysisProgress
+  trainingAvailable: boolean
+  replacing: boolean
   status: string
   kindLabel: string
   warnings: string[]
@@ -27,7 +32,9 @@ export function Reader({
   pdf,
   pages,
   mode,
-  analyzing,
+  analysis,
+  trainingAvailable,
+  replacing,
   status,
   kindLabel,
   warnings,
@@ -41,9 +48,9 @@ export function Reader({
   const [activePage, setActivePage] = useState(0)
   const [zoom, setZoom] = useState(100)
   const [revealed, setRevealed] = useState(0)
-  const [concentration, setConcentration] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
-  const showNavigation = !concentration && (navigation ?? wide)
+  const showNavigation = navigation ?? wide
+  const analyzing = analysis !== undefined
   const main = useRef<HTMLElement>(null)
   const toolbar = useRef<HTMLElement>(null)
   const navigationPanel = useRef<HTMLElement>(null)
@@ -175,10 +182,6 @@ export function Reader({
     adjustZoom(Math.max(25, Math.min(200, value)))
   }
 
-  function toggleConcentration() {
-    setConcentration((current) => !current)
-  }
-
   function toggleFullscreen() {
     const action = document.fullscreenElement
       ? document.exitFullscreen?.()
@@ -209,7 +212,6 @@ export function Reader({
       arrowup: () => viewer.current?.navigateCorrection('previous'),
       arrowdown: () => viewer.current?.navigateCorrection('next'),
       r: () => viewer.current?.remaskAll(),
-      f: toggleConcentration,
     }
     const action = actions[event.key.toLowerCase()]
     if (!action) return
@@ -218,14 +220,7 @@ export function Reader({
   }
 
   return (
-    <main
-      ref={main}
-      id="main-content"
-      className="reader"
-      data-concentration={concentration || undefined}
-      tabIndex={-1}
-      onKeyDown={handleShortcut}
-    >
+    <main ref={main} id="main-content" className="reader" tabIndex={-1} onKeyDown={handleShortcut}>
       <section className="reader-toolbar" ref={toolbar} aria-label="Outils de lecture">
         <div className="reader-toolbar-inner">
           <div className="reader-modes">
@@ -240,7 +235,13 @@ export function Reader({
               }
             >
               <Icon name="eye-off" size={17} />
-              <span>{training ? 'Tout remasquer' : 'Masquer les corrigés'}</span>
+              <span>
+                {training
+                  ? 'Tout remasquer'
+                  : mode.kind === 'progressive' && trainingAvailable
+                    ? 'Mode entraînement'
+                    : 'Masquer les corrigés'}
+              </span>
             </button>
             <button
               type="button"
@@ -250,6 +251,19 @@ export function Reader({
             >
               <Icon name="sliders" size={17} /> <span>Révélation progressive</span>
             </button>
+            {training && (
+              <button
+                type="button"
+                className="ui-button reader-reveal-all"
+                disabled={revealed === total}
+                onClick={() => {
+                  if (window.confirm('Révéler toutes les corrections détectées ?'))
+                    viewer.current?.revealAll()
+                }}
+              >
+                <Icon name="eye" size={17} /> <span>Tout révéler</span>
+              </button>
+            )}
           </div>
           <div className="reader-tools">
             <button
@@ -259,7 +273,6 @@ export function Reader({
               aria-label="Navigation par page"
               aria-controls={showNavigation ? 'reader-navigation' : undefined}
               aria-expanded={showNavigation}
-              disabled={concentration}
               onClick={() => setNavigation(!showNavigation)}
             >
               <Icon name="pages" />
@@ -296,16 +309,6 @@ export function Reader({
                 <Icon name="fit" size={17} />
               </button>
             </div>
-            <button
-              type="button"
-              className="icon-button"
-              title="Mode concentration"
-              aria-label="Mode concentration"
-              aria-pressed={concentration}
-              onClick={toggleConcentration}
-            >
-              <Icon name="focus" />
-            </button>
             <details className="reader-menu" ref={menu}>
               <summary
                 className="icon-button"
@@ -359,7 +362,6 @@ export function Reader({
                   <span>Alt + Maj + Page haut / bas — pages</span>
                   <span>Alt + Maj + ↑ / ↓ — corrections</span>
                   <span>Alt + Maj + R — tout remasquer</span>
-                  <span>Alt + Maj + F — concentration</span>
                   <span>Entrée ou Espace — activer le bouton ciblé</span>
                 </div>
               </div>
@@ -424,13 +426,24 @@ export function Reader({
         <div className="reader-main">
           <section className="reader-status" aria-label="État du document">
             <div className="reader-status-copy">
-              {analyzing && <span className="loading-ring" aria-hidden="true" />}
+              {(analysis?.phase === 'detect' || (replacing && !analyzing)) && (
+                <span className="loading-ring" aria-hidden="true" />
+              )}
               <div>
                 {(training || kindLabel) && (
                   <p className="reader-mode-label">{training ? 'Mode entraînement' : kindLabel}</p>
                 )}
                 {training && kindLabel === 'Corrigé seul' && <p>{kindLabel}</p>}
-                <p role="status">{status}</p>
+                <p role={analysis?.phase === 'extract' ? undefined : 'status'}>{status}</p>
+                {analysis && (
+                  <progress
+                    className="reader-analysis-progress"
+                    aria-label="Progression de l’analyse"
+                    aria-valuetext={status}
+                    value={analysis.phase === 'extract' ? analysis.extracted : undefined}
+                    max={analysis.phase === 'extract' ? analysis.total : 1}
+                  />
+                )}
                 {training && (
                   <p>Clique sur une zone masquée ou utilise les boutons pour la révéler.</p>
                 )}

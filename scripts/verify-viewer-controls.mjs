@@ -14,6 +14,7 @@ const page = await context.newPage()
 page.setDefaultTimeout(20000)
 const reader = page.locator('.reader')
 const maskButton = reader.getByRole('button', { name: 'Masquer les corrigés', exact: true })
+const training = reader.getByRole('button', { name: 'Mode entraînement', exact: true })
 const remask = reader.getByRole('button', { name: 'Tout remasquer', exact: true })
 const progressive = reader.getByRole('button', { name: 'Révélation progressive', exact: true })
 const masks = reader.getByTestId('correction-mask')
@@ -169,7 +170,8 @@ try {
       await reader.getByTestId('progressive-mask').count(),
       await reader.locator('[data-reader-page]').count(),
     )
-    await analyze()
+    await training.click()
+    await masks.first().waitFor()
     assert.equal(await masks.count(), total)
     console.log(
       JSON.stringify({

@@ -4,7 +4,7 @@ import App from './App'
 import { detectCorrections } from './detection'
 import { openPdf } from './pdf'
 import type { PdfDocument } from './pdf'
-import type { DetectionResult } from './shared/types'
+import type { DetectionResult, PageData } from './shared/types'
 
 vi.mock('./pdf', () => ({ openPdf: vi.fn() }))
 vi.mock('./detection', () => ({ detectCorrections: vi.fn() }))
@@ -53,6 +53,140 @@ beforeEach(() => {
 })
 
 describe('Unspoil', () => {
+  it('ouvre l’annale synthétique couverte puis transmet ses pages au moteur', async () => {
+    detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
+    render(<App />)
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Essayer avec une annale de démonstration' }),
+    )
+    await screen.findByRole('heading', { name: 'QCM de démonstration (synthétique).pdf' })
+    const file = loadPdf.mock.calls[0]?.[0]
+    expect(file).toMatchObject({
+      name: 'QCM de démonstration (synthétique).pdf',
+      type: 'application/pdf',
+    })
+    expect((file as File).size).toBeGreaterThan(0)
+    expect(screen.getByTestId('page-cover')).toBeTruthy()
+    expect(detect).not.toHaveBeenCalled()
+    startAnalysis()
+    expect(await screen.findByTestId('correction-mask')).toBeTruthy()
+    expect(detect).toHaveBeenCalledWith(
+      expect.objectContaining({ pages: [{ ...page, textItems: [] }] }),
+    )
+  })
+
+  it('préserve le lecteur lors d’un dépôt invalide puis remplace le PDF lors d’un dépôt valide', async () => {
+    const original = fakePdf()
+    const replacement = fakePdf()
+    loadPdf
+      .mockResolvedValueOnce(original)
+      .mockRejectedValueOnce(new Error('PDF invalide'))
+      .mockResolvedValueOnce(replacement)
+    detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
+    await importDocument()
+    startAnalysis()
+    fireEvent.click(await screen.findByRole('button', { name: /Afficher le corrigé/ }))
+    const reader = screen.getByRole('main')
+    const data = (name: string, type: string) => ({
+      types: ['Files'],
+      files: [new File(['synthétique'], name, { type })],
+    })
+    const invalidType = data('texte.txt', 'text/plain')
+    fireEvent.dragEnter(reader, { dataTransfer: invalidType })
+    expect(screen.getByText('Dépose un PDF pour remplacer le document ouvert')).toBeTruthy()
+    expect(screen.getByText('1 / 1 correction révélée')).toBeTruthy()
+    expect(fireEvent.drop(reader, { dataTransfer: invalidType })).toBe(false)
+    expect(screen.getByRole('alert').textContent).toContain('Choisis un fichier PDF.')
+    expect(loadPdf).toHaveBeenCalledOnce()
+    fireEvent.drop(reader, { dataTransfer: data('illisible.pdf', 'application/pdf') })
+    await screen.findByText(/Impossible d’ouvrir ce PDF/)
+    expect(screen.getByText('1 / 1 correction révélée')).toBeTruthy()
+    expect(original.close).not.toHaveBeenCalled()
+    fireEvent.drop(reader, { dataTransfer: data('autre.pdf', 'application/pdf') })
+    await screen.findByRole('heading', { name: 'autre.pdf' })
+    expect(screen.getByTestId('page-cover')).toBeTruthy()
+    expect(original.close).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByRole('button', { name: 'Révélation progressive' }))
+    expect(screen.queryByRole('button', { name: 'Mode entraînement' })).toBeNull()
+    startAnalysis()
+    await screen.findByTestId('correction-mask')
+    expect(detect).toHaveBeenCalledTimes(2)
+  })
+
+  it('affiche les pages réellement extraites puis une analyse indéterminée', async () => {
+    const pdf = fakePdf()
+    pdf.pageCount = 2
+    pdf.getPageDimensions.mockImplementation(async (pageIndex) => ({ ...page, pageIndex }))
+    let extracted!: (data: PageData) => void
+    pdf.getPageData
+      .mockResolvedValueOnce({ ...page, textItems: [] })
+      .mockReturnValueOnce(new Promise((resolve) => (extracted = resolve)))
+    loadPdf.mockResolvedValueOnce(pdf)
+    let finish!: (result: DetectionResult) => void
+    detect.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)))
+    await importDocument()
+    startAnalysis()
+    const progress = screen.getByRole<HTMLProgressElement>('progressbar', {
+      name: 'Progression de l’analyse',
+    })
+    expect(progress.value).toBe(0)
+    expect(progress.max).toBe(2)
+    await screen.findByText('Extraction du texte — 1 / 2 pages')
+    expect(progress.value).toBe(1)
+    expect(screen.getAllByTestId('page-cover')).toHaveLength(2)
+    await act(async () => extracted({ ...page, pageIndex: 1, textItems: [] }))
+    await waitFor(() => expect(detect).toHaveBeenCalledOnce())
+    expect(progress.hasAttribute('value')).toBe(false)
+    expect(screen.getByText('Analyse des corrections…')).toBeTruthy()
+    expect(screen.getAllByTestId('page-cover')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler l’analyse' }))
+    await act(async () =>
+      finish({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false }),
+    )
+    expect(screen.queryByRole('progressbar', { name: 'Progression de l’analyse' })).toBeNull()
+    expect(screen.getAllByTestId('page-cover')).toHaveLength(2)
+  })
+
+  it('confirme la révélation globale, puis retrouve les mêmes blocs masqués sans analyser à nouveau', async () => {
+    const second = { ...block, id: 'q2', questionLabel: 'Question 2' }
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValue(true)
+    detect.mockResolvedValue({
+      kind: 'mixed',
+      blocks: [block, second],
+      warnings: [],
+      needsFallback: false,
+    })
+    try {
+      await importDocument()
+      startAnalysis()
+      await screen.findByText('0 / 2 corrections révélées')
+      const revealAll = screen.getByRole('button', { name: 'Tout révéler' })
+      fireEvent.click(revealAll)
+      expect(screen.getAllByTestId('correction-mask')).toHaveLength(2)
+      fireEvent.click(revealAll)
+      expect(confirm).toHaveBeenCalledTimes(2)
+      expect(screen.getByText('2 / 2 corrections révélées')).toBeTruthy()
+      expect(screen.queryByTestId('correction-mask')).toBeNull()
+      fireEvent.click(screen.getByRole('button', { name: 'Tout remasquer' }))
+      expect(screen.getAllByTestId('correction-mask')).toHaveLength(2)
+      fireEvent.click(screen.getByRole('button', { name: 'Tout révéler' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Révélation progressive' }))
+      expect(screen.getByTestId('progressive-mask').style.top).toBe('0%')
+      fireEvent.click(screen.getByRole('button', { name: 'Mode entraînement' }))
+      expect(screen.getAllByTestId('correction-mask')).toHaveLength(2)
+      expect(detect).toHaveBeenCalledOnce()
+    } finally {
+      confirm.mockRestore()
+    }
+  })
+
+  it('garde la navigation et le zoom sans le mode concentration', async () => {
+    await importDocument()
+    expect(screen.queryByRole('button', { name: 'Mode concentration' })).toBeNull()
+    fireEvent.keyDown(screen.getByRole('main'), { key: 'F', altKey: true, shiftKey: true })
+    expect(screen.getByRole('button', { name: 'Navigation par page' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Zoom avant' })).toBeTruthy()
+  })
   it('importe un PDF glissé sur la zone prévue et garde ses pages couvertes', async () => {
     render(<App />)
     const zone = screen.getByLabelText('Importer un PDF').closest('.file-drop')!
@@ -145,10 +279,8 @@ describe('Unspoil', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Navigation par page' }))
     const nav = screen.getByRole('navigation', { name: 'Pages du PDF' })
     const input = within(nav).getByRole('spinbutton', { name: 'Numéro de page' })
-    fireEvent.keyDown(input, { key: 'F', altKey: true, shiftKey: true })
-    expect(
-      screen.getByRole('button', { name: 'Mode concentration' }).getAttribute('aria-pressed'),
-    ).toBe('false')
+    fireEvent.keyDown(input, { key: 'PageDown', altKey: true, shiftKey: true })
+    expect(screen.getByLabelText('Page 1 sur 12')).toBeTruthy()
     expect(nav.querySelector('canvas, img')).toBeNull()
     expect(nav.querySelectorAll('.page-tile')).toHaveLength(12)
     fireEvent.change(input, { target: { value: '10' } })
@@ -160,24 +292,6 @@ describe('Unspoil', () => {
     expect(
       screen.getByRole('navigation', { name: 'Pages du PDF' }).querySelector('canvas, img'),
     ).toBeNull()
-  })
-
-  it('conserve l’accès aux corrections et leur état en mode concentration', async () => {
-    detect.mockResolvedValue({ kind: 'mixed', blocks: [block], warnings: [], needsFallback: false })
-    await importDocument()
-    startAnalysis()
-    const direct = await screen.findByRole('button', { name: 'Révéler dans le PDF — Question 1' })
-    const concentration = screen.getByRole('button', { name: 'Mode concentration' })
-    fireEvent.click(concentration)
-    expect(concentration.getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(direct)
-    expect(screen.queryByTestId('correction-mask')).toBeNull()
-    expect(screen.getByText('1 / 1 correction révélée')).toBeTruthy()
-    fireEvent.keyDown(direct, { key: 'F', altKey: true, shiftKey: true })
-    expect(concentration.getAttribute('aria-pressed')).toBe('false')
-    expect(screen.queryByTestId('correction-mask')).toBeNull()
-    fireEvent.keyDown(direct, { key: 'R', altKey: true, shiftKey: true })
-    expect(screen.getByTestId('correction-mask')).toBe(direct)
   })
 
   it('ne découvre rien après l’annulation explicite d’une analyse en cours', async () => {

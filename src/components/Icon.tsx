@@ -14,7 +14,6 @@ const paths = {
   plus: 'M5 12h14m-7-7v14',
   fit: 'M8 4H4v16h4m8-16h4v16h-4M7 12h10m-7-3-3 3 3 3m4-6 3 3-3 3',
   file: 'M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Zm0 0v6h6',
-  focus: 'M9 4H4v5m11-5h5v5m0 6v5h-5M4 15v5h5m6-8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   alert: 'M12 8v4m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
 } as const

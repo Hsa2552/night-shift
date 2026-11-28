@@ -24,6 +24,8 @@ Dans beaucoup d’annales, le corrigé apparaît juste sous la question ou dans 
 
 ## Démonstration
 
+Depuis l’accueil, « Essayer avec une annale de démonstration » ouvre un QCM synthétique dans le lecteur. Le moteur analyse ce PDF en local comme tout document importé.
+
 Le même **QCM synthétique de chimie** dans Unspoil. Les propositions restent lisibles, les marques de réponse des QCM détectés sont uniformisées et chaque question peut être révélée séparément. [PDF de démonstration](src/detection/samples/qcm-cases.pdf)
 
 | Réponses visibles | Corrections masquées | Première correction révélée |

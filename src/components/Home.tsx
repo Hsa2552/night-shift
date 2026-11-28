@@ -28,11 +28,13 @@ export function FileInput({
 
 export function Home({
   onFile,
+  onDemo,
   pending,
   onCancel,
   error,
 }: {
   onFile: (file: File) => void
+  onDemo: () => void
   pending: File | null
   onCancel: () => void
   error: string
@@ -88,6 +90,15 @@ export function Home({
                 {dragging ? 'Dépose ton PDF ici' : 'ou glisse-le ici'}
               </span>
             </div>
+            <button
+              type="button"
+              className="ui-button home-demonstration"
+              disabled={!!pending}
+              onClick={onDemo}
+            >
+              <Icon name="file" /> Essayer avec une annale de démonstration
+            </button>
+            <p className="home-demo-note">QCM synthétique</p>
             <p className="home-privacy">
               <Icon name="lock" size={15} /> Tes fichiers restent sur ton appareil.
             </p>
