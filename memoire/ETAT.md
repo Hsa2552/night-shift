@@ -178,7 +178,8 @@
 - Statut : en revue · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/convergence-phase-5`
 - Candidat intermédiaire pour Salif : `e1322384e3f874c3a6b4b249f3505a108104f849`. Moteur `6f7c4e4`, historique Hazem `3ab2453`, géométrie et graphisme Wael `2cb23cd`, transport et benchmark Salif déjà inclus.
-- Raccordement conservateur du sous-détecteur graphique. Masques spécialisés QCM exclus, périmètres sans preuve laissés hors production. Suivi dans la PR #27 et le journal de Wael.
+- Maturité : parcours QCM démontré dans le build de convergence sous Edge, dont l’import hors ligne. Aucun changement de masque sur les six PDF ENSAI-dev dans la comparaison de raccordement. Raccordement graphique natif conservateur, périmètres sans preuve et balayage raster optionnel laissés hors du parcours automatique.
+- Notes : PR #27, recette V-28-0608-WB et procédure dans `LIVRAISON.md`. La fusion et le contrôle de Pages sur le nouveau `main` restent à l’équipe.
 
 ## Terminées ou abandonnées
 

@@ -514,6 +514,14 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Géométrie C1, cinq pages de phase 4.3. 7 → 1 mélanges de colonnes ou cellules et 581/655 → 630/655 comparaisons d’ordre. L’activation sur trois pages conserve ce score. Parité Python/TypeScript des groupes sur 14 cas horizontaux avec les mêmes lignes de base.
 - Rotation synthétique du sous-détecteur graphique. 1/5 → 5/5 cibles strictes après correction de l’échelle graphique à partir de la taille de police C1, 0/3 énoncé touché. La reconstruction de l’ordre du texte tourné n’a pas été résolue. Aucun résultat de masquage intégré au moteur revendiqué.
 
+### V-28-0608-WB · Recette de convergence
+
+- Base `0444703`, moteur `6f7c4e4` dans `3ab2453`, transport #21 et #23 et benchmark de Salif déjà compris, graphique `2cb23cd`. Référence Edge avant raccordement `e132238`, essai avec raster optionnel `71fb462`, puis raccordement natif seul. La PR #27 indique les rapports du SHA final. Les corpus réservés et leurs annotations restent hors de cette recette.
+- Edge sur `e132238` et `71fb462` : développement historique 8/10 réussites, 3 strictes, 2 072/2 072 corrections couvertes à 95 % et 311/1 304 énoncés touchés. Trois sujets seuls classés correctement et sans masque, 3/3 stricts. Diagnostic public : 34/48 cibles entièrement couvertes à 95 %, 3/24 lignes d’énoncé touchées, 2 replis, aucune réussite stricte. Aucun écart moteur/lecteur.
+- Les six PDF ENSAI-dev identifiés par leur SHA-256 donnent chacun le même résultat moteur et les mêmes masques, marques neutres et blocs révélables avant et après raccordement sur ces deux builds. Les six affichent un masquage automatique. Ceci ne mesure pas la couverture de vérité terrain. Hazem annonçait 4/6 réussites, 602/602 cases couvertes et 20/476 lignes touchées sur son jalon. Ses annotations n’étaient pas disponibles localement.
+- Edge, essai `71fb462` sur le QCM `ensai-09e01e2ab125` : 4 pages, 12 blocs révélables, 94 masques. Deux révélations indépendantes, remasquage individuel et global, zoom, défilement, remplacement et lecture progressive sur le MIT. Huit premiers libellés de question repérés par Poppler sur les pages de propositions, aucun pixel de leur boîte chevauché par un masque. Après rechargement hors ligne, nouveau chargement du worker, import, masquage et révélation réussis. Aucune requête externe ou d’envoi pendant la recette. Installation système et appareil physique non testés.
+- Deux suites Vitest optionnelles sont ignorées par `npm run check` faute de configuration de leurs corpus. Le benchmark navigateur est exécuté séparément. `npm ci` fonctionne sous Windows. Le build de production est vérifié sous WSL, car le poste Windows bloque le chargement de Rollup pour Workbox. L’audit npm des seules dépendances de production ne trouve aucun avis. Aucun verrou, contrat, réglage GitHub ou seuil du moteur n’a changé.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
