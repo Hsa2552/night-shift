@@ -588,3 +588,40 @@ describe('detectCorrections', () => {
     expect(await run(page)).toEqual(await run(page))
   })
 })
+
+describe('énoncés recopiés dans le corrigé', () => {
+  const statement = [
+    'Exercice 1',
+    '1. On considère la fonction f définie sur R par f(x) = x² + 1.',
+    'Montrer que f admet un minimum sur R et le calculer.',
+  ]
+  const correction = [
+    'Corrigé',
+    'Exercice 1',
+    '1. On considère la fonction f définie sur R par f(x) = x² + 1.',
+    'Montrer que f admet un minimum sur R et le calculer.',
+    'La dérivée de f vaut deux fois x, elle est nulle en zéro.',
+    'Le minimum de f sur R vaut donc un, atteint en zéro.',
+  ]
+
+  it('énoncé recopié (déjà visible plus haut) : visible, la correction reste masquée', async () => {
+    // Énoncé placé plus bas : hors des bandes d'en-tête (lignes répétées au même endroit).
+    const result = await run(fakePage(0, statement, 300), fakePage(1, correction))
+    expect(result.kind).toBe('mixed')
+    expect(result.blocks.every((b) => b.regions.every((r) => r.pageIndex === 1))).toBe(true)
+    const after = coverage(result, 1, 6)
+    expect([after[2], after[3]]).toEqual([null, null])
+    expect(after[4]).not.toBeNull()
+    expect(after[5]).not.toBeNull()
+  })
+
+  it('texte identique mais absent de la partie visible : reste masqué', async () => {
+    // Pas d'énoncé avant : rien n'est « déjà visible », rien n'est démasqué.
+    const result = await run(
+      fakePage(0, ['Sujet : voir la feuille distribuée.']),
+      fakePage(1, correction),
+    )
+    const after = coverage(result, 1, 6)
+    expect(after.slice(4).every((b) => b !== null)).toBe(true)
+  })
+})
