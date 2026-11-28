@@ -166,6 +166,13 @@
 - Dépend de : C1 et perception vectorielle. Expériences indépendantes du moteur et du benchmark officiel.
 - Maturité : comparatif sur pages réelles et variantes synthétiques. Prototype TypeScript isolé de topologie des séparateurs, comparé à Python. PR #24. Résultats et limites dans `research/document-layout/`.
 
+### T-WB-8 · Corrections graphiques et géométrie adaptative
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/graphic-corrections-adaptive-layout`
+- Dépend de : observations C1 du lecteur et ancres pédagogiques du moteur. Hazem garde la fusion globale.
+- Maturité : sous-détecteur isolé testé sous Edge sur pages publiques et contrôles synthétiques. Géométrie alternative et cadres disponibles séparément. Les expériences nécessitent des périmètres pédagogiques fiables, à raccorder par Hazem. PR #26 et `research/graphic-corrections/README.md`.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._
