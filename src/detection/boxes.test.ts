@@ -1,11 +1,12 @@
 // QCM corrigés par noircissement de cases dessinées : pages et rendus raster SYNTHÉTIQUES
 // (rectangles peints dans un raster à l'échelle 1, aucun vrai PDF).
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { answerBoxes, findBoxes } from './boxes.ts'
 import type { DetectionResult, PageData, RasterData, Rect, TextItem } from './contract.ts'
-import { A4, fakeItem, fakeRaster } from './fixtures.ts'
+import { A4, fakeItem, fakePage, fakeRaster } from './fixtures.ts'
 import { detectCorrections } from './index.ts'
+import { registerColorAnalyzer } from './fusion.ts'
 
 const GREY: [number, number, number] = [170, 170, 170] // lettres et chiffres imprimés dans les cases
 
@@ -262,5 +263,81 @@ describe('QCM corrigé par noircissement de cases', () => {
     const result = await run(pages, true)
     expect(result.kind).toBe('unknown')
     expect(result.needsFallback).toBe(true)
+  })
+})
+
+describe('document hybride : exercices rédigés corrigés en couleur + QCM à cases', () => {
+  const RED: [number, number, number] = [210, 30, 30]
+  const written = [
+    'Exercice 1 : estimation',
+    'On observe un échantillon de taille 50 de moyenne 12.',
+    '1) Donner un estimateur sans biais de la moyenne.',
+    'La moyenne empirique est sans biais, elle vaut 12.',
+    'Son écart type estimé vaut 1,4 sur cet échantillon.',
+    '2) Construire un intervalle de confiance à 95 %.',
+    'On obtient l’intervalle [9,3 ; 14,7] par la loi normale.',
+  ]
+  const isAnswer = (t: string) => /^(La moyenne|Son écart|On obtient)/.test(t)
+
+  afterEach(() => registerColorAnalyzer('default'))
+
+  it.each([
+    ['moteur seul', null],
+    ['moteur et détecteur colorimétrique', 'default'],
+  ] as const)(
+    'réponses colorées de la partie rédigée masquées malgré les cases (%s)',
+    async (_, analyzer) => {
+      registerColorAnalyzer(analyzer)
+      const page0 = fakePage(0, written)
+      const pages = [
+        { page: page0, raster: fakeRaster(page0, (it) => (isAnswer(it.text) ? RED : undefined)) },
+        ...exam(1, 'A').map((p) => p.build()),
+      ]
+      const result = await run(pages)
+      expect(result.kind).not.toBe('statement_only')
+      const covered = (n: number) =>
+        regions(result).some((r) => r.pageIndex === 0 && inside(r.bbox, 100, 72 + n * 16.5 + 5))
+      // Réponses (3, 4, 6) masquées ; données et questions (1, 2, 5) visibles.
+      expect([3, 4, 6].map(covered)).toEqual([true, true, true])
+      expect([0, 1, 2, 5].map(covered)).toEqual([false, false, false, false])
+      // Les blocs de QCM sont toujours présents (cases masquées sur les pages 2 et 3).
+      const boxMasks = regions(result).filter((r) => r.pageIndex > 0 && r.bbox.width < 30)
+      expect(new Set(boxMasks.map((r) => r.pageIndex))).toEqual(new Set([1, 2]))
+    },
+  )
+})
+
+describe('cohérence géométrique des groupes de cases', () => {
+  it('case absente du raster au milieu d’une colonne régulière : masquée quand même', async () => {
+    const p = new QcmPage(0)
+    p.text('Correction', 268)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1).map((o) => ({ ...o, correct: o.letter === 'A' })))
+    p.text('Question 2 Que peut-on conclure ?')
+    p.options(OPTS(2))
+    // Aucune lettre extractible dans les cases (pas de complétion par le texte).
+    p.items = p.items.filter((it) => it.text.length > 1)
+    const missing = p.shapes[2]! // proposition C de la question 1, case vide
+    const built = p.build()
+    // La case C n'est pas dessinée (contour trop pâle pour le moteur de rendu).
+    paint(
+      built.raster,
+      missing.x - 1,
+      missing.y - 1,
+      missing.x + missing.side + 1,
+      missing.y + missing.side + 1,
+      255,
+    )
+    const result = await run([built])
+    const cx = missing.x + missing.side / 2
+    const cy = missing.y + missing.side / 2
+    expect(regions(result).some((r) => r.pageIndex === 0 && inside(r.bbox, cx, cy))).toBe(true)
+    // Même carré que les autres cases du groupe.
+    const sides = new Set(
+      regions(result)
+        .filter((r) => r.bbox.width < 30)
+        .map((r) => r.bbox.width.toFixed(1)),
+    )
+    expect(sides.size).toBe(1)
   })
 })
