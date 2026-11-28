@@ -86,18 +86,18 @@
 
 ### T-S-7 · Stabilité des commandes de révélation
 
-- Statut : en revue · Priorité : P0
+- Statut : fusionnée · Priorité : P0
 - Responsable : Salif · Agent : Codex · Branche : `fix/commandes-revelation`. Travail signalé à Wael dans la PR #18.
 - Critères d'acceptation : une commande stable par bloc, indépendant du zoom et du rendu ; remasquage global synchronisé ; remplacement et lecture progressive sûrs.
 - Maturité : reproduite sur le build de `main` `da87ece`, corrigée et testée sur de vraies annales et un QCM synthétique dans Edge. Recette et limites dans `QUALITE.md` V-28-0359-S.
 
 ### T-S-6 · Transport et validation des observations vectorielles
 
-- Statut : en revue · Priorité : P0
-- Responsable : Salif · Agent : Codex · Branche : `feat/transport-vectoriel`
+- Statut : fusionnée · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branches : `feat/transport-vectoriel` (PR #21), `fix/validation-vectorielle` (PR #23), fusionnées dans la branche de Hazem
 - Dépend de : validation collective C1 v1.1, PR #19. Base de contrôle commune : `87b6aef` (PR #17 intégrée à la branche de Hazem).
 - Critères d'acceptation : lecture vectorielle à la demande et par document, dégradation vers le raster, essais Node et Edge sur les mêmes PDF et absence de changement de verdict au transport seul.
-- Maturité : transport raccordé au lecteur, à App et aux recettes de benchmark. La validation du moteur hybride suivra le premier commit qui appelle ce fournisseur.
+- Maturité : transport raccordé au lecteur, à App et aux recettes de benchmark. Le premier moteur hybride est mesuré dans Edge et Node. Les résultats et limites sont dans V-28-0422-S et V-28-0430-S.
 
 ### T01 · Socle technique commun
 
