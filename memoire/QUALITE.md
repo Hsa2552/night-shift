@@ -459,6 +459,20 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Corpus réservé v1 toujours figé. Sur `23f906d`, 4/5 traités automatiquement, 3/4 échouent strictement et 1/4 présente une correction incomplètement masquée au seuil de 95 %. Une lecture progressive et aucune erreur technique. Seules les mesures agrégées sont partagées. Le dev historique donne 8/10 réussites (3 strictes) avec 2 072/2 072 corrections brutes couvertes.
 - Pages sert `65ac20d09ba0abdb149284943ddb372309c56b2e`, confirmé par le workflow et le marqueur HTML public. Le lecteur démarre et analyse Lyon 2 après coupure de réseau et rechargement dans Edge en émulation tactile. Téléphones physiques et installation système restent à vérifier. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46101896870)
 
+### V-28-0430-S · Premier moteur hybride dans le lecteur et distribution du visualiseur
+
+- Build propre `bd12a06`, intégrant les cases natives de `090e86e` et le correctif distinct `6a78b02`, observé dans Edge 158.0.4370.45 et Node 24.18.0. Les rapports v2 enregistrent le SHA, l’empreinte de chaque PDF et annotation et les modes réellement présentés. Dans Edge, les observations sont demandées sur 132 pages du dev, 42 du diagnostic public et 39 du réservé. La comparaison avec `23f906d`, document par document sur ces trois partitions, ne révèle aucun changement de verdict ou de couverture avec les cases natives. Le gain a été observé dans le test synthétique des cases pâles.
+- Dev historique dans Edge : 8/10 réussites, dont 3 strictes, et 1 abstention. Les trois sujets seuls de l’extension sont classés sans masque sur 292 unités d’énoncé. Cette amélioration vient du correctif des consignes de notation. Les extraits publics conservent 29/48 corrections entièrement couvertes à 95 %, sans réussite stricte sur quatre documents. Le réservé conserve 1 réussite stricte sur cinq et 3 échecs stricts sur les quatre parcours automatiques. Le passage au vecteur a été vérifié hors ligne.
+- Test historique agrégé sur le build intégré `3709b44`, avec douze PDF publics dont les empreintes sont vérifiées. Aucun écart entre l’oracle et le parcours affiché dans Edge. Le tableau relève les corrections visibles au seuil de couverture de 95 % dans les parcours automatiques. Le recueil de Nantes avait dépassé le délai de 30 s du script. Avec un délai de 120 s pour l’analyse, la mesure dans Edge a pris 56,6 s, ouverture comprise.
+- Reproduction depuis ce SHA. Construire avec `BASE_PATH=/night-shift/` et `npm run build -- --manifest`. Télécharger ou vérifier le corpus avec `node scripts/benchmark.mjs test --cache <cache externe> --out <sortie externe>`. Lancer `node scripts/benchmark-browser.mjs . test <cache externe> <rapport externe.json>` avec `UNSPOIL_BENCH_INK=1` pour mesurer aussi l’encre apparente. Le rapport indique l’empreinte du manifeste, le SHA complet du build et les empreintes document par document.
+
+| Environnement | Mesurables | Traités automatiquement | Réussites à 95 % / strictes | Abstentions | Automatiques avec correction visible |
+|---|---:|---:|---:|---:|---:|
+| Edge | 12/12 | 8/12 | 0 / 0 | 4 | 6/8 |
+| Node | 12/12 | 8/12 | 0 / 0 | 4 | 6/8 |
+
+- La PR #22 est déployée sur Pages. Le marqueur public du build corrigé correspond à `5ad305c4b73de1ec83b85f55443cac02d86ebea5`. Les commandes de révélation et le remasquage global restent stables dans Edge sous redimensionnement, zoom, défilement, remplacement et reprise hors ligne sur Liège, Toulouse et le QCM synthétique. Sur l’intégration `3709b44`, les mêmes essais et le chargement à froid des vecteurs hors ligne passent. `npm run check` compte 230 tests réussis, deux ignorés. Téléphones physiques et installation système restent à vérifier. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46102892739)
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
