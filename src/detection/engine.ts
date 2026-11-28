@@ -56,6 +56,8 @@ export const WARNINGS = {
     "Aucun marqueur de corrigé, mais l'analyse visuelle de la page a échoué : détection incertaine.",
   suspicious:
     'Aucun marqueur de corrigé, mais certaines lignes pourraient être des réponses : détection incertaine.',
+  ambiguousColor: (pages: number[]) =>
+    `Encre colorée inexpliquée (page${pages.length > 1 ? 's' : ''} ${pages.join(', ')}) : des corrigés peuvent rester visibles, document couvert par prudence.`,
 } as const
 
 // --- Contexte de numérotation -------------------------------------------------
@@ -413,7 +415,14 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     for (const layout of layouts) {
       if (layout.lines.length > 0 && !(await rasterOf(layout.pageIndex))) visualCheckFailed = true
     }
-    const colorBlocks = colorDrafts(flow, parsed, inks, modeAt, labelAt)
+  }
+  // Conventions locales : l'inférence par couleur porte sur les unités (section × page) que
+  // les autres détecteurs n'expliquent pas, et non sur tout le document. Un document hybride
+  // (QCM à cases + exercices rédigés en couleur) n'est pas réglé par la seule présence des
+  // cases. Sans aucun bloc, toutes les lignes d'énoncé sont éligibles, comme auparavant.
+  const eligible = drafts.length === 0 ? null : unexplainedLines(flow, parsed, drafts, labelAt)
+  if (inks && !byQuestionInk && (eligible === null || eligible.size > 0)) {
+    const colorBlocks = colorDrafts(flow, parsed, inks, modeAt, labelAt, eligible)
     if (colorBlocks.length > 0) {
       byColor = true
       drafts.push(...colorBlocks)
@@ -553,6 +562,13 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       protectedLines,
       ownRegions: blocks.flatMap((b) => b.regions),
       questionHue,
+      firstQuestion: (() => {
+        const i = flow.findIndex((_, k) => {
+          const q = parsed[k]!.q
+          return q !== null && q.kind !== 'part' && q.kind !== 'exercise'
+        })
+        return i < 0 ? null : { pageIndex: flow[i]!.pageIndex, y: flow[i]!.bbox.y }
+      })(),
       labelAt: (pageIndex, y) => {
         let found: string | undefined
         flow.forEach((l, i) => {
@@ -568,10 +584,14 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       warnings.push(WARNINGS.externalColor)
       if (kind === 'statement_only' || kind === 'unknown') kind = 'mixed'
     }
-    if (outcome.externalFallback && kind === 'statement_only') {
+    // Contrôle final : un signal colorimétrique que ni les masques du moteur, ni les questions,
+    // ni la teinte des questions n'expliquent rend le document ambigu, quel que soit son type :
+    // « mixte » ne prouve pas que toutes les corrections ont été trouvées (document hybride).
+    if (outcome.externalFallback && kind !== 'unknown') {
+      const pages = [...new Set(outcome.audit.unexplained.map((r) => r.pageIndex + 1))]
       kind = 'unknown'
       needsFallback = true
-      warnings.push(WARNINGS.suspicious)
+      warnings.push(pages.length > 0 ? WARNINGS.ambiguousColor(pages) : WARNINGS.suspicious)
     }
   }
 
@@ -1177,6 +1197,7 @@ function colorDrafts(
   inks: Ink[],
   modeAt: string[],
   labelAt: (string | undefined)[],
+  eligible: Set<number> | null = null,
 ): Draft[] {
   const sizes = flow.map((l) => l.fontSize).sort((a, b) => a - b)
   const bodySize = sizes[Math.floor(sizes.length / 2)]!
@@ -1186,6 +1207,7 @@ function colorDrafts(
   const clusters: { hue: number; lines: number[] }[] = []
   inks.forEach((ink, i) => {
     if (ink.kind !== 'color' || modeAt[i] !== 'statement' || isHeading(i)) return
+    if (eligible && !eligible.has(i)) return
     const cluster = clusters.find((c) => hueDistance(c.hue, ink.hue) <= 20)
     if (cluster) cluster.lines.push(i)
     else clusters.push({ hue: ink.hue, lines: [i] })
@@ -1227,6 +1249,53 @@ function colorDrafts(
     i = j + 1
   }
   return drafts
+}
+
+/**
+ * Lignes des unités (suite de lignes entre deux titres de section, sur une même page) qu'aucun
+ * bloc n'explique : aucune ligne de l'unité n'est masquée, aucune case de QCM n'est sur la
+ * page, et au moins une question de l'unité n'a de correction nulle part (son libellé n'est
+ * celui d'aucun bloc ; une question corrigée en fin de document est donc expliquée).
+ */
+function unexplainedLines(
+  flow: Line[],
+  parsed: Parsed[],
+  drafts: Draft[],
+  labelAt: (string | undefined)[],
+): Set<number> {
+  const sectionOf: number[] = []
+  let section = 0
+  flow.forEach((_, i) => {
+    const q = parsed[i]!.q
+    if (q && (q.kind === 'part' || q.kind === 'exercise')) section++
+    sectionOf.push(section)
+  })
+  const unit = (i: number) => `${sectionOf[i]}:${flow[i]!.pageIndex}`
+  const explained = new Set<string>()
+  const boxPages = new Set<number>()
+  const answered = new Set<string>()
+  for (const d of drafts) {
+    // Une case de QCM répond à la question de sa page (déjà exclue) : seul un bloc de texte
+    // corrige une question ailleurs (corrigé en fin de document).
+    if (d.custom) for (const r of d.custom) boxPages.add(r.pageIndex)
+    else {
+      if (d.label) answered.add(d.label)
+      for (let i = d.start; i <= d.end; i++) explained.add(unit(i))
+    }
+  }
+  const open = new Set<string>()
+  flow.forEach((line, i) => {
+    const q = parsed[i]!.q
+    if (!q || q.kind === 'part' || q.kind === 'exercise') return
+    if (explained.has(unit(i)) || boxPages.has(line.pageIndex)) return
+    const label = labelAt[i]
+    if (!label || !answered.has(label)) open.add(unit(i))
+  })
+  const lines = new Set<number>()
+  flow.forEach((_, i) => {
+    if (open.has(unit(i))) lines.add(i)
+  })
+  return lines
 }
 
 // --- Prudence avant d'annoncer « aucun corrigé » -------------------------------------

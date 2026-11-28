@@ -98,3 +98,56 @@ describe('fusion avec le détecteur colorimétrique externe', () => {
     expect(result.needsFallback).toBe(true)
   })
 })
+
+describe('contrôle final de cohérence (document déjà « mixte »)', () => {
+  // Exercice 1 corrigé par marqueur ; exercice 2 : une réponse en couleur que le moteur ne
+  // localise pas (une seule ligne), signalée ambiguë par le détecteur externe.
+  const lines = [
+    'Exercice 1',
+    '1. Calculer la dérivée de f.',
+    'Correction : f′(x) vaut deux fois x.',
+    'Exercice 2',
+    '1. Donner la limite de g en zéro.',
+    'La limite de g en zéro vaut un.',
+  ]
+  const ambiguous = (n: number) => ({
+    region: { pageIndex: 0, bbox: lineRect(n) },
+    hue: 0,
+    evidence: 'ambiguous' as const,
+  })
+
+  it('encre ambiguë inexpliquée : document couvert, même s’il est mixte', async () => {
+    fakeAnalyzer({ candidates: [ambiguous(5)], blocks: [], needsFallback: true })
+    const result = await run(fakePage(0, lines))
+    expect(result.kind).toBe('unknown')
+    expect(result.needsFallback).toBe(true)
+    expect(result.warnings.some((w) => w.startsWith('Encre colorée inexpliquée'))).toBe(true)
+  })
+
+  it('encre ambiguë déjà couverte par un masque du moteur : indices convergents, pas de repli', async () => {
+    fakeAnalyzer({ candidates: [ambiguous(2)], blocks: [], needsFallback: true })
+    const result = await run(fakePage(0, lines))
+    expect(result.kind).toBe('mixed')
+    expect(result.needsFallback).toBe(false)
+  })
+
+  it('logo répété au même endroit sur deux pages, ou placé avant les questions : pas de repli', async () => {
+    const logo = (pageIndex: number) => ({
+      region: { pageIndex, bbox: { x: 480, y: 40, width: 60, height: 20 } },
+      hue: 200,
+      evidence: 'ambiguous' as const,
+    })
+    registerColorAnalyzer((page) => ({
+      candidates: [logo(page.pageIndex)],
+      blocks: [],
+      needsFallback: true,
+    }))
+    const pages = [fakePage(0, lines), fakePage(1, ['2. Montrer que g est continue.'])]
+    const result = await detectCorrections({
+      pages,
+      getRaster: async (i) => fakeRaster(pages[i]!),
+    })
+    expect(result.kind).toBe('mixed')
+    expect(result.needsFallback).toBe(false)
+  })
+})
