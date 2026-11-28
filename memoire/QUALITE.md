@@ -361,6 +361,13 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Corpus réservé v1, gelé le 28/11 à 03:08 Paris avant exécution du détecteur, engagement SHA-256 `544258e372f586fd29e291bd48e8e52946c879bb82af63f6f3a79e2e41f63730` sur le manifeste qui inclut les empreintes des PDF et des annotations. Cinq documents, onze pages échantillonnées et 100 unités visuelles annotées sans prédiction. Familles représentées : sujet seul, alternance, corrigé en fin de partie, QCM vectoriel, document hybride, figures et scan manuscrit. Le panel ne comprend pas de QCM non vectoriel vérifié.
 - Edge sur le build candidat propre `5cafcbe`, avec métriques v2. Les 5 documents sont mesurables. Un parcours est une réussite stricte, un est en lecture progressive, trois présentent une autre issue infructueuse. Aucune erreur technique et aucun écart entre oracle et mode/masques observés. Ces chiffres décrivent un échantillon de pages. Les PDF, annotations, choix de pages et résultats individuels restent hors du dépôt.
 
+### V-28-0322-S · Vérification croisée du build de la PR #17
+
+- Les rapports Node et Edge sur le checkout propre `9615001`, moteur de Hazem `65d8543`, ont le même format, les mêmes onze documents et les mêmes empreintes d'annotation. L'ENS sans unité évaluable explique la seule exclusion. Aucune erreur technique ni différence entre oracle et parcours réellement observé dans Edge. La recette d'ouverture et d'analyse après rechargement hors ligne passe sur `fb47938`, qui contient le même code produit.
+- Edge produit 5 réussites sur 10, dont 2 strictes, et 1 abstention. Au seuil historique, 1 984/2 072 unités de correction sont couvertes et 298/1 304 unités d'énoncé touchées. Le témoin Edge `8cebd09` comptait 372 unités d'énoncé touchées et les mêmes totaux de réussites et de corrections couvertes. Toulouse affiche encore des masques sur 3/104 unités d'énoncé dans le vrai parcours.
+- Node avec le chargeur v2 produit 6 réussites sur 10, dont 2 strictes, et 1 abstention. Il couvre 2 059/2 072 unités de correction et touche 317/1 304 unités d'énoncé. Le profil de rendu diffère du benchmark Node historique, donc l'écart de score Node entre les deux références mélange les changements de moteur et de chargeur.
+- La recette refuse une empreinte d'annotation discordante avant d'évaluer le PDF. À 03:22, la PR #15 était toujours ouverte, le dépôt public et Pages désactivé. Aucune mesure d'un SHA publié ni validation sur téléphone physique.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>
