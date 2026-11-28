@@ -40,7 +40,16 @@ L'ouverture peut échouer, notamment pour un fichier invalide ou protégé par m
 - Pour placer les masques en CSS, le visualiseur utilise les rapports `x / page.width`, `y / page.height`, `width / page.width` et `height / page.height`. Pour lire le raster, le détecteur applique le rapport de taille raster/page sur chaque axe.
 
 - **Responsable** : Salif, avec Hazem et Wael pour les usages intermodules.
-- **Version** : v1, 27/11/2026.
+- **Versions** : v1, 27/11/2026 ; v1.1, 28/11/2026.
+
+#### Observations vectorielles facultatives · C1 v1.1
+
+- Validation collective de D-28-0315-HZ et D-28-0319-WB confirmée par Salif le 28/11/2026.
+- `PdfDocument` et `DetectionInput` peuvent fournir `getVectors?(pageIndex: number): Promise<VectorPageObservation | undefined>`. L'argument est un indice de page à partir de zéro. La fonction est liée au document ouvert et s'exécute uniquement à la demande.
+- `VectorPageObservation` est le type existant de `src/detection/visual/vector/index.ts`, réexporté par les types communs. Ses régions utilisent le repère canonique C1, rotation appliquée. Les commandes de peinture du texte, couleurs, opacités et états `paint-command`, `clipped`, `invisible` et `unresolved` conservent leur sens d'origine. Si le moteur dérive des cases avec `nativeSquares`, il préserve l'état `ambiguous` et l'indication de contrôle de visibilité.
+- Les observations n'attribuent aucun rôle d'énoncé ou de corrigé. Une page observée sans objet pertinent renvoie une observation vide. L'absence de fonction ou un résultat `undefined` signifie que le moteur doit poursuivre avec les entrées disponibles, dont le raster si fourni.
+- L'extraction indisponible, l'échec de ce canal facultatif ou la fermeture du document donnent `undefined`. Un indice invalide est rejeté par `RangeError`. Après remplacement, le moteur précédent ne peut recevoir que des observations de son ancien document ou un résultat indisponible. Toute opération en cours cesse d'alimenter le parcours de lecture après fermeture ou remplacement.
+- Le lecteur ne conserve pas les observations de tout le document. Les implémentations peuvent mutualiser les demandes simultanées d'une page et libèrent leurs références de travail à la fermeture.
 
 ## Modèle
 

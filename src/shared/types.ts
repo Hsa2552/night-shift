@@ -1,3 +1,7 @@
+import type { VectorPageObservation } from '../detection/visual/vector/index.ts'
+
+export type { VectorPageObservation }
+
 /** Rectangle in the page viewport at scale 1, with origin at the top left. */
 export interface Rect {
   x: number
@@ -34,6 +38,7 @@ export interface RasterData {
 export interface DetectionInput {
   pages: PageData[]
   getRaster?: (pageIndex: number) => Promise<RasterData>
+  getVectors?: (pageIndex: number) => Promise<VectorPageObservation | undefined>
 }
 
 export interface PageRegion {
