@@ -5,7 +5,7 @@ import unittest
 
 import pymupdf as pdf
 
-from probe import observe
+from probe import observe, symbol_cases
 from score import score
 
 
@@ -44,6 +44,14 @@ class VectorObservationTests(unittest.TestCase):
         self.assertEqual(result["matches"], 1)
         self.assertEqual(result["unmatched"], 1)
         self.assertEqual(result["missing"], {"empty": 1})
+
+    def test_overlaid_tick_marks_only_one_glyph_box(self):
+        boxes = [
+            (pdf.Rect(1, 2, 9, 13), {"bbox": [1, 2, 8, 11], "symbol": "empty-square", "visibility": "painted"}),
+            (pdf.Rect(20, 2, 28, 13), {"bbox": [20, 2, 8, 11], "symbol": "empty-square", "visibility": "painted"}),
+            (pdf.Rect(21, 1, 30, 12), {"bbox": [21, 1, 9, 11], "symbol": "tick", "visibility": "painted"}),
+        ]
+        self.assertEqual([case["state"] for case in symbol_cases(boxes)], ["empty", "marked"])
 
 
 if __name__ == "__main__":

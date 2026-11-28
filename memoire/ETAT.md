@@ -103,11 +103,11 @@
 
 ### T-WB-5 · Perception vectorielle des PDF
 
-- Statut : en cours · Priorité : P0
+- Statut : en revue · Priorité : P0
 - Responsable : Wael · Agent : Codex · Branche : `feat/perception-vectorielle`
 - Dépend de : repère C1, lecteur et comparaison brute avec `findBoxes`. Hazem garde la fusion des observations.
-- Maturité : laboratoire Python testé sur PDF réels et contrôles synthétiques. Transposition PDF.js à vérifier.
-- Notes : `research/pdf-vector/`. La PR #15 conditionne séparément la synchronisation de la recette de phase 3.
+- Maturité : laboratoire Python et prototype PDF.js testés en isolation sur PDF réels et contrôles synthétiques. Approche hybride proposée. Raccordement au moteur et évaluation indépendante à réaliser après revue.
+- Notes : PR #16, `research/pdf-vector/` et V-28-0319-WB. La PR #15 conditionne séparément la synchronisation de la recette de phase 3.
 
 ## Terminées ou abandonnées
 

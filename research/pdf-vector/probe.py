@@ -175,13 +175,15 @@ def styles_and_spans(page, coordinates):
             paint in {"fill-path", "fill-image", "fill-shade"} and pdf.Rect(box).contains(span["bbox"])
             for paint, box, _ in log[seq + 1:]
         )
+        origin = pdf.Point(0, 0) * page.rotation_matrix
+        direction = pdf.Point(span["dir"]) * page.rotation_matrix - origin
         info = {
             "bbox": bounds(rect),
             "font": span["font"],
             "size": round(span["size"], 3),
             "flags": span["flags"],
             "bidi": span["bidi_lvl"],
-            "direction": list(span["dir"]),
+            "direction": list(direction),
             "ink": rgba_color(span["color"], span["opacity"]),
             "seq": seq,
             "render": kind,
@@ -222,6 +224,41 @@ def styles_and_spans(page, coordinates):
     return log, spans, grouped, symbols
 
 
+def symbol_cases(symbols):
+    """Join composited square and checkmark glyphs without assigning a question."""
+    boxes = [
+        (rect, glyph) for rect, glyph in symbols if glyph["symbol"].endswith("square")
+    ]
+    ticks = [
+        (rect, glyph) for rect, glyph in symbols
+        if glyph["symbol"] == "tick" and glyph["visibility"] == "painted"
+    ]
+    pairs = []
+    for i, (box, glyph) in enumerate(boxes):
+        if glyph["symbol"] != "empty-square" or glyph["visibility"] != "painted":
+            continue
+        for j, (tick, _) in enumerate(ticks):
+            whole = min(box.get_area(), tick.get_area())
+            if whole > 0:
+                overlap = (box & tick).get_area() / whole
+                if overlap >= 0.45:
+                    pairs.append((overlap, i, j))
+    paired, used_ticks = {}, set()
+    for _, i, j in sorted(pairs, reverse=True):
+        if i not in paired and j not in used_ticks:
+            paired[i] = ticks[j][1]["bbox"]
+            used_ticks.add(j)
+    return [
+        {
+            "bbox": glyph["bbox"],
+            "state": "marked" if i in paired else glyph["symbol"].replace("-square", ""),
+            "overlaid_tick": paired.get(i),
+            "visibility": glyph["visibility"],
+        }
+        for i, (_, glyph) in enumerate(boxes)
+    ]
+
+
 def inspect_page(page, coordinates):
     started = perf_counter()
     drawings = page.get_drawings()
@@ -249,7 +286,8 @@ def inspect_page(page, coordinates):
         "pageIndex": page.number, "width": page.rect.width, "height": page.rect.height,
         "rotation": page.rotation, "rotation_matrix": list(page.rotation_matrix),
         "paint_counts": dict(paint_counts), "rawdict_glyphs": raw_glyphs,
-        "text_spans": spans, "styles": styles, "cases": cases, "symbols": [record for _, record in symbols],
+        "text_spans": spans, "styles": styles, "cases": cases,
+        "symbols": [record for _, record in symbols], "symbol_cases": symbol_cases(symbols),
         "drawings": [{
             "bbox": bounds(canonical(page, d["rect"])),
             "seq": d["seqno"], "kind": d["type"], "primitives": dict(Counter(p[0] for p in d["items"])),
@@ -257,7 +295,8 @@ def inspect_page(page, coordinates):
             "stroke": rgba_color(d.get("color"), d.get("stroke_opacity")),
             "stroke_width": d.get("width"), "layer": d.get("layer"),
         } for d in drawings],
-        "annotations": [{"type": a.type[1], "bbox": bounds(canonical(page, a.rect)), "flags": a.flags, "opacity": a.opacity} for a in (page.annots() or ())],
+        "annotations": [{"type": a.type[1], "bbox": bounds(canonical(page, a.rect)), "flags": a.flags,
+                         "opacity": a.opacity, "colors": a.colors} for a in (page.annots() or ())],
         "widgets": [{"type": w.field_type_string, "bbox": bounds(canonical(page, w.rect))} for w in (page.widgets() or ())],
         "ms": round((perf_counter() - started) * 1_000, 2),
     }

@@ -39,6 +39,13 @@
 - **Décision** : réaliser une PWA de masquage des corrections dans le PDF original, avec détection déterministe et révélation progressive en secours. Les PDF restent sur l'appareil.
 - **Responsables** : Salif pour le lecteur PDF et la PWA, Hazem pour la détection, Wael pour le lecteur côté interface et les interactions.
 
+### D-28-0319-WB · Perception hybride des documents · `[PROPOSÉ]`
+
+- Proposée par Wael (Codex) au premier jalon vectoriel. Voir V-28-0319-WB et PR #16.
+- Exploiter les opérations natives comme observations locales dans le repère C1. Le raster confirme la visibilité, complète les contours et traite les pages numérisées. Le moteur attribue les rôles et regroupe les observations par question et par session.
+- Justification. Les 81 cases vides manquées par `findBoxes` brut dans le diagnostic sont présentes dans les deux relevés natifs. Les cas à glyphes, fond coloré ou scan nécessitent d’autres signaux.
+- Raccordement soumis à revue avec Hazem et Salif. Le prototype n’édite aucune interface commune.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...
