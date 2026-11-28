@@ -36,6 +36,7 @@ export async function openBuild(checkout) {
       url: `http://127.0.0.1:${source.httpServer.address().port}${webManifest.scope}`,
       reader: manifest['src/pdf/index.ts'].file,
       detection: manifest['src/detection/index.ts'].file,
+      worker: manifest['src/pdf/index.ts'].assets?.find((file) => file.includes('pdf.worker')),
       close: async () => {
         await browser.close()
         await source.close()
@@ -101,6 +102,78 @@ export async function browserRaster(page, index) {
     }
   }, index)
   return { width, height, rgba: new Uint8ClampedArray(Buffer.from(base64, 'base64')) }
+}
+
+async function browserControls(page, release, checkout, bytes, productionRasters) {
+  assert.ok(release.worker, 'Worker PDF.js absent du manifeste de production')
+  const moduleUrl = new URL('__parity_control.mjs', release.url).href
+  const runtime = await readFile(resolve(checkout, 'node_modules/pdfjs-dist/legacy/build/pdf.mjs'))
+  await page.route(moduleUrl, (route) =>
+    route.fulfill({ contentType: 'text/javascript', body: runtime }),
+  )
+  await page.evaluate(async (url) => {
+    window.parityControl = await import(url)
+  }, moduleUrl)
+  const variants = [
+    ['edge-fontface', {}],
+    ['edge-system-fonts-off', { useSystemFonts: false }],
+    ['edge-outline-fonts', { disableFontFace: true, useSystemFonts: false }],
+  ]
+  const data = bytes.toString('base64')
+  const out = new Map()
+  for (const [name, options] of variants) {
+    await page.evaluate(
+      async ({ data, worker, options }) => {
+        const { getDocument, GlobalWorkerOptions } = window.parityControl
+        GlobalWorkerOptions.workerSrc = new URL(worker, location.href).href
+        const url = (directory) => new URL(`pdfjs/${directory}/`, location.href).href
+        const task = getDocument({
+          data: Uint8Array.fromBase64(data),
+          cMapUrl: url('cmaps'),
+          cMapPacked: true,
+          standardFontDataUrl: url('standard_fonts'),
+          wasmUrl: url('wasm'),
+          iccUrl: url('iccs'),
+          ...options,
+        })
+        window.parityControlTask = task
+        window.parityControlDocument = await task.promise
+      },
+      { data, worker: release.worker, options },
+    )
+    const rasters = new Map()
+    try {
+      for (const [index, { width, height }] of productionRasters) {
+        const base64 = await page.evaluate(
+          async ({ index, width, height }) => {
+            const pdfPage = await window.parityControlDocument.getPage(index + 1)
+            const viewport = pdfPage.getViewport({ scale: 1 })
+            const canvas = document.createElement('canvas')
+            const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true })
+            canvas.width = width
+            canvas.height = height
+            const transform = [width / viewport.width, 0, 0, height / viewport.height, 0, 0]
+            await pdfPage.render({ canvas, viewport, transform, background: '#fff' }).promise
+            const { data } = context.getImageData(0, 0, width, height)
+            const base64 = new Uint8Array(data.buffer, data.byteOffset, data.byteLength).toBase64()
+            canvas.width = 0
+            canvas.height = 0
+            return base64
+          },
+          { index, width, height },
+        )
+        rasters.set(index, {
+          width,
+          height,
+          rgba: new Uint8ClampedArray(Buffer.from(base64, 'base64')),
+        })
+      }
+    } finally {
+      await page.evaluate(() => window.parityControlTask.destroy())
+    }
+    out.set(name, rasters)
+  }
+  return out
 }
 
 async function nodeProbe(checkout) {
@@ -353,6 +426,23 @@ async function diagnose() {
           } finally {
             await task.destroy()
           }
+        }
+        const browserVariants = await browserControls(page, release, checkout, bytes, edgeRasters)
+        for (const [name, rasters] of browserVariants) {
+          const requests = []
+          const result = await detectCorrections({
+            pages: edge.pages,
+            getRaster: async (index) => {
+              requests.push(index)
+              return rasters.get(index)
+            },
+          })
+          outcomes.push({
+            ...reportResult('edge', name, result, edge.pages, requests),
+            byPageVersusProduction: indexes.map((index) =>
+              compareRaster(rasters.get(index), edgeRasters.get(index)),
+            ),
+          })
         }
       }
       await page.evaluate(() => window.parityPdf.close())

@@ -65,3 +65,4 @@
 
 - PR #17 ouverte et premier contrôle GitHub réussi. Extension séparée de trois sujets seuls et rapport Node/Edge. Le profil Node a désormais les ressources PDF.js et la géométrie du lecteur.
 - Vérité réservée gelée avant toute prédiction, avec empreintes locales et engagement dans `QUALITE.md`. Les seules mesures publiées sont agrégées. Le test des indices de forme dans les groupes QCM est distinct de la couverture historique.
+- Contrôle Savoie dans Edge : les cinq rasters témoin sont identiques à ceux de production, même sans polices système. Basculer `disableFontFace` reproduit exactement la sortie Node du détecteur. Mesure par le navigateur de production conservée pour les résultats produit.

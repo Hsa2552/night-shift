@@ -91,7 +91,9 @@ Le protocole de parité compare le texte et la géométrie des lignes après nor
 identifiants de police par document. Les quatre croisements texte/raster alimentent une seule
 instance du moteur construit depuis le checkout, et le résultat est comparé au vrai bundle Edge.
 Le diagnostic Savoie est une exposition du test historique réservée à la reproductibilité.
-`UNSPOIL_PARITY_CONTROLS=1` ajoute les contrôles de transformée, ressources et polices sous Node.
+`UNSPOIL_PARITY_CONTROLS=1` ajoute les contrôles de transformée et des ressources sous Node,
+puis répète le rendu dans Edge avec et sans les polices système et le chargement `FontFace`.
+Le module de contrôle est servi uniquement par interception locale, avec le worker du build.
 
 Pour une partition réservée, définir `UNSPOIL_BENCH_MANIFEST` vers un manifeste local exporté
 avant évaluation, ajouter la sixième colonne `truth_sha256` et placer les annotations dans le
