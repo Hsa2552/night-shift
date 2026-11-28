@@ -306,3 +306,38 @@ describe('document hybride : exercices rédigés corrigés en couleur + QCM à c
     },
   )
 })
+
+describe('cohérence géométrique des groupes de cases', () => {
+  it('case absente du raster au milieu d’une colonne régulière : masquée quand même', async () => {
+    const p = new QcmPage(0)
+    p.text('Correction', 268)
+    p.text('Question 1 Quelle affirmation est exacte ?')
+    p.options(OPTS(1).map((o) => ({ ...o, correct: o.letter === 'A' })))
+    p.text('Question 2 Que peut-on conclure ?')
+    p.options(OPTS(2))
+    // Aucune lettre extractible dans les cases (pas de complétion par le texte).
+    p.items = p.items.filter((it) => it.text.length > 1)
+    const missing = p.shapes[2]! // proposition C de la question 1, case vide
+    const built = p.build()
+    // La case C n'est pas dessinée (contour trop pâle pour le moteur de rendu).
+    paint(
+      built.raster,
+      missing.x - 1,
+      missing.y - 1,
+      missing.x + missing.side + 1,
+      missing.y + missing.side + 1,
+      255,
+    )
+    const result = await run([built])
+    const cx = missing.x + missing.side / 2
+    const cy = missing.y + missing.side / 2
+    expect(regions(result).some((r) => r.pageIndex === 0 && inside(r.bbox, cx, cy))).toBe(true)
+    // Même carré que les autres cases du groupe.
+    const sides = new Set(
+      regions(result)
+        .filter((r) => r.bbox.width < 30)
+        .map((r) => r.bbox.width.toFixed(1)),
+    )
+    expect(sides.size).toBe(1)
+  })
+})

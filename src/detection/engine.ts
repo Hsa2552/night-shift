@@ -1179,6 +1179,43 @@ async function boxDrafts(
     })
     groups.set(instance, list)
   }
+  // Cohérence géométrique des groupes : dans une colonne (ou une rangée) régulière de cases
+  // d'une même question, un emplacement manquant entre deux cases reconnues est une case que
+  // le raster n'a pas vue (contour pâle, sans lettre extractible). Interpolation seulement,
+  // jamais au-delà des extrémités ; jamais sur une ligne de question.
+  for (const [instance, regions] of groups) {
+    if (instance < 0) continue
+    for (const gap of regularGaps(regions)) {
+      const onQuestion = flow.some(
+        (l, i) =>
+          parsed[i]!.q !== null &&
+          parsed[i]!.q!.kind !== 'letter' &&
+          l.pageIndex === gap.pageIndex &&
+          gap.cx >= l.bbox.x &&
+          gap.cx <= l.bbox.x + l.bbox.width &&
+          gap.cy >= l.bbox.y &&
+          gap.cy <= l.bbox.y + l.bbox.height,
+      )
+      if (onQuestion) continue
+      const raster = await rasterOf(gap.pageIndex)
+      const pageData = input.pages.find((pd) => pd.pageIndex === gap.pageIndex)
+      const located =
+        raster && pageData ? locateSquare(raster, pageData, gap.cx, gap.cy, gap.side - 3) : null
+      const at =
+        located && Math.hypot(located.cx - gap.cx, located.cy - gap.cy) < gap.side / 2
+          ? located
+          : gap
+      regions.push({
+        pageIndex: gap.pageIndex,
+        bbox: {
+          x: at.cx - gap.side / 2,
+          y: at.cy - gap.side / 2,
+          width: gap.side,
+          height: gap.side,
+        },
+      })
+    }
+  }
   const drafts: Draft[] = [...groups.entries()].map(([instance, regions]) => {
     const anchor = instance >= 0 ? instance : Math.max(0, lineOfBox[0]!)
     return { start: anchor, end: anchor, label: labelAt[anchor], grouped: false, custom: regions }
@@ -1249,6 +1286,64 @@ function colorDrafts(
     i = j + 1
   }
   return drafts
+}
+
+/**
+ * Emplacements manquants d'une suite régulière de masques carrés (même page, même colonne ou
+ * même rangée, à 2 points près) : entre deux masques consécutifs distants de m pas (m ≥ 2, à
+ * 15 % près), les m − 1 positions intermédiaires. Le pas est le plus petit écart de la suite.
+ */
+function regularGaps(
+  regions: PageRegion[],
+): { pageIndex: number; cx: number; cy: number; side: number }[] {
+  const squares = regions
+    .filter((r) => Math.abs(r.bbox.width - r.bbox.height) < 0.5)
+    .map((r) => ({
+      pageIndex: r.pageIndex,
+      cx: r.bbox.x + r.bbox.width / 2,
+      cy: r.bbox.y + r.bbox.height / 2,
+      side: r.bbox.width,
+    }))
+  const gaps: { pageIndex: number; cx: number; cy: number; side: number }[] = []
+  for (const axis of ['cy', 'cx'] as const) {
+    const across = axis === 'cy' ? 'cx' : 'cy'
+    const used = new Set<number>()
+    squares.forEach((s, k) => {
+      if (used.has(k)) return
+      const run = squares
+        .map((o, n) => ({ o, n }))
+        .filter(
+          ({ o }) =>
+            o.pageIndex === s.pageIndex &&
+            Math.abs(o[across] - s[across]) <= 2 &&
+            Math.abs(o.side - s.side) < 0.5,
+        )
+      for (const { n } of run) used.add(n)
+      if (run.length < 3) return
+      const pos = run.map(({ o }) => o[axis]).sort((a, b) => a - b)
+      const deltas = pos
+        .slice(1)
+        .map((p, i) => p - pos[i]!)
+        .filter((d) => d > s.side)
+      if (deltas.length === 0) return
+      const step = Math.min(...deltas)
+      for (let i = 1; i < pos.length; i++) {
+        const d = pos[i]! - pos[i - 1]!
+        const m = Math.round(d / step)
+        if (m < 2 || m > 4 || Math.abs(d - m * step) > 0.15 * step) continue
+        for (let j = 1; j < m; j++) {
+          const p = pos[i - 1]! + (j * d) / m
+          gaps.push({
+            pageIndex: s.pageIndex,
+            side: s.side,
+            cx: axis === 'cx' ? p : s.cx,
+            cy: axis === 'cy' ? p : s.cy,
+          })
+        }
+      }
+    })
+  }
+  return gaps
 }
 
 /**
