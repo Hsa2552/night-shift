@@ -216,6 +216,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   let lastQRelX: number | undefined
   let segmentBaseline: number | undefined
   let continuityEvents = 0
+  let lastHier: string | null = null
   let qCount = 0
 
   const relX = (i: number) => flow[i]!.bbox.x - flow[i]!.area.x0
@@ -266,11 +267,16 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   const endsCorrection = (m: QuestionMarker, i: number): boolean => {
     if (lastQRelX !== undefined && relX(i) > lastQRelX + tol(i)) return false
     if (m.kind === 'part' || m.kind === 'exercise' || m.kind === 'question') return true
+    // Étiquette hiérarchique : termine la correction seulement si elle succède à la dernière
+    // question hiérarchique de l'énoncé (A.1 → A.2, A.5 → B.1) ; une question recopiée
+    // dans une section de corrigés (« II.a » à nouveau) ne la termine pas.
+    if (m.style === 'hier') return lastHier !== null && isHierSuccessor(lastHier, m.value)
     const expected = nextValue(lastInSeq.get(seqKey(ctx, m)) ?? '')
     return expected === m.value
   }
 
   const statementQuestion = (i: number, m: QuestionMarker) => {
+    if (m.style === 'hier') lastHier = m.value
     const key = seqKey(ctx, m)
     const expected = nextValue(lastInSeq.get(key) ?? '')
     if (expected === m.value) continuityEvents++
@@ -1401,4 +1407,17 @@ function correctionHint(layouts: PageLayout[], flow: Line[], parsed: Parsed[]): 
 function defaultColorAnalyzer(pages: PageData[]): ExternalColorAnalyzer {
   const convention = readColorConvention(pages)
   return (page, raster) => analyzeColorPage(page, raster, convention)
+}
+
+/**
+ * Successeur hiérarchique : au premier composant différent, la valeur est la suivante
+ * (1 → 2, b → c, ii → iii, a → b) et les composants suivants repartent au début (1, a, i).
+ */
+function isHierSuccessor(previous: string, value: string): boolean {
+  const a = previous.split('.')
+  const b = value.split('.')
+  const k = b.findIndex((part, i) => part !== a[i])
+  if (k < 0) return false
+  if (a[k] === undefined || nextValue(a[k]!) !== b[k]) return false
+  return b.slice(k + 1).every((part) => part === '1' || part === 'a' || part === 'i')
 }

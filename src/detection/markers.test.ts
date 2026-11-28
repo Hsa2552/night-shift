@@ -133,3 +133,24 @@ describe('extraction dégradée', () => {
     expect(isCorrectionTitle('Exercices de géométrie')).toBe(false)
   })
 })
+
+describe('numérotations hiérarchiques', () => {
+  it.each([
+    ['A.1. Écrire l’énergie cinétique.', 'a.1'],
+    ['C.I.1. Quelles sont les dimensions ?', 'c.i.1'],
+    ['C.II.3 On cherche une solution.', 'c.ii.3'],
+    ['II.a (6+4) Que signifie ce fait ?', 'ii.a'],
+    ['1.b (6) Montrer l’égalité.', '1.b'],
+  ])('%s', (text, value) => {
+    const m = parseQuestion(text)
+    expect(m?.value).toBe(value)
+    expect(m?.style).toBe('hier')
+  })
+  it('« Exercice VII.2 » garde son sous-numéro', () => {
+    expect(parseQuestion('Exercice VII.2 Ch7-Exercice2')?.value).toBe('vii.2')
+  })
+  it('ne prend pas « i.e. » ni « A. Lyon » pour une numérotation hiérarchique', () => {
+    expect(parseQuestion('i.e. dans ce cas')).toBeNull()
+    expect(parseQuestion('A. Lyon')?.style).not.toBe('hier')
+  })
+})
