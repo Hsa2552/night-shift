@@ -328,6 +328,13 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - La transformée exacte du lecteur, l'ajout des ressources PDF.js et l'autorisation des polices système sous Node ne font pas basculer la sortie. La première divergence causale mesurée est donc la rasterisation. Le facteur de bas niveau entre backend canvas et rendu des polices reste à isoler. La mesure produit utilise le véritable navigateur.
 - Pages était désactivé et l'URL HTTPS standard répondait 404. Le workflow du dépôt est prêt. La vérification du SHA public et l'installation physique attendent l'activation et des appareils.
 
+### V-28-0310-S · Extension sujets seuls et corpus réservé gelé
+
+- La partition `dev-v2-sujets` ajoute Paris-Saclay, Strasbourg et Stanford, avec 292 unités d'énoncé. Les plages ont été relues sur les originaux. Les rectangles proviennent de l'extraction PDF.js sans sortie du détecteur. Sur le moteur `5cafcbe` dans Edge, 2/3 sont montrés comme sujets seuls, 1/3 passe en révélation progressive, aucune erreur et aucun énoncé touché au seuil historique. La recette Node sur le même moteur donne les mêmes modes.
+- Le chargeur Node `pdfjs-native-canvas/2` reçoit les répertoires de ressources de la distribution PDF.js, dont WASM. Un scan JBIG2 présentait un rendu vide sous le chargeur Node dépourvu de cette ressource. Le rendu de préparation lit bien les images après ajout du répertoire. Le chargeur Node applique désormais la transformée et la limite raster du lecteur. Les rapports identifient son nouveau profil. Le canvas Node reste distinct de celui du navigateur.
+- Corpus réservé v1, gelé le 28/11 à 03:08 Paris avant exécution du détecteur, engagement SHA-256 `544258e372f586fd29e291bd48e8e52946c879bb82af63f6f3a79e2e41f63730` sur le manifeste qui inclut les empreintes des PDF et des annotations. Cinq documents, onze pages échantillonnées et 100 unités visuelles annotées sans prédiction. Familles représentées : sujet seul, alternance, corrigé en fin de partie, QCM vectoriel, document hybride, figures et scan manuscrit. Le panel ne comprend pas de QCM non vectoriel vérifié.
+- Edge sur le build candidat propre `5cafcbe`, avec métriques v2. Les 5 documents sont mesurables. Un parcours est une réussite stricte, un est en lecture progressive, trois présentent une autre issue infructueuse. Aucune erreur technique et aucun écart entre oracle et mode/masques observés. Ces chiffres décrivent un échantillon de pages. Les PDF, annotations, choix de pages et résultats individuels restent hors du dépôt.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

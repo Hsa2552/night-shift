@@ -81,6 +81,7 @@ describe('scoreGeo', () => {
       mode: 'error',
       coverage: null,
       success: false,
+      strictSuccess: false,
     })
   })
 })

@@ -8,6 +8,9 @@ rôles (aucun texte des annales).
 - **dev** : documents utilisés pour analyser les échecs et régler les heuristiques.
 - **test** : documents d'autres établissements, annotés à l'aveugle (sans sortie du détecteur) puis
   figés avant toute amélioration. On n'en regarde que les totaux pendant le développement.
+- **dev-v2-sujets** : extension distincte à trois sujets seuls de Paris-Saclay, Strasbourg et Stanford.
+  Les rôles et plages ont été relus sur les sujets, puis les boîtes de texte extraites sans prédiction.
+  Le dénominateur de la partition `dev` historique garde ses 11 documents.
 
 Reproduire : télécharger chaque PDF dans `<dossier>/<partition>/<nom>.pdf` (vérifier l'empreinte),
 copier les `.roles.txt` à côté, installer localement `npm install --no-save @napi-rs/canvas`, puis
@@ -54,8 +57,11 @@ node scripts/benchmark.mjs ensai-dev --cache <dossier>   # documents locaux non 
 - **Mesure complémentaire stricte**. `strict` mesure la couverture par union des rectangles
   et les énoncés sans intersection. `category` peut distinguer texte, case vide, case remplie
   et figure. Les annotations historiques sans catégorie sont comptées dans `unspecified`.
-  Un groupe QCM annoté dont une case reste partiellement visible est à risque de fuite indirecte.
-  La géométrie ne mesure pas à elle seule ce qu'un étudiant peut déduire du style des masques.
+  Un groupe QCM annoté dont une case est incomplètement couverte, ou dont la géométrie permet de
+  séparer les états rempli et vide, est à risque de fuite indirecte. Les profils de masque par
+  case sont quantifiés à 2 points. `strictSuccess` exige une couverture complète, tous les énoncés
+  préservés, tous les blocs annotés indépendants et aucun risque ainsi mesuré. Les indices fins
+  du style et des traits pâles restent à contrôler visuellement.
 - **Encre**. Avec `UNSPOIL_BENCH_INK=1`, les pixels du raster canonique sur fond blanc sont
   échantillonnés au centre. Un pixel d'encre a au moins un canal RVB inférieur à 239. Le rapport
   compte les zones annotées avec encre visible ou masquée et les zones sans encre détectée.
@@ -84,3 +90,9 @@ identifiants de police par document. Les quatre croisements texte/raster aliment
 instance du moteur construit depuis le checkout, et le résultat est comparé au vrai bundle Edge.
 Le diagnostic Savoie est une exposition du test historique réservée à la reproductibilité.
 `UNSPOIL_PARITY_CONTROLS=1` ajoute les contrôles de transformée, ressources et polices sous Node.
+
+Pour une partition réservée, définir `UNSPOIL_BENCH_MANIFEST` vers un manifeste local exporté
+avant évaluation, ajouter la sixième colonne `truth_sha256` et placer les annotations dans le
+cache à côté des PDF. Le runner vérifie les deux empreintes avant mesure. Conserver les détails
+hors du dépôt et partager uniquement le résumé pendant le développement. Le corpus réservé v1
+contient des unités annotées sur un sous-ensemble de pages. Les résultats valent pour cet échantillon.

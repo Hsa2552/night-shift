@@ -80,7 +80,8 @@
 - Responsable : Salif · Agent : Codex · Branche : `fix/benchmark-parity`
 - Dépend de : benchmark et marqueur de build intégrés par la PR #14 à `feat/detection-generalisation`. C1 reste applicable.
 - Critères d'acceptation : mêmes décisions d'affichage dans le produit et le score, référence Node/Edge avec empreintes, exclusions documentées, corpus réservé avant évaluation et vérification HTTPS après activation humaine.
-- Maturité : oracle partagé, score strict et recette réelle testés. Savoie isolé au raster. Référence dev et limites détaillées dans `QUALITE.md` V-28-0301-S. Corpus réservé en constitution.
+- Maturité : oracle partagé, score strict et recette réelle testés. Savoie isolé au raster. Trois sujets seuls supplémentaires mesurés, et corpus réservé gelé puis mesuré dans Edge. Voir `QUALITE.md` V-28-0301-S et V-28-0310-S.
+- Notes : PR #17 vers la branche de Hazem qui contient le benchmark.
 - Blocage externe : PR #15 en attente de revue humaine et Pages à activer par le propriétaire. La recette physique dépend de l'URL et de l'accès à des appareils.
 
 ### T01 · Socle technique commun

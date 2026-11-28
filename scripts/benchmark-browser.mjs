@@ -28,7 +28,9 @@ for (const directory of [process.cwd(), resolve(checkout)]) {
 }
 
 const evaluation = resolve('src/detection/eval')
-const manifest = await readFile(resolve(evaluation, 'corpus.tsv'))
+const manifest = await readFile(
+  process.env.UNSPOIL_BENCH_MANIFEST ?? resolve(evaluation, 'corpus.tsv'),
+)
 const rows = manifest
   .toString('utf8')
   .trim()
@@ -37,6 +39,16 @@ const rows = manifest
   .map((line) => line.split('\t'))
   .filter(([partition]) => split === 'all' || split === partition)
 assert.ok(rows.length, 'Partition inconnue ou vide')
+assert.ok(
+  rows.every(
+    ([partition, name, , , pdfHash, truthHash]) =>
+      /^[a-z0-9-]+$/.test(partition) &&
+      /^[a-z0-9-]+$/.test(name) &&
+      /^[a-f0-9]{64}$/.test(pdfHash) &&
+      (truthHash === undefined || /^[a-f0-9]{64}$/.test(truthHash)),
+  ),
+  'Partition, nom de fichier ou SHA-256 invalide dans le manifeste',
+)
 const documents = []
 const release = await openBuild(resolve(checkout))
 const origin = new URL(release.url).origin
@@ -118,7 +130,7 @@ try {
   await gotoBuild(stamp, release)
   const userAgent = await stamp.evaluate(() => navigator.userAgent)
   await stamp.close()
-  for (const [partition, name, family, url, expectedHash] of rows) {
+  for (const [partition, name, family, url, expectedHash, expectedTruthHash] of rows) {
     const doc = { partition, name, family }
     const file = resolve(cache, partition, `${name}.pdf`)
     const bytes = await fetchLocal(file)
@@ -142,11 +154,15 @@ try {
       documents.push({ ...doc, status: 'sans vérité' })
       continue
     }
+    doc.truthSha256 = hash(annotation)
+    if (expectedTruthHash && doc.truthSha256 !== expectedTruthHash) {
+      documents.push({ ...doc, status: 'vérité différente' })
+      continue
+    }
     const page = await context.newPage()
     page.setDefaultTimeout(30000)
     try {
       const truth = JSON.parse(annotation)
-      doc.truthSha256 = hash(annotation)
       doc.truthVersion = truth.format
       doc.provenance = truth.provenance
       doc.annotationSource = provenanceKind(truth.provenance)
@@ -219,6 +235,7 @@ try {
       evaluated: evaluated.length,
       abstentions: evaluated.filter((doc) => doc.abstained).length,
       successes: evaluated.filter((doc) => doc.success).length,
+      strictSuccesses: evaluated.filter((doc) => doc.presentation.strictSuccess).length,
       presentationMismatches: documents.filter((doc) => doc.oracleMatches === false).length,
       errors: documents.filter((doc) => doc.status === 'erreur').length,
     },
@@ -226,7 +243,15 @@ try {
   }
   await writeFile(out, JSON.stringify(report, null, 2))
   console.log(JSON.stringify(report.summary))
-  if (report.summary.errors || report.summary.presentationMismatches) process.exitCode = 1
+  if (
+    report.summary.errors ||
+    report.summary.presentationMismatches ||
+    documents.some(
+      (doc) => doc.status === 'empreinte différente' || doc.status === 'vérité différente',
+    )
+  ) {
+    process.exitCode = 1
+  }
 } finally {
   await release.close()
 }

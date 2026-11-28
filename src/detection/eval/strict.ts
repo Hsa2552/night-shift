@@ -18,6 +18,7 @@ function fullCoverage(box: Element['bbox'], masks: Rect[]): boolean {
   const [x, y, width, height] = box
   if (!(width > 0 && height > 0)) return false
   const intersections = overlap(box, masks)
+  if (!intersections.length) return false
   const edges = [...new Set([x, x + width, ...intersections.flatMap((m) => [m.left, m.right])])]
   edges.sort((a, b) => a - b)
   const epsilon = 1e-7
@@ -51,10 +52,38 @@ function masksByPage(blocks: readonly CorrectionBlock[]) {
   return byPage
 }
 
+function distinguishesCaseState(group: Element[], masks: Map<number, Rect[]>): boolean {
+  const profiles = (category: Element['category']) =>
+    new Set(
+      group
+        .filter((unit) => unit.category === category)
+        .map((unit) => {
+          const [x, y, width, height] = unit.bbox
+          const own = (masks.get(unit.page) ?? []).filter(
+            (mask) =>
+              group.filter(
+                (other) => other.page === unit.page && overlap(other.bbox, [mask]).length,
+              ).length === 1 && overlap(unit.bbox, [mask]).length,
+          )
+          return own
+            .map((mask) =>
+              [mask.x - x, mask.y - y, mask.width - width, mask.height - height]
+                .map((value) => Math.round(value / 2))
+                .join(','),
+            )
+            .sort()
+            .join(';')
+        }),
+    )
+  const filled = profiles('filled-box')
+  const empty = profiles('empty-box')
+  return filled.size > 0 && empty.size > 0 && [...filled].every((profile) => !empty.has(profile))
+}
+
 export function scoreStrictGeometry(truth: GeoTruth, blocks: readonly CorrectionBlock[]) {
   const byPage = masksByPage(blocks)
   const corrections: Record<string, { total: number; full: number }> = {}
-  const questionGroups = new Set<string>()
+  const questionGroups = new Map<string, Element[]>()
   const groupsAtRisk = new Set<string>()
   let total = 0
   let preserved = 0
@@ -71,14 +100,26 @@ export function scoreStrictGeometry(truth: GeoTruth, blocks: readonly Correction
     score.total++
     if (full) score.full++
     if (unit.group && (category === 'empty-box' || category === 'filled-box')) {
-      questionGroups.add(unit.group)
+      const units = questionGroups.get(unit.group) ?? []
+      units.push(unit)
+      questionGroups.set(unit.group, units)
       if (!full) groupsAtRisk.add(unit.group)
     }
+  }
+  let groupsWithGeometryCue = 0
+  for (const [name, group] of questionGroups) {
+    if (groupsAtRisk.has(name) || !distinguishesCaseState(group, byPage)) continue
+    groupsWithGeometryCue++
+    groupsAtRisk.add(name)
   }
   return {
     corrections,
     statements: { total, preserved },
-    indirect: { qcmGroupsAnnotated: questionGroups.size, groupsAtRisk: groupsAtRisk.size },
+    indirect: {
+      qcmGroupsAnnotated: questionGroups.size,
+      groupsAtRisk: groupsAtRisk.size,
+      groupsWithGeometryCue,
+    },
   }
 }
 

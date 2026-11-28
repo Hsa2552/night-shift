@@ -18,7 +18,7 @@ import {
   type DocumentScore,
   type GeoTruth,
 } from './geo.ts'
-import { loadPdf } from './loader.ts'
+import { loadPdf, NODE_PDF_LOADER_VERSION } from './loader.ts'
 import { scoreVisibleInk } from './strict.ts'
 
 const split = process.env.UNSPOIL_BENCH_SPLIT
@@ -84,6 +84,7 @@ function aggregate(docs: DocReport[]) {
     overmaskRate: stmts === 0 ? 0 : masked / stmts,
     abstentions: done.filter((d) => d.abstained).length,
     successes: done.filter((d) => d.success).length,
+    strictSuccesses: done.filter((d) => d.presentation?.strictSuccess).length,
     presentation: {
       automatic: docs.filter((d) => d.presentation?.mode === 'automatic').length,
       statementOnly: docs.filter((d) => d.presentation?.mode === 'statement_only').length,
@@ -99,9 +100,6 @@ function aggregate(docs: DocReport[]) {
 describe.skipIf(!split)('benchmark du détecteur', () => {
   it('évalue le corpus et écrit les rapports', { timeout: 3_600_000 }, async () => {
     const rows = readManifest().filter((r) => split === 'all' || r.partition === split)
-    const fontsDir = join(process.cwd(), 'node_modules/pdfjs-dist/standard_fonts/')
-      .split('\\')
-      .join('/')
     const docs: DocReport[] = []
     for (const row of rows) {
       const base: DocReport = {
@@ -140,7 +138,6 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
       try {
         const truth = JSON.parse(annotation.toString('utf8')) as GeoTruth
         const input = await loadPdf(bytes, {
-          standardFontDataUrl: fontsDir,
           raster: process.env.UNSPOIL_BENCH_RASTER !== '0',
         })
         let measured: DocReport
@@ -186,7 +183,11 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
     const report = {
       format: 'unspoil-benchmark/2',
       metricsVersion: GEO_METRICS_VERSION,
-      runtime: { environment: 'node', version: process.version },
+      runtime: {
+        environment: 'node',
+        version: process.version,
+        pdfLoader: NODE_PDF_LOADER_VERSION,
+      },
       date: new Date().toISOString(),
       split,
       git: {
@@ -215,7 +216,8 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
     const resolved: string[] = []
     const comparable =
       previous?.metricsVersion === report.metricsVersion &&
-      previous.corpusVersion === report.corpusVersion
+      previous.corpusVersion === report.corpusVersion &&
+      previous.runtime?.pdfLoader === report.runtime.pdfLoader
     if (comparable) {
       for (const d of docs.filter((x) => x.status === 'évalué' && x.measurable !== false)) {
         const p = previous.documents.find((x) => x.name === d.name && x.status === 'évalué')

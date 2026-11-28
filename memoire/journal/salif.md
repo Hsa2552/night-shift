@@ -60,3 +60,8 @@
 - Branche `fix/benchmark-parity` basée sur `8cebd09` qui intègre la PR #14. Définition partagée de la décision produit, métriques historiques et strictes, rapports navigateur et diagnostic croisé.
 - Référence Node et Edge sur le même SHA, corpus dev historique et mesure d'encre. Toulouse est mesurable, la ligne exclue correspond à une autre annale sans annotation évaluable. Savoie isole l'effet du raster. Voir V-28-0301-S. Aucun réglage du moteur sur ce document du test historique.
 - PR #15 encore en revue humaine. Pages reste désactivé. Le corpus réservé est en constitution, et aucun résultat détaillé n'est diffusé à l'équipe.
+
+### 28/11 · SESSION · T-S-5 corpus et contrôle strict · Codex
+
+- PR #17 ouverte et premier contrôle GitHub réussi. Extension séparée de trois sujets seuls et rapport Node/Edge. Le profil Node a désormais les ressources PDF.js et la géométrie du lecteur.
+- Vérité réservée gelée avant toute prédiction, avec empreintes locales et engagement dans `QUALITE.md`. Les seules mesures publiées sont agrégées. Le test des indices de forme dans les groupes QCM est distinct de la couverture historique.

@@ -44,6 +44,7 @@ export interface PresentedScore {
   reason?: 'uncertain' | 'invalid-masks'
   coverage: RegionScore | null
   success: boolean
+  strictSuccess: boolean
 }
 
 export interface DocumentScore extends RegionScore {
@@ -117,20 +118,28 @@ export function scorePresentedGeo(truth: GeoTruth, decision: PresentedDetection)
       ...(decision.kind === 'progressive' ? { reason: decision.reason } : {}),
       coverage: null,
       success: false,
+      strictSuccess: false,
     }
   }
   const coverage = scoreRegions(truth, decision.kind === 'automatic' ? decision.blocks : [])
   const { corrections, statements } = coverage
   const expectedMode = truth.kind === 'statement_only' ? 'statement_only' : 'automatic'
+  const success =
+    truth.kind !== 'unknown' &&
+    expectedMode === decision.kind &&
+    corrections.total + statements.total > 0 &&
+    corrections.full === corrections.total &&
+    statements.masked <= statements.total * OVERMASK_THRESHOLD
   return {
     mode: decision.kind,
     coverage,
-    success:
-      truth.kind !== 'unknown' &&
-      expectedMode === decision.kind &&
-      corrections.total + statements.total > 0 &&
-      corrections.full === corrections.total &&
-      statements.masked <= statements.total * OVERMASK_THRESHOLD,
+    success,
+    strictSuccess:
+      success &&
+      Object.values(coverage.strict.corrections).every(({ total, full }) => full === total) &&
+      coverage.strict.indirect.groupsAtRisk === 0 &&
+      coverage.strict.statements.preserved === statements.total &&
+      coverage.blocks.independent === coverage.blocks.total,
   }
 }
 
