@@ -64,6 +64,15 @@
 - Wael propose des observations complémentaires de lignes locales et de cadres à séparateurs croisés. Le nombre de mélanges entre cellules baisse, et les cadres sont précis sur les trois pages annotées. Garder le traitement actuel en dehors des familles confirmées.
 - La topologie dispose d’un prototype TypeScript isolé. Le classement automatique du graphe et la fermeture raster n’apportent pas de bénéfice dans le protocole. Les résultats et limites sont consignés dans V-28-0428-WB et V-28-0437-WB, PR #24.
 
+### D-28-0655-HZ · Interface moteur ↔ sous-détecteur graphique de Wael · `[PROPOSÉ]`
+
+- Proposé par : Hazem (Claude Code), pour Wael ; à valider par l'équipe (aucune modification de C1 : interface interne au module de détection, enregistrée comme l'analyseur colorimétrique).
+- Le moteur transmet des ancres textuelles, sans rôle graphique : par page, `questions: { label?: string; bbox: Rect }[]` (lignes de question visibles), `blocks: { id: string; label?: string; regions: PageRegion[] }[]` (blocs de correction déjà décidés), `statements: Rect[]` (lignes d'énoncé visibles à préserver).
+- Le sous-détecteur renvoie des propositions : `{ region: PageRegion; kind: 'figure' | 'table' | 'frame' | 'rule' | 'highlight'; blockId?: string; evidence: 'contained' | 'adjacent' | 'aligned' | 'ambiguous' }[]`.
+- Règles de fusion côté moteur : une proposition rattachée à un bloc (`blockId`, preuve non ambiguë) étend ce bloc ; une proposition qui recouvre une ligne d'énoncé protégée est rejetée ; une proposition `ambiguous` non rattachée alimente le contrôle final (document ambigu, révélation progressive), comme une encre colorée inexpliquée.
+- Enregistrement : `registerGraphicDetector(detector | null)` dans `fusion.ts`, appel asynchrone après la construction des blocs de texte, avec `getVectors` et `getRaster` déjà fournis au moteur.
+- Cas d'usage immédiats relevés sur le diagnostic public : figure verte de Virginia Tech p. 11 (actuellement abstention), figures et formules du corrigé MIT, tableaux de réponses de Washington.
+
 ## Modèle
 
 ### D-<jour>-<hhmm>-<initiales> · <titre> · `[PROPOSÉ]` | `[DÉCIDÉ]` (prénom, heure) | `[OBSOLÈTE]` → D-...

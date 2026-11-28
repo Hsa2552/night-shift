@@ -100,3 +100,29 @@ avant évaluation, ajouter la sixième colonne `truth_sha256` et placer les anno
 cache à côté des PDF. Le runner vérifie les deux empreintes avant mesure. Conserver les détails
 hors du dépôt et partager uniquement le résumé pendant le développement. Le corpus réservé v1
 contient des unités annotées sur un sous-ensemble de pages. Les résultats valent pour cet échantillon.
+
+## Transport vectoriel et diagnostic hybride
+
+```sh
+npm run build -- --manifest
+node scripts/vector-parity.mjs /chemin/checkout /chemin/sortie.json /chemin/annale.pdf
+```
+
+`vector-parity.mjs` appelle le fournisseur du vrai lecteur de production, sans modifier FontFace.
+Il compare dimensions, rectangles, états graphiques, couleurs, peintures et candidats calculés
+avec `nativeSquares`. Il neutralise uniquement le préfixe PDF.js de l'identifiant par document.
+Le rapport contient le SHA, le navigateur, PDF.js et les empreintes PDF. Indiquer
+`UNSPOIL_VECTOR_TRUTH_DIR` pour joindre le hash des annotations d'entrée de Wael lorsqu'elles
+existent. Le tas JavaScript après GC et les workers après fermeture concernent la session de test.
+
+Le manifeste `diagnostic-vectoriel-v1.tsv` désigne quatre extraits de PDF publics. Le benchmark
+navigateur l'accepte via `UNSPOIL_BENCH_MANIFEST`. Copier les PDF vérifiés par SHA-256 dans le
+sous-dossier `diagnostic-vectoriel-v1` du cache. Les six colonnes verrouillent les PDF et les
+annotations. Les zones annotées distinguent texte, formules, cases, figures, tableaux et énoncés.
+Les cas cochés ou signalés peuvent être catégorisés `filled-box` selon leur état visible.
+Les échantillons ne permettent pas de conclure sur les pages non annotées ni sur les PDF ENSAI.
+
+Le champ `automaticHandling` compte parmi les documents mesurables les parcours traités sans
+intervention (masques automatiques et sujet seul), ceux qui échouent au score strict et ceux qui
+laissent une correction incomplètement masquée au seuil de 95 %. Un repli réduit le taux de
+traitement automatique. Le risque de fuite est mesuré sur le parcours initial affiché.

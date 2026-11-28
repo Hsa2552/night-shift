@@ -132,6 +132,7 @@ export default function App() {
       const result = await detectCorrections({
         pages,
         getRaster: (index) => document.pdf.getRaster(index),
+        getVectors: document.pdf.getVectors?.bind(document.pdf),
       })
       if (request !== revision.current) return
       setWarnings(result.warnings)

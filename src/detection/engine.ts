@@ -11,9 +11,20 @@ import type {
   RasterData,
   Rect,
   PageData,
+  TextItem,
 } from './contract.ts'
 import { hueDistance, inkOf, type Ink } from './color.ts'
-import { answerBoxes, findBoxes, locateSquare, type Box } from './boxes.ts'
+import {
+  answerBoxes,
+  findBoxes,
+  locateSquare,
+  markBoxes,
+  withNativeBoxes,
+  type Box,
+  type NativeMarks,
+} from './boxes.ts'
+import { nativeSquares, type NativeSquare } from './visual/vector/cases.ts'
+import type { TextColorObservation } from './visual/vector/text-colors.ts'
 import {
   fuseExternalColor,
   registeredColorAnalyzer,
@@ -184,7 +195,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   let firstPreambleMarker = -1
   for (let i = 0; i < preambleEnd && firstPreambleMarker < 0; i++) {
     const titleZone = flow[i]!.pageIndex === 0 && i < 6
-    if (isC(i) || (titleZone && isCorrectionTitle(flow[i]!.text))) firstPreambleMarker = i
+    if (isC(i) || (titleZone && announcesCorrection(flow[i]!.text))) firstPreambleMarker = i
   }
   const markerIsTitle = (i: number) => {
     const c = parsed[i]!.c
@@ -382,7 +393,7 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
   }
 
   // Couleurs : encre de chaque ligne, dès que le rendu raster est disponible.
-  const inks = input.getRaster ? await lineInks(flow, layouts, rasterOf) : null
+  const inks = input.getRaster ? await lineInks(flow, layouts, rasterOf, input) : null
 
   // Questions colorées servant d'ancres : si une teinte porte les questions numérotées, la
   // correction de chaque question est ce qui suit sa question jusqu'à la question suivante.
@@ -416,11 +427,12 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       if (layout.lines.length > 0 && !(await rasterOf(layout.pageIndex))) visualCheckFailed = true
     }
   }
-  // Conventions locales : l'inférence par couleur porte sur les unités (section × page) que
-  // les autres détecteurs n'expliquent pas, et non sur tout le document. Un document hybride
+  // Conventions locales : l'inférence par couleur porte sur les portées de question que les
+  // autres détecteurs n'expliquent pas, et non sur tout le document. Un document hybride
   // (QCM à cases + exercices rédigés en couleur) n'est pas réglé par la seule présence des
   // cases. Sans aucun bloc, toutes les lignes d'énoncé sont éligibles, comme auparavant.
-  const eligible = drafts.length === 0 ? null : unexplainedLines(flow, parsed, drafts, labelAt)
+  const eligible =
+    drafts.length === 0 ? null : unexplainedLines(flow, parsed, drafts, labelAt, boxes.lines)
   if (inks && !byQuestionInk && (eligible === null || eligible.size > 0)) {
     const colorBlocks = colorDrafts(flow, parsed, inks, modeAt, labelAt, eligible)
     if (colorBlocks.length > 0) {
@@ -482,7 +494,12 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
       }
       return false
     })
-    kind = (correctionFromStart && !byQuestionInk) || !hasStatement ? 'correction_only' : 'mixed'
+    // Un titre de corrigé n'impose pas « corrigé seul » si une convention (encre des questions,
+    // couleur des réponses) a laissé des énoncés visibles.
+    kind =
+      (correctionFromStart && !byQuestionInk && !byColor) || !hasStatement
+        ? 'correction_only'
+        : 'mixed'
     if (byColor) warnings.push(WARNINGS.color)
     if (byQuestionInk) warnings.push(WARNINGS.questionInk)
     if (kind === 'correction_only' && drafts.length === 1 && !drafts[0]!.label) {
@@ -587,8 +604,23 @@ export async function detect(input: DetectionInput): Promise<DetectionResult> {
     const protectedLines = flow
       .filter((_, i) => parsed[i]!.q !== null && modeAt[i] !== 'correction')
       .map((l) => ({ pageIndex: l.pageIndex, bbox: l.bbox }))
+    // Texte déclaré neutre par les opérateurs du PDF (contradiction possible avec le raster).
+    const neutralText: PageRegion[] = []
+    if (input.getVectors) {
+      for (const page of input.pages) {
+        const vectors = await input.getVectors(page.pageIndex).catch(() => undefined)
+        const colors = (vectors as { textColors?: TextColorObservation[] } | undefined)?.textColors
+        for (const c of colors ?? []) {
+          const item = page.textItems[c.textIndex]
+          if (!item || c.status !== 'matched' || c.ranges.length === 0) continue
+          const neutral = c.ranges.every(({ rgb }) => Math.max(...rgb) - Math.min(...rgb) < 60)
+          if (neutral) neutralText.push({ pageIndex: page.pageIndex, bbox: item.bbox })
+        }
+      }
+    }
     const outcome = fuseExternalColor(results, {
       protectedLines,
+      neutralText,
       ownRegions: blocks.flatMap((b) => b.regions),
       questionHue,
       firstQuestion: (() => {
@@ -999,14 +1031,86 @@ async function lineInks(
   flow: Line[],
   layouts: PageLayout[],
   rasterOf: (pageIndex: number) => Promise<RasterData | null>,
+  input: DetectionInput,
 ): Promise<Ink[]> {
   const inks: Ink[] = []
+  const natives = new Map<number, Map<TextItem, TextColorObservation>>()
+  const nativeOf = async (pageIndex: number) => {
+    if (!natives.has(pageIndex)) {
+      const byItem = new Map<TextItem, TextColorObservation>()
+      const page = input.pages.find((p) => p.pageIndex === pageIndex)
+      const vectors = input.getVectors
+        ? await input.getVectors(pageIndex).catch(() => undefined)
+        : undefined
+      const colors = (vectors as { textColors?: TextColorObservation[] } | undefined)?.textColors
+      if (page && colors)
+        for (const c of colors) {
+          const item = page.textItems[c.textIndex]
+          if (item) byItem.set(item, c)
+        }
+      natives.set(pageIndex, byItem)
+    }
+    return natives.get(pageIndex)!
+  }
   for (const line of flow) {
     const layout = layouts.find((l) => l.pageIndex === line.pageIndex)!
     const raster = await rasterOf(line.pageIndex)
-    inks.push(raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' })
+    const rasterInk = (): Ink =>
+      raster ? inkOf(raster, layout.width, layout.height, line.bbox) : { kind: 'none' }
+    const native = nativeInk(line, await nativeOf(line.pageIndex))
+    // Couleur déclarée du texte (indépendante du moteur de rendu) quand elle couvre au moins la
+    // moitié des caractères de la ligne ; sinon le raster. La peinture déclarée ne garantit pas
+    // la visibilité : une ligne sans encre dans le raster reste « sans encre ».
+    if (native && raster) {
+      const seen = rasterInk()
+      inks.push(seen.kind === 'none' ? seen : native)
+    } else inks.push(rasterInk())
   }
   return inks
+}
+
+/**
+ * Encre d'une ligne d'après les couleurs natives de ses fragments (plages UTF-16, états
+ * `matched` ou `partial`) : couleur si au moins la moitié des caractères couverts est colorée
+ * (écart entre canaux ≥ 60, comme pour le raster), teinte moyenne pondérée ; neutre sinon.
+ * Null si moins de la moitié des caractères non blancs de la ligne est couverte.
+ */
+function nativeInk(line: Line, byItem: Map<TextItem, TextColorObservation>): Ink | null {
+  if (!line.sources || byItem.size === 0) return null
+  let letters = 0
+  let covered = 0
+  let colored = 0
+  let hx = 0
+  let hy = 0
+  for (const item of line.sources) {
+    letters += item.text.replace(/\s/gu, '').length
+    const obs = byItem.get(item)
+    if (!obs || (obs.status !== 'matched' && obs.status !== 'partial')) continue
+    for (const range of obs.ranges) {
+      const n = item.text.slice(range.start, range.end).replace(/\s/gu, '').length
+      covered += n
+      const [r, g, b] = range.rgb
+      const max = Math.max(r, g, b)
+      const min = Math.min(r, g, b)
+      if (max - min < 60) continue
+      colored += n
+      const h = hueOfRgb(r, g, b)
+      hx += n * Math.cos((h * Math.PI) / 180)
+      hy += n * Math.sin((h * Math.PI) / 180)
+    }
+  }
+  if (letters === 0 || covered < 0.5 * letters) return null
+  if (colored < 0.5 * covered) return { kind: 'dark' }
+  return { kind: 'color', hue: ((Math.atan2(hy, hx) * 180) / Math.PI + 360) % 360 }
+}
+
+/** Teinte en degrés d'une couleur RVB (0-255). */
+function hueOfRgb(r: number, g: number, b: number): number {
+  const max = Math.max(r, g, b)
+  const d = max - Math.min(r, g, b)
+  if (d === 0) return 0
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
+  return (h * 60 + 360) % 360
 }
 
 /**
@@ -1054,7 +1158,22 @@ async function boxDrafts(
   for (const page of input.pages) {
     if (!flow.some((l) => l.pageIndex === page.pageIndex)) continue
     const raster = await rasterOf(page.pageIndex)
-    if (raster) all.push(...findBoxes(raster, page))
+    if (!raster) continue
+    // Cases natives (opérateurs du PDF, C1 v1.1), confirmées par le raster ; canal facultatif.
+    const vectors = input.getVectors
+      ? await input.getVectors(page.pageIndex).catch(() => undefined)
+      : undefined
+    const found = findBoxes(raster, page)
+    const merged = vectors
+      ? withNativeBoxes(
+          found,
+          [...nativeSquares(vectors.rectangles), ...glyphSquares(vectors as NativeGlyphs, page)],
+          raster,
+          page,
+        )
+      : found
+    // Coches, croix et aplats natifs : désignent la case marquée.
+    all.push(...markBoxes(merged, vectors as NativeMarks | undefined, page.pageIndex))
   }
   const kept = answerBoxes(all)
   if (kept.length === 0) return { drafts: [], lines: new Set() }
@@ -1245,6 +1364,45 @@ async function boxDrafts(
       })
     }
   }
+  // Gabarits de marque (coche qui déborde de la case, aplat de la ligne de réponse) : relevés
+  // relativement au centre des cases marquées et appliqués à toutes les cases de la page, pour
+  // que le masque d'une case marquée ne se distingue pas de celui d'une case vide.
+  const templates = new Map<number, { dx: number; dy: number; w: number; h: number }[]>()
+  for (const b of kept) {
+    if (!b.cue) continue
+    const cx = b.bbox.x + b.bbox.width / 2
+    const cy = b.bbox.y + b.bbox.height / 2
+    const t = { dx: b.cue.x - cx, dy: b.cue.y - cy, w: b.cue.width, h: b.cue.height }
+    const list = templates.get(b.pageIndex) ?? []
+    const same = list.some(
+      (o) =>
+        Math.abs(o.dx - t.dx) <= 1 &&
+        Math.abs(o.dy - t.dy) <= 1 &&
+        Math.abs(o.w - t.w) <= 1 &&
+        Math.abs(o.h - t.h) <= 1,
+    )
+    if (!same) list.push(t)
+    templates.set(b.pageIndex, list)
+  }
+  if (templates.size > 0) {
+    for (const regions of groups.values()) {
+      const squares = regions.filter(
+        (r) => templates.has(r.pageIndex) && Math.abs(r.bbox.width - r.bbox.height) < 0.5,
+      )
+      for (const r of squares) {
+        const cx = r.bbox.x + r.bbox.width / 2
+        const cy = r.bbox.y + r.bbox.height / 2
+        for (const t of templates.get(r.pageIndex)!) {
+          const bbox = { x: cx + t.dx - 1, y: cy + t.dy - 1, width: t.w + 2, height: t.h + 2 }
+          // Aplat de ligne (bien plus large qu'une case) : on masque l'aplat hors des lignes de
+          // texte qu'il traverse, pour laisser lisible le texte des propositions.
+          const wide = t.w > 3 * r.bbox.width
+          const parts = wide ? minusTextRows(bbox, flow, r.pageIndex) : [bbox]
+          for (const part of parts) regions.push({ pageIndex: r.pageIndex, bbox: part })
+        }
+      }
+    }
+  }
   const drafts: Draft[] = [...groups.entries()].map(([instance, regions]) => {
     const anchor = instance >= 0 ? instance : Math.max(0, lineOfBox[0]!)
     return { start: anchor, end: anchor, label: labelAt[anchor], grouped: false, custom: regions }
@@ -1367,6 +1525,78 @@ function restatedLines(flow: Line[], drafts: Draft[], modeAt: string[]): Set<num
 }
 
 /**
+ * Parties d'un rectangle situées au-dessus, entre et au-dessous des lignes de texte de la page
+ * qu'il recoupe horizontalement (bandes de moins d'un point écartées).
+ */
+function minusTextRows(rect: Rect, flow: Line[], pageIndex: number): Rect[] {
+  const rows = flow
+    .filter(
+      (l) =>
+        l.pageIndex === pageIndex &&
+        l.bbox.x < rect.x + rect.width &&
+        l.bbox.x + l.bbox.width > rect.x &&
+        l.bbox.y < rect.y + rect.height &&
+        l.bbox.y + l.bbox.height > rect.y,
+    )
+    .map((l) => [l.bbox.y, l.bbox.y + l.bbox.height] as const)
+    .sort((a, b) => a[0] - b[0])
+  const parts: Rect[] = []
+  let y = rect.y
+  for (const [top, bottom] of rows) {
+    if (top > y) parts.push({ ...rect, y, height: top - y })
+    y = Math.max(y, bottom)
+  }
+  if (rect.y + rect.height > y) parts.push({ ...rect, y, height: rect.y + rect.height - y })
+  return parts.filter((p) => p.height >= 1)
+}
+
+/** Symboles typographiques natifs (☐ ☑ ■…) de l'observation de Wael (C1 v1.1). */
+interface NativeGlyphs {
+  glyphSymbols?: {
+    region: PageRegion
+    kind: string
+    visibility: string
+  }[]
+}
+
+/**
+ * Cases typographiques (glyphes ☐ □ ▫, ☑ ☒, ■ ▪) peintes : mêmes cases natives que les
+ * rectangles dessinés, état natif « vide » ou « plein » selon le symbole.
+ */
+function glyphSquares(vectors: NativeGlyphs, page: PageData): NativeSquare[] {
+  const out: NativeSquare[] = []
+  // Légende de consigne (« Exemple de case bien noircie : ■ », « … mal noircies : □ □ ✓ ⊠ ») :
+  // le symbole suit un texte terminé par « : » (symboles intermédiaires ignorés), alors qu'une
+  // case de réponse précède sa proposition (« □ true / □✓ false »).
+  const legendRow = (b: Rect) => {
+    const before = page.textItems
+      .filter(
+        (t) =>
+          Math.abs(t.bbox.y + t.bbox.height / 2 - (b.y + b.height / 2)) < 4 &&
+          t.bbox.x + t.bbox.width <= b.x + 1,
+      )
+      .sort((u, v) => u.bbox.x - v.bbox.x)
+      .map((t) => t.text)
+      .join(' ')
+    return /:\s*$/u.test(
+      before.replace(/[\s\u25A0-\u25FF\u2610-\u2612\u2713-\u2718\u22A0-\u22A1]+$/u, ''),
+    )
+  }
+  for (const s of vectors.glyphSymbols ?? []) {
+    if (s.visibility !== 'paint-command' || legendRow(s.region.bbox)) continue
+    const state =
+      s.kind === 'empty-square'
+        ? 'empty'
+        : s.kind === 'filled-square' || s.kind === 'marked-square'
+          ? 'filled'
+          : null
+    if (!state) continue
+    out.push({ region: s.region, nativeState: state, paint: [], needsVisibilityCheck: true })
+  }
+  return out
+}
+
+/**
  * Emplacements manquants d'une suite régulière de masques carrés (même page, même colonne ou
  * même rangée, à 2 points près) : entre deux masques consécutifs distants de m pas (m ≥ 2, à
  * 15 % près), les m − 1 positions intermédiaires. Le pas est le plus petit écart de la suite.
@@ -1425,48 +1655,47 @@ function regularGaps(
 }
 
 /**
- * Lignes des unités (suite de lignes entre deux titres de section, sur une même page) qu'aucun
- * bloc n'explique : aucune ligne de l'unité n'est masquée, aucune case de QCM n'est sur la
- * page, et au moins une question de l'unité n'a de correction nulle part (son libellé n'est
- * celui d'aucun bloc ; une question corrigée en fin de document est donc expliquée).
+ * Lignes que les blocs de texte n'expliquent pas, par portée de question (de la ligne d'une
+ * question à la question suivante, par-delà les sauts de page) : aucune ligne de la portée,
+ * après la question, n'est dans un bloc de texte, et la question n'est corrigée nulle part
+ * ailleurs (son libellé n'est celui d'aucun bloc de texte : corrigé en fin de document). Les
+ * cases de QCM n'expliquent que les lignes qui les portent : une page mêlant QCM et réponses
+ * rédigées en couleur reste analysée (document hybride). Le préambule n'est jamais éligible.
  */
 function unexplainedLines(
   flow: Line[],
   parsed: Parsed[],
   drafts: Draft[],
   labelAt: (string | undefined)[],
+  boxLines: Set<number>,
 ): Set<number> {
-  const sectionOf: number[] = []
-  let section = 0
+  const spanOf: number[] = []
+  let span = -1
   flow.forEach((_, i) => {
     const q = parsed[i]!.q
-    if (q && (q.kind === 'part' || q.kind === 'exercise')) section++
-    sectionOf.push(section)
+    if (q && q.kind !== 'letter') span = i
+    spanOf.push(span)
   })
-  const unit = (i: number) => `${sectionOf[i]}:${flow[i]!.pageIndex}`
-  const explained = new Set<string>()
-  const boxPages = new Set<number>()
+  const explained = new Set<number>()
   const answered = new Set<string>()
   for (const d of drafts) {
-    // Une case de QCM répond à la question de sa page (déjà exclue) : seul un bloc de texte
-    // corrige une question ailleurs (corrigé en fin de document).
-    if (d.custom) for (const r of d.custom) boxPages.add(r.pageIndex)
-    else {
-      if (d.label) answered.add(d.label)
-      for (let i = d.start; i <= d.end; i++) explained.add(unit(i))
-    }
+    // Une case de QCM répond à sa propre question : seul un bloc de texte corrige une question
+    // ailleurs (corrigé en fin de document) ou explique une portée.
+    if (d.custom) continue
+    if (d.label) answered.add(d.label)
+    for (let i = d.start; i <= d.end; i++) if (i > spanOf[i]!) explained.add(spanOf[i]!)
   }
-  const open = new Set<string>()
-  flow.forEach((line, i) => {
-    const q = parsed[i]!.q
-    if (!q || q.kind === 'part' || q.kind === 'exercise') return
-    if (explained.has(unit(i)) || boxPages.has(line.pageIndex)) return
-    const label = labelAt[i]
-    if (!label || !answered.has(label)) open.add(unit(i))
-  })
   const lines = new Set<number>()
   flow.forEach((_, i) => {
-    if (open.has(unit(i))) lines.add(i)
+    const s = spanOf[i]!
+    if (s < 0 || i === s || boxLines.has(i) || explained.has(s)) return
+    const q = parsed[s]!.q!
+    if (q.kind === 'part' || q.kind === 'exercise') {
+      lines.add(i)
+      return
+    }
+    const label = labelAt[s]
+    if (!label || !answered.has(label)) lines.add(i)
   })
   return lines
 }
@@ -1619,6 +1848,19 @@ function questionInkDrafts(
 
 // --- Indices de corrigés non localisés ----------------------------------------------------
 
+/**
+ * Consigne de notation (« Solutions that violate … may get partial credit », « La correction
+ * tiendra compte de la rédaction ») : le mot « solution » ou « correction » y décrit la
+ * notation et n'annonce pas un corrigé. Texte replié (minuscules, sans accents).
+ */
+const GRADING_NOTE =
+  /\b(?:credit|points?|marks?|graded|grading|bareme|notation|notee?s?|penalis\w*|tiendra compte|tient compte|prise? en compte|will be (?:graded|marked|evaluated)|may (?:get|receive|lose))\b/
+
+/** Titre ou bandeau annonçant un corrigé, hors consigne de notation. */
+function announcesCorrection(text: string): boolean {
+  return isCorrectionTitle(text) && !GRADING_NOTE.test(fold(text))
+}
+
 /** Tournures qui ouvrent typiquement une réponse rédigée (français et anglais). */
 const ANSWER_CUE =
   /^(?:on a\b|donc\b|d['’]où\b|ainsi\b|par conséquent\b|la réponse\b|réponse\b|il suffit\b|c['’]est\b|therefore\b|hence\b|thus\b|we have\b|we get\b|the answer\b)/iu
@@ -1635,7 +1877,7 @@ function correctionHint(layouts: PageLayout[], flow: Line[], parsed: Parsed[]): 
   const bands = layouts.flatMap((p) =>
     p.lines.filter((l) => l.bbox.y < 0.08 * p.height || l.bbox.y > 0.9 * p.height),
   )
-  const announces = [...titleZone, ...bands].some((l) => isCorrectionTitle(l.text))
+  const announces = [...titleZone, ...bands].some((l) => announcesCorrection(l.text))
   if (announces) return true
   let span = -1
   let cues = 0

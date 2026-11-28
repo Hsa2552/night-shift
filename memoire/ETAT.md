@@ -86,10 +86,18 @@
 
 ### T-S-7 · Stabilité des commandes de révélation
 
-- Statut : en revue · Priorité : P0
+- Statut : fusionnée · Priorité : P0
 - Responsable : Salif · Agent : Codex · Branche : `fix/commandes-revelation`. Travail signalé à Wael dans la PR #18.
 - Critères d'acceptation : une commande stable par bloc, indépendant du zoom et du rendu ; remasquage global synchronisé ; remplacement et lecture progressive sûrs.
 - Maturité : reproduite sur le build de `main` `da87ece`, corrigée et testée sur de vraies annales et un QCM synthétique dans Edge. Recette et limites dans `QUALITE.md` V-28-0359-S.
+
+### T-S-6 · Transport et validation des observations vectorielles
+
+- Statut : fusionnée · Priorité : P0
+- Responsable : Salif · Agent : Codex · Branches : `feat/transport-vectoriel` (PR #21), `fix/validation-vectorielle` (PR #23), fusionnées dans la branche de Hazem
+- Dépend de : validation collective C1 v1.1, PR #19. Base de contrôle commune : `87b6aef` (PR #17 intégrée à la branche de Hazem).
+- Critères d'acceptation : lecture vectorielle à la demande et par document, dégradation vers le raster, essais Node et Edge sur les mêmes PDF et absence de changement de verdict au transport seul.
+- Maturité : transport raccordé au lecteur, à App et aux recettes de benchmark. Le premier moteur hybride est mesuré dans Edge et Node. Les résultats et limites sont dans V-28-0422-S et V-28-0430-S.
 
 ### T01 · Socle technique commun
 
@@ -116,7 +124,7 @@
 - Dépend de : rien de bloquant ; contrat C1 inchangé
 - Critères d'acceptation : mesures avant/après sur corpus réels dev et test séparés ; QCM ENSAI DOC-corrige sans indice visuel
 - Maturité : intégrée (189 tests, benchmark automatique, détecteur de Wael fusionné) ; QCM ENSAI et BUG-001 vérifiés dans Edge. Non testé : téléphone, Safari
-- Phase 4 (fusion, conventions locales, QCM, sur-masquage) : premier jalon `65d8543`, voir V-28-0310-HZ ; candidat à évaluer par Salif sur test.
+- Phase 4 (fusion, conventions locales, QCM, sur-masquage) : premier jalon `65d8543`, voir V-28-0310-HZ. Phase 4.2 : parité Node/Edge du moteur (V-28-0415-HZ), cases natives C1 v1.1 et consignes de notation (V-28-0425-HZ) ; candidat à évaluer par Salif sur test : `6a78b02`. Phase 4.3 jalon 1 (couleurs, glyphes et marques natives) : `6f7c4e4`, V-28-0655-HZ ; interface graphique proposée à Wael : D-28-0655-HZ.
 - Notes : journal entrées du 28/11 01:25, 02:00, 02:20 et 03:15 ; `QUALITE.md` V-28-0115-HZ à V-28-0310-HZ ; PR à ouvrir (lien dans le journal) ; à valider par l'équipe : `benchmark.yml` et scripts `benchmark:*` de `package.json`
 
 ### T-WB-3 · Détecteurs visuels déterministes

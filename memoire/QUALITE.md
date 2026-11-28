@@ -183,6 +183,53 @@
 - Temps : dev 803 ms par document en moyenne sur une exécution non chargée (`5cafcbe`) ; les mesures à 1,5 s du même soir correspondent à une machine chargée (même écart sur ensai-dev), non à un coût des mécanismes.
 - Non vérifié : Edge ; partitions de test ; documents hybrides réels.
 
+### V-28-0415-HZ · Parité Node/Edge du moteur : faux carrés de glyphes et lettres sombres dans les cases
+
+- Par : Hazem (Claude Code). Commits `6829b38` (glyphes), `fc5ce79` (lettre sombre dans une case), mesurés sur `861a75d` (main intégrée, PR #18, #19, #21). Diagnostic sur les seules partitions dev et ensai-dev ; test et réservé non consultés.
+- Protocole : benchmark navigateur de Salif (`scripts/benchmark-browser.mjs`, build `--manifest`, Edge, métriques v2, `UNSPOIL_BENCH_INK=1`) et benchmark Node ; croisements texte × raster (Node/Edge) hors dépôt à partir des pages et rasters relevés dans le build Edge (`scripts/pdf-parity.mjs` réutilisé).
+- Diagnostic : sur exo7, labri et le sujet de Toulouse, le texte extrait est identique sous Node et Edge ; l'encre des lignes aussi (2 lignes de ponctuation sur 367). Seul le raster change le résultat, par `findBoxes` : le rendu FontFace d'Edge dessine des glyphes en petits carrés pleins ou creux (lettres d'un titre « A. Question de cours », puces « • », « ℝ », « 𝑛 »), reconnus comme cases de QCM. Ces faux blocs perturbaient toute la segmentation (labri : 16 → 7 régions de texte). Second défaut, ensai-dev : dans Edge, la lettre « A » imprimée dans une case vide est plus sombre et faisait rejeter le contour (« centre clair » calculé sur tous les pixels noirs).
+- Correctifs, décidés sur le texte extrait et la géométrie, un test unitaire chacun (échec vérifié sans la règle) : forme sur une lettre accolée à une autre (dans un mot, apostrophe comprise) ou sur un signe non alphanumérique autre qu'un symbole de case : glyphe ; lettre isolée dont la forme n'est pas plus grande que le texte (< 1,1 × sa hauteur ; lettres AMC des annales ENSAI de dev : 1,36, lettres de titre : ≤ 0,79) : glyphe ; une case de réponse a une voisine alignée (même rangée, ou même colonne à moins de 20 côtés) ; centre d'un contour jugé sur les seuls pixels de sa composante.
+- Première version de la règle d'alignement (rayon de huit côtés) : 5 lignes d'énoncé masquées en plus sur une annale ENSAI (propositions en rangée espacées de 131 points) ; corrigée avant commit.
+
+| Edge, produit réel | Réussites (strictes) | Corrections couvertes | Énoncés masqués | Documents avec fuite |
+|---|---|---|---|---|
+| dev, `87b6aef` (avant) | 5/10 (2) | 1 984/2 072 (88 visibles : exo7 55, labri 33) | 298/1 304 | 2 |
+| dev, `861a75d` | **8/10 (3)** | **2 072/2 072** | 311/1 304 | **0** |
+| ensai-dev, `6829b38` | 1/6 | 600/602 (2 cases « A » visibles) | 62/476 | 1 |
+| ensai-dev, `861a75d` | 1/6 | **602/602** | 62/476 | **0** |
+
+- Node, `861a75d` : dev 8/10, 2 072/2 072, 311/1 304 ; ensai-dev 602/602, 62/476 : identique à Edge. Le sujet seul de Toulouse est de nouveau présenté comme « sujet seul » dans Edge (0/104 énoncé masqué). Aucun écart entre l'oracle de décision et les masques présentés.
+- Temps moyen Edge par document (import et interaction compris) : 2,1 s sur `6829b38`, 4,3 s sur `861a75d` ; non expliqué (transport vectoriel nouvellement raccordé ou charge de la machine), à mesurer à part.
+- Non vérifié : partitions test et réservée (évaluation par Salif sur version figée) ; Safari, téléphone.
+
+### V-28-0425-HZ · Cases natives (C1 v1.1) et consignes de notation
+
+- Par : Hazem (Claude Code). Commits `090e86e` (cases natives), `6a78b02` (consigne de notation). Dev, ensai-dev et dev-v2-sujets uniquement.
+- Cases natives : `nativeSquares` (Wael) sur `getVectors` complète `findBoxes` ; ajout si le raster montre la case peinte (contour non blanc, seuil 245) ; état natif conservé (`ambiguous` compris, état lu dans le raster). Rappel brut des cases de réponse sur ensai-dev : raster seul 602/602, y compris à demi-résolution : **aucun bénéfice mesurable sur dev**. Bénéfice démontré seulement sur un cas synthétique (case vide pâle, luminance 230, en fin de colonne : visible sans les opérateurs, masquée avec). Aucune régression.
+- Consigne de notation : « Solutions that violate … may get partial credit » faisait abstenir le sujet seul de Stanford (indice « corrigé annoncé »). Une ligne de notation (crédit, points, barème, « tiendra compte »…) n'annonce plus un corrigé. dev-v2-sujets : 2/3 → 3/3 ; dev et ensai-dev inchangés.
+- Edge, `6a78b02`, produit réel : dev 8/10 (3 strictes), 2 072/2 072, 311/1 304 énoncés masqués, 0 document avec fuite ; ensai-dev 602/602, 62/476 ; dev-v2-sujets 3/3 strictes, 0/292 énoncé masqué. Aucun écart oracle/masques. Temps moyen Edge 2,4 s (dev) : les 4,3 s de `861a75d` relevaient de la charge de la machine.
+- Non vérifié : test et réservé (Salif, version candidate `6a78b02`).
+
+### V-28-0655-HZ · Phase 4.3, jalon 1 : couleurs, glyphes et marques natives
+
+- Par : Hazem (Claude Code). Base stable `3709b44` (main avec PR #20, #22 et PR #23 intégrées une fois). Jalon `6f7c4e4`. Partitions : dev, ensai-dev, dev-v2-sujets et diagnostic public `diagnostic-vectoriel-v1` (désigné comme tel par Salif) ; partitions réservées non consultées.
+- Protocole : Edge (référence produit), `scripts/benchmark-browser.mjs`, métriques v2 ; ablations par mécanisme désactivé un à un (Node pour les partitions de développement, où Node = Edge, Edge pour le diagnostic).
+
+| Edge | Avant `3709b44` | Jalon `6f7c4e4` |
+|---|---|---|
+| dev : réussites (strictes), corrections, énoncés masqués | 8/10 (3), 2 072/2 072, 311/1 304 | identique |
+| ensai-dev | 1/6, 602/602, 62/476 | **4/6**, 602/602, **20/476** |
+| dev-v2-sujets | 3/3 strictes, 0/292 | identique |
+| diagnostic : corrections couvertes, énoncés masqués, abstentions | 29/48, 11/24, 0 | **34/48**, **3/24**, 2 |
+| Temps moyen Edge | 2,0 à 4,8 s | 1,0 à 2,0 s |
+
+- Ablations (mécanisme retiré → effet) : couleurs natives des lignes → MIT repasse en automatique avec de faux blocs colorés (étiquettes noires sur aplats de figure) et 6/6 corrections visibles ; marques natives (coches, aplats) et gabarits → diagnostic 34 → 13/48 ; cases typographiques → diagnostic 34 → 31/48 ; géométrie native des cases → ensai-dev 20 → 62/476 énoncés masqués, 4 → 1 réussite ; contradiction couleur native / raster dans la fusion → aucun effet mesuré (gardée : complément de la couleur native, test unitaire) ; inférence par portée de question → aucun effet mesuré sur ces corpus (gardée : remplace la règle « page à cases expliquée », test hybride).
+- Régression trouvée et corrigée avant commit : les légendes de consigne ENSAI (« Exemple de case bien noircie : ■ », « … mal noircies : □ □ ✓ ⊠ ») devenaient des cases (ensai-dev 20 → 23 énoncés masqués, une réussite perdue) ; écartées (symbole précédé d'un texte terminé par « : »).
+- Retirés après ablation, faute de bénéfice : neutralisation des tables des matières, convention de couleur prioritaire sur un titre de corrigé (Virginia Tech s'abstient sans gain de couverture), masquage de l'encre de la teinte des réponses dans la fusion.
+- Abstentions du diagnostic : MIT (corrections manuscrites non localisables, abstention correcte) ; Virginia Tech (encre verte sans texte, p. 11, dans une figure : association figure ↔ bloc confiée à Wael).
+- Limites : Washington, réponses de tableau en texte noir (3 unités) sans indice physique ; couleur verte de l'aplat visible entre les lettres de la proposition marquée (masque hors lignes de texte seulement) ; Virginia Tech, une case vide fine (1 px au rendu d'échelle 1) non retrouvée dans Edge ; réponses bleues couvertes à 0,88-0,94 de rectangles d'annotation plus hauts que la ligne.
+- Pour Salif (métrique, sans modification de ma part) : `groupsWithGeometryCue` compare les masques aux rectangles annotés ; les cases cochées y sont annotées coche comprise (9 pt) et les vides sans (8 pt). Des masques identiques au centième de point par rapport aux vraies cases (vérifié sur Virginia Tech dans Edge) y paraissent distinguables : faux positif d'indice indirect (6 groupes).
+
 ## Problèmes connus et risques
 
 ### Q-27-2218-WB · Génération du service worker bloquée sur le poste Windows de Wael · contourné
@@ -423,11 +470,34 @@ Les PDF aveugles supplémentaires ont été demandés à Salif. Cette recette re
 - Après — Aucun nœud de commande remplacé au changement de largeur ou de zoom. Chaque bloc garde une commande en pied de sa première page. Les masques groupés se révèlent et se remasquent ensemble. « Masquer les corrigés » remasque les blocs déjà révélés sans nouvelle analyse. Les bascules vers la lecture progressive repartent de pages couvertes. Importations, remplacement et analyse hors ligne vérifiés. `node scripts/verify-viewer-controls.mjs <URL locale> assert <PDF> <PDF> …` reproduit la recette.
 - Distribution — Pages est en service, HTTPS imposé, déploiement `da87ece` confirmé par GitHub Actions. Le SHA-256 du module JavaScript public correspond au build local propre. Dans Edge en émulation tactile, après précache initial, rechargement, import et analyse réussissent hors ligne sur l'URL HTTPS. Installation et essais sur appareils physiques restent à effectuer. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46099507179)
 
+### V-28-0422-S · Transport seul, parité vectorielle et couverture du diagnostic
+
+- Comparaison à moteur inchangé entre `87b6aef` et `afb48b0`, même corpus dev et mêmes empreintes d'annotation, métriques v2. Les résultats par document concordent dans chaque environnement, hors durée et journal des demandes. Edge compte 5 réussites et Node 6 sur 10 documents mesurables. Le moteur de cette comparaison n'appelle pas le fournisseur vectoriel.
+- Build propre `23f906d`, PDF.js 6.5.438, Edge 158.0.4370.45 et Node 24.18.0. Comparaison directe du transport enrichi par document sur Washington, Virginia Tech, Lyon 2, Liège, MIT 16.30 et le scan dérivé de 170 pages. 223/224 pages concordent après normalisation des identifiants de police par document. Les dimensions et les candidats `nativeSquares` concordent sur 224/224. Liège p. 1 diffère sur `fill` pour trois rectangles et trois peintures de texte. Le rapport associe les empreintes des PDF et les deux empreintes de vérités visuelles de Wael lorsque disponibles.
+- Aucun worker du document après chacune des six fermetures. Le tas JS après GC va de 3,76 à 3,90 Mo après le premier document. Une fermeture pendant l'appel invalide le résultat en cours. La lecture native à froid après rechargement hors ligne réussit sur Washington. Le scan de 170 pages demandé intégralement prend environ 42 s côté Edge dans cette passe. Cette mesure exclut l'ouverture et ne mesure pas la mémoire native de tous les processus. L'extraction est à la demande. La déduplication de PDF.js ramène le premier paquet vectoriel de 451 à 7,6 ko, puis l'extracteur enrichi atteint 20,2 ko (7,6 ko gzip).
+- Témoin avant consommation des vecteurs, `23f906d`. Le diagnostic public annote 48 unités de correction et 24 d'énoncé sur quatre extraits. Couverture stricte dans le parcours Edge : 7/10 cases remplies ou signalées, 8/9 cases vides, 6/11 zones de texte, 8/10 formules, 0/5 figures ou aplats, 0/3 zones de tableau, 7/14 blocs indépendants. Deux des huit groupes de QCM ont un indice de réponse selon le score géométrique. Les documents ENSAI privés ne sont pas disponibles sur cette machine. Le résultat ne couvre ni leurs corrections rédactionnelles ni les pages non annotées du diagnostic public.
+- Corpus réservé v1 toujours figé. Sur `23f906d`, 4/5 traités automatiquement, 3/4 échouent strictement et 1/4 présente une correction incomplètement masquée au seuil de 95 %. Une lecture progressive et aucune erreur technique. Seules les mesures agrégées sont partagées. Le dev historique donne 8/10 réussites (3 strictes) avec 2 072/2 072 corrections brutes couvertes.
+- Pages sert `65ac20d09ba0abdb149284943ddb372309c56b2e`, confirmé par le workflow et le marqueur HTML public. Le lecteur démarre et analyse Lyon 2 après coupure de réseau et rechargement dans Edge en émulation tactile. Téléphones physiques et installation système restent à vérifier. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46101896870)
+
 ### V-28-0428-WB · Géométrie adaptative et séparation des lignes
 
 - Protocole. Vrai `layoutPage` et reconstructions sur les mêmes fragments PDF.js. Cinq pages de quatre PDF publics, 81 lignes annotées sur le rendu. Cinq cas synthétiques et cinq transformations, sans accès aux partitions réservées.
 - Sur les pages publiques, lignes mélangeant deux colonnes ou cellules de 7 à 1. Concordance de l’ordre 581/655 en référence, 630/655 avec XY-Cut, 586/655 pour les voisins. Blocs à IoU 0,50 de 5/14 à 7/14 avec les deux méthodes, avec des régressions selon les pages.
 - Les voisins retrouvent 18/18 blocs synthétiques de base et 18/18 sous transformations. XY-Cut retrouve 3/18 et 7/18. Le graphe et la proximité brute donnent 3/3 relations synthétiques. Voir `research/document-layout/`. Les observations ne mesurent pas la couverture des corrections.
+
+### V-28-0430-S · Premier moteur hybride dans le lecteur et distribution du visualiseur
+
+- Build propre `bd12a06`, intégrant les cases natives de `090e86e` et le correctif distinct `6a78b02`, observé dans Edge 158.0.4370.45 et Node 24.18.0. Les rapports v2 enregistrent le SHA, l’empreinte de chaque PDF et annotation et les modes réellement présentés. Dans Edge, les observations sont demandées sur 132 pages du dev, 42 du diagnostic public et 39 du réservé. La comparaison avec `23f906d`, document par document sur ces trois partitions, ne révèle aucun changement de verdict ou de couverture avec les cases natives. Le gain a été observé dans le test synthétique des cases pâles.
+- Dev historique dans Edge : 8/10 réussites, dont 3 strictes, et 1 abstention. Les trois sujets seuls de l’extension sont classés sans masque sur 292 unités d’énoncé. Cette amélioration vient du correctif des consignes de notation. Les extraits publics conservent 29/48 corrections entièrement couvertes à 95 %, sans réussite stricte sur quatre documents. Le réservé conserve 1 réussite stricte sur cinq et 3 échecs stricts sur les quatre parcours automatiques. Le passage au vecteur a été vérifié hors ligne.
+- Test historique agrégé sur le build intégré `3709b44`, avec douze PDF publics dont les empreintes sont vérifiées. Aucun écart entre l’oracle et le parcours affiché dans Edge. Le tableau relève les corrections visibles au seuil de couverture de 95 % dans les parcours automatiques. Le recueil de Nantes avait dépassé le délai de 30 s du script. Avec un délai de 120 s pour l’analyse, la mesure dans Edge a pris 56,6 s, ouverture comprise.
+- Reproduction depuis ce SHA. Construire avec `BASE_PATH=/night-shift/` et `npm run build -- --manifest`. Télécharger ou vérifier le corpus avec `node scripts/benchmark.mjs test --cache <cache externe> --out <sortie externe>`. Lancer `node scripts/benchmark-browser.mjs . test <cache externe> <rapport externe.json>` avec `UNSPOIL_BENCH_INK=1` pour mesurer aussi l’encre apparente. Le rapport indique l’empreinte du manifeste, le SHA complet du build et les empreintes document par document.
+
+| Environnement | Mesurables | Traités automatiquement | Réussites à 95 % / strictes | Abstentions | Automatiques avec correction visible |
+|---|---:|---:|---:|---:|---:|
+| Edge | 12/12 | 8/12 | 0 / 0 | 4 | 6/8 |
+| Node | 12/12 | 8/12 | 0 / 0 | 4 | 6/8 |
+
+- La PR #22 est déployée sur Pages. Le marqueur public du build corrigé correspond à `5ad305c4b73de1ec83b85f55443cac02d86ebea5`. Les commandes de révélation et le remasquage global restent stables dans Edge sous redimensionnement, zoom, défilement, remplacement et reprise hors ligne sur Liège, Toulouse et le QCM synthétique. Sur l’intégration `3709b44`, les mêmes essais et le chargement à froid des vecteurs hors ligne passent. `npm run check` compte 230 tests réussis, deux ignorés. Téléphones physiques et installation système restent à vérifier. [Déploiement](https://github.com/Hsa2552/night-shift/actions/runs/46102892739)
 
 ### V-28-0437-WB · Topologie et structure logique
 

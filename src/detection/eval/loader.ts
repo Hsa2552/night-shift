@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { fitCanvas, MAX_RASTER_PIXELS } from '../../pdf/canvas-size.ts'
 import { readPageText } from '../../pdf/read-text.ts'
+import { createVectorSource } from '../../pdf/vector-source.ts'
 import type { DetectionInput, PageData, RasterData } from '../contract.ts'
 
 export interface LoadedDocument extends DetectionInput {
@@ -63,6 +64,11 @@ async function preparePdf(
       raster = false
     }
   }
+  const vectors = createVectorSource(
+    doc.numPages,
+    (index) => doc.getPage(index + 1),
+    async (_, index) => pages[index]!.textItems,
+  )
   const cache = new Map<number, Promise<RasterData>>()
   const getRaster = raster
     ? (pageIndex: number): Promise<RasterData> => {
@@ -101,8 +107,10 @@ async function preparePdf(
   return {
     pages,
     getRaster,
+    getVectors: vectors.getVectors,
     raster,
     close: () => {
+      vectors.close()
       cache.clear()
       return task.destroy()
     },
