@@ -253,6 +253,20 @@ Corpus téléchargé depuis les sites des universités pour les essais locaux. L
 - Résultat : 226/226 cases noircies entièrement couvertes, 0 partielle, 0 visible. Huit cases non noircies de propositions à masquer restent partiellement couvertes (2) ou visibles (6). Elles ne correspondent pas à une boîte reconnue dans le raster à ces positions. Ces différences donnent un indice indirect par élimination. Aucun comptage vérifié des énoncés masqués à tort sur ce document. Temps du moteur sur 28 pages : 2 041 ms lors du passage sans instrumentation supplémentaire, dont 913 ms pour les rasters.
 - Signalé à Hazem dans la PR #13. Aucun deuxième détecteur géométrique de QCM développé sur cette branche.
 
+### V-28-0319-WB · Perception vectorielle et comparaison avec les cases raster
+
+- Par Wael (Codex). Protocole et sources dans `research/pdf-vector/`. Référence raster dans Edge sur `edf4b92`, avec le lecteur réel et `findBoxes`. Prototype Edge PDF.js 6.5.438. L’évaluateur consigne aussi les empreintes des sources mises en service.
+- Deux annales ENSAI de diagnostic, 12 et 4 pages. Référentiel géométrique de 288 et 184 carrés relevés sur les objets natifs, comprenant des cases d’identification. Appariement un à un, IoU minimale 0,60. Le laboratoire Python avec confirmation raster et le prototype PDF.js retrouvent les 472 cibles dans leur état attendu, médiane IoU 1,000. `findBoxes` brut en retrouve 240 et 151, dont les 88 pleines. Il manque 81 vides, avec 602 et 54 candidats non appariés (autres carrés ou décalages). Le protocole avantage la géométrie native et ne mesure pas la segmentation finale.
+- Contrôles publics. Virginia Tech présente 41 glyphes carrés et 20 coches, sans contour carré natif. Washington présente des réponses signalées par un fond vert autour de cases identiques. Sur Lyon 2, les 17 spans natifs bleus éligibles concordent avec le raster et PDF.js relève le même RGB. Liège et Illinois donnent zéro candidat carré, Berkeley un candidat ambigu. Le scan MIT n’a ni texte ni carré natif.
+- Temps cumulés. Référence brute raster et cases de 521 et 154 ms. Opérateurs PDF.js et normalisation en 149 et 66 ms. Chronométrages hors ouverture, à interpréter selon les opérations mesurées.
+- Limites. Les états TypeScript restent à confirmer après composition. Les vrais PDF publics servent aux contrôles ponctuels, sans inventaire annoté exhaustif de leurs objets. Les partitions réservées de Salif, les masques de bout en bout, Safari et les appareils physiques sont hors de ce relevé. Proposition hybride et interface de revue dans la PR #16.
+
+### V-28-0323-WB · Deux pages publiques annotées depuis le rendu
+
+- Protocole. Annotation visuelle indépendante des boîtes et états, appariement à IoU 0,60. Voir `research/pdf-vector/public-truth/` pour les deux pages et les empreintes des PDF.
+- Virginia Tech p. 15. `findBoxes` apparie 11/15 cases et renvoie toutes les cochées comme vides. Les glyphes PyMuPDF apparient les 7 cochées et 3 des 8 vides. À IoU 0,50, les 15 glyphes sont appariés dans leur bon état, avec une médiane IoU 0,608.
+- Washington p. 1. Les 4 cases s’apparient dans les comparaisons PDF.js et raster. Les états raster sont tous « vide » et les états natifs sont ambigus. Les trois marqueurs verts apparaissent dans le relevé PDF.js parmi les rectangles englobants. Le raster fournit 88 candidats en dehors des quatre cibles de la page.
+
 ## Modèles
 
 ### V-<jour>-<hhmm>-<initiales> · <ce qui a été vérifié>

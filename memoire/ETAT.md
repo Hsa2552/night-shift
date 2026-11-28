@@ -101,6 +101,14 @@
 - Maturité : testée en isolation avec le lecteur PDF dans Edge et par tests unitaires, dont le cas des questions bleues et données/corrections noires. Intégration structurelle par Hazem.
 - Notes : PR #13. Vérifications V-28-0118-WB et V-28-0128-WB. Détecteur QCM développé par Hazem, relu en isolation par Wael (V-28-0129-WB).
 
+### T-WB-5 · Perception vectorielle des PDF
+
+- Statut : en revue · Priorité : P0
+- Responsable : Wael · Agent : Codex · Branche : `feat/perception-vectorielle`
+- Dépend de : repère C1, lecteur et comparaison brute avec `findBoxes`. Hazem garde la fusion des observations.
+- Maturité : laboratoire Python et prototype PDF.js testés en isolation sur PDF réels et contrôles synthétiques. Approche hybride proposée. Raccordement au moteur et évaluation indépendante à réaliser après revue.
+- Notes : PR #16, `research/pdf-vector/` et V-28-0319-WB. La PR #15 conditionne séparément la synchronisation de la recette de phase 3.
+
 ## Terminées ou abandonnées
 
 _Déplacer ici les blocs `fusionnée` ou `abandonnée` pour garder la liste active courte._

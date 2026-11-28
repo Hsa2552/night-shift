@@ -67,3 +67,14 @@
 - Vérifié dans Edge : Lyon 2, quatre pages, 23/23 fragments bleus et 7/7 échantillons noirs observés, aucun masque couleur sur les questions. Berkeley conserve les résultats du premier jalon. Voir V-28-0128-WB.
 - Audit QCM de la branche de Hazem sur le recueil ENSAI local : toutes les cases noircies couvertes, huit cases vides résiduelles susceptibles de donner un indice. Voir V-28-0129-WB. Les fichiers du moteur et les PDF restent hors de la PR.
 - Maturité : relevé testé en isolation, intégration structurelle confiée à Hazem.
+
+### 28/11 03:19 · SESSION · T-WB-5 · Perception PDF native
+
+- PR #16 issue de `main` `329d297`. Laboratoire PyMuPDF et prototype PDF.js indépendants. Le lecteur, le moteur et C1 restent intacts. Observations proposées par page et dans le repère C1.
+- Vérifié sur deux annales ENSAI de diagnostic. Les deux extracteurs vectoriels retrouvent 472/472 candidats, contre 391/472 avec les cases raster brutes. Contrôles de familles publiques, notamment glyphes superposés, bleu des questions et scan sans vecteurs. Voir V-28-0319-WB.
+- Approche hybride proposée. Les opérateurs et la couleur sont des indices locaux, à confirmer par le raster quand la visibilité ou l’état est indéterminé. Association aux questions et fusion en revue avec Hazem. Aucun raccordement au lecteur sans coordination avec Salif.
+- Recette précédente. PR #14 fusionnée par l’équipe dans la branche de Hazem au commit `8cebd09`. PR #15 encore ouverte à la dernière vérification de ce jalon.
+
+### 28/11 03:23 · SESSION · T-WB-5 · Contrôle public indépendant
+
+- Mesure géométrique des cases sur une page de Virginia Tech et une de Washington. Enregistrement des seules coordonnées et de l’état observé sur ces deux sources publiques. Les résultats confirment la complémentarité des indices natifs et raster. Voir V-28-0323-WB.
