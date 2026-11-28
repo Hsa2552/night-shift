@@ -9,16 +9,12 @@
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { version as pdfjsVersion } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
 import { detectCorrections } from '../index.ts'
-import {
-  GEO_METRICS_VERSION,
-  provenanceKind,
-  scoreGeo,
-  type DocumentScore,
-  type GeoTruth,
-} from './geo.ts'
+import { GEO_METRICS_VERSION, provenanceKind, scoreGeo, type GeoTruth } from './geo.ts'
 import { loadPdf, NODE_PDF_LOADER_VERSION } from './loader.ts'
+import { aggregate, type DocReport } from './report.ts'
 import { scoreVisibleInk } from './strict.ts'
 
 const split = process.env.UNSPOIL_BENCH_SPLIT
@@ -34,22 +30,6 @@ interface Row {
   sha256: string
 }
 
-interface DocReport extends Partial<DocumentScore> {
-  partition: string
-  name: string
-  family: string
-  status: 'évalué' | 'absent' | 'empreinte différente' | 'sans vérité' | 'erreur'
-  detail?: string
-  provenance?: string
-  annotationSource?: ReturnType<typeof provenanceKind>
-  pdfSha256?: string
-  truthSha256?: string
-  truthVersion?: string
-  ink?: Awaited<ReturnType<typeof scoreVisibleInk>>
-  durationMs?: number
-  raster?: boolean
-}
-
 const pct = (n: number, d: number) => (d === 0 ? '—' : `${((100 * n) / d).toFixed(1)} %`)
 
 function readManifest(): Row[] {
@@ -58,43 +38,6 @@ function readManifest(): Row[] {
     const [partition, name, family, url, sha256] = l.split('\t')
     return { partition: partition!, name: name!, family: family!, url: url!, sha256: sha256! }
   })
-}
-
-function aggregate(docs: DocReport[]) {
-  const done = docs.filter((d) => d.status === 'évalué' && d.measurable !== false)
-  const sum = (f: (d: DocReport) => number) => done.reduce((a, d) => a + f(d), 0)
-  const corr = sum((d) => d.corrections?.total ?? 0)
-  const full = sum((d) => d.corrections?.full ?? 0)
-  const stmts = sum((d) => d.statements?.total ?? 0)
-  const masked = sum((d) => d.statements?.masked ?? 0)
-  return {
-    documents: docs.length,
-    evaluated: done.length,
-    notMeasurable: docs.filter((d) => d.status === 'évalué' && d.measurable === false).length,
-    errors: docs.filter((d) => d.status !== 'évalué').length,
-    kindCorrect: done.filter((d) => d.kindExpected === d.kindObtained).length,
-    corrections: {
-      total: corr,
-      full,
-      partial: sum((d) => d.corrections?.partial ?? 0),
-      none: sum((d) => d.corrections?.none ?? 0),
-    },
-    leakRate: corr === 0 ? 0 : (corr - full) / corr,
-    statements: { total: stmts, masked },
-    overmaskRate: stmts === 0 ? 0 : masked / stmts,
-    abstentions: done.filter((d) => d.abstained).length,
-    successes: done.filter((d) => d.success).length,
-    strictSuccesses: done.filter((d) => d.presentation?.strictSuccess).length,
-    presentation: {
-      automatic: docs.filter((d) => d.presentation?.mode === 'automatic').length,
-      statementOnly: docs.filter((d) => d.presentation?.mode === 'statement_only').length,
-      progressive: docs.filter((d) => d.presentation?.mode === 'progressive').length,
-      errors: docs.filter((d) => d.status === 'erreur').length,
-    },
-    documentsWithLeak: done.filter((d) => (d.corrections?.total ?? 0) > (d.corrections?.full ?? 0))
-      .length,
-    meanDurationMs: done.length === 0 ? 0 : Math.round(sum((d) => d.durationMs ?? 0) / done.length),
-  }
 }
 
 describe.skipIf(!split)('benchmark du détecteur', () => {
@@ -186,6 +129,7 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
       runtime: {
         environment: 'node',
         version: process.version,
+        pdfjs: pdfjsVersion,
         pdfLoader: NODE_PDF_LOADER_VERSION,
       },
       date: new Date().toISOString(),
@@ -217,7 +161,8 @@ describe.skipIf(!split)('benchmark du détecteur', () => {
     const comparable =
       previous?.metricsVersion === report.metricsVersion &&
       previous.corpusVersion === report.corpusVersion &&
-      previous.runtime?.pdfLoader === report.runtime.pdfLoader
+      previous.runtime?.pdfLoader === report.runtime.pdfLoader &&
+      previous.runtime?.pdfjs === report.runtime.pdfjs
     if (comparable) {
       for (const d of docs.filter((x) => x.status === 'évalué' && x.measurable !== false)) {
         const p = previous.documents.find((x) => x.name === d.name && x.status === 'évalué')

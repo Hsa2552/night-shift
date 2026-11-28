@@ -9,6 +9,7 @@ import {
   scorePresentedGeo,
 } from '../src/detection/eval/geo.ts'
 import { scoreVisibleInk } from '../src/detection/eval/strict.ts'
+import { aggregate } from '../src/detection/eval/report.ts'
 import { browserRaster, gotoBuild, hash, openBrowserProbe, openBuild } from './pdf-parity.mjs'
 import { displayedBlocks, masksOf } from './browser-masks.mjs'
 
@@ -221,30 +222,32 @@ try {
       await page.close()
     }
   }
-  const evaluated = documents.filter((d) => d.status === 'évalué' && d.measurable)
   const report = {
     format: 'unspoil-benchmark/2',
     metricsVersion: GEO_METRICS_VERSION,
     date: new Date().toISOString(),
     split,
     git: release.git,
-    runtime: { environment: 'browser', version: release.browser.version(), userAgent },
-    corpusVersion: hash(manifest).slice(0, 12),
-    summary: {
-      documents: documents.length,
-      evaluated: evaluated.length,
-      abstentions: evaluated.filter((doc) => doc.abstained).length,
-      successes: evaluated.filter((doc) => doc.success).length,
-      strictSuccesses: evaluated.filter((doc) => doc.presentation.strictSuccess).length,
-      presentationMismatches: documents.filter((doc) => doc.oracleMatches === false).length,
-      errors: documents.filter((doc) => doc.status === 'erreur').length,
+    runtime: {
+      environment: 'browser',
+      version: release.browser.version(),
+      pdfjs: release.pdfjs,
+      userAgent,
     },
+    corpusVersion: hash(manifest).slice(0, 12),
+    summary: aggregate(documents),
+    families: Object.fromEntries(
+      families.map((family) => [
+        family,
+        aggregate(documents.filter((doc) => doc.family === family)),
+      ]),
+    ),
     documents,
   }
   await writeFile(out, JSON.stringify(report, null, 2))
   console.log(JSON.stringify(report.summary))
   if (
-    report.summary.errors ||
+    report.summary.presentation.errors ||
     report.summary.presentationMismatches ||
     documents.some(
       (doc) => doc.status === 'empreinte différente' || doc.status === 'vérité différente',

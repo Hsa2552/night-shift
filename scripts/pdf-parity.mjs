@@ -18,6 +18,9 @@ export async function openBuild(checkout) {
   const webManifest = JSON.parse(
     await readFile(resolve(checkout, 'dist/manifest.webmanifest'), 'utf8'),
   )
+  const pdfjs = JSON.parse(
+    await readFile(resolve(checkout, 'node_modules/pdfjs-dist/package.json'), 'utf8'),
+  ).version
   const source = await preview({
     root: checkout,
     configFile: false,
@@ -29,6 +32,7 @@ export async function openBuild(checkout) {
     return {
       browser,
       git: { sha, dirty },
+      pdfjs,
       url: `http://127.0.0.1:${source.httpServer.address().port}${webManifest.scope}`,
       reader: manifest['src/pdf/index.ts'].file,
       detection: manifest['src/detection/index.ts'].file,
@@ -204,9 +208,6 @@ async function diagnose() {
     fitCanvas,
     MAX_RASTER_PIXELS,
   } = await nodeProbe(checkout)
-  const pdfjs = JSON.parse(
-    await readFile(resolve(checkout, 'node_modules/pdfjs-dist/package.json'), 'utf8'),
-  )
   const fontRoot =
     resolve(checkout, 'node_modules/pdfjs-dist/standard_fonts').replaceAll('\\', '/') + '/'
   const node = await loadPdf(new Uint8Array(bytes), { standardFontDataUrl: fontRoot, raster: true })
@@ -364,7 +365,7 @@ async function diagnose() {
         runtime: {
           browser: release.browser.version(),
           node: process.version,
-          pdfjs: pdfjs.version,
+          pdfjs: release.pdfjs,
         },
         resources: [...resources],
         pages,

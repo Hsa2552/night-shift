@@ -83,7 +83,9 @@ Le navigateur de référence est Edge par défaut. `UNSPOIL_CHANNEL` permet de c
 canal Chromium installé. La recette lit les masques réels, vérifie leur opacité et rejoue chaque
 commande de révélation. Elle compare ensuite l'oracle de décision aux masques effectivement
 présentés, avec une tolérance de 0,01 point pour la sérialisation CSS. Les temps navigateur
-comprennent import et interaction, tandis que le temps Node isole le détecteur.
+comprennent import et interaction, tandis que le temps Node isole le détecteur. Les deux rapports
+JSON emploient le même agrégateur, avec le même dénominateur relatif aux documents mesurables et
+des compteurs de provenance distincts.
 
 Le protocole de parité compare le texte et la géométrie des lignes après normalisation des
 identifiants de police par document. Les quatre croisements texte/raster alimentent une seule
